@@ -9,6 +9,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Unzip project
         run: unzip -q water_android_project.zip
+      - name: Fix Kotlin duplicate classes
+        run: |
+          cat >> WaterApp/app/build.gradle <<'EOF'
+
+          dependencies {
+              implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
+          }
+          EOF
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
