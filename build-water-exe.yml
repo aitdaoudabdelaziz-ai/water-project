@@ -1,0 +1,51 @@
+name: Build EXE (WaterApp)
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: Expand-Archive -Path water_desktop_project.zip -DestinationPath .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        working-directory: WaterDesktop
+        run: npm install
+      - name: Copy Excel library
+        working-directory: WaterDesktop
+        run: Copy-Item node_modules/xlsx/dist/xlsx.full.min.js xlsx.full.min.js
+      - name: Unit tests (backup engine)
+        working-directory: WaterDesktop
+        run: npm test
+      - name: Build installer + portable
+        working-directory: WaterDesktop
+        run: npm run dist
+      - name: Smoke test (launch, backup, verify, quit)
+        working-directory: WaterDesktop
+        continue-on-error: true
+        timeout-minutes: 3
+        shell: pwsh
+        run: |
+          $env:APP_SMOKE = "1"
+          $env:SMOKE_OUT = "$PWD\smoke.json"
+          $p = Start-Process -FilePath "dist\win-unpacked\WaterApp.exe" -PassThru
+          if (-not $p.WaitForExit(90000)) { $p.Kill(); throw "smoke test timed out" }
+          Get-Content smoke.json
+          if ($p.ExitCode -ne 0) { throw "smoke test failed" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe
+          path: WaterDesktop/dist/*.exe
+      - name: Publish release (tags v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: WaterDesktop/dist/*.exe
