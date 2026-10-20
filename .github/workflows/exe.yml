@@ -1,0 +1,27 @@
+name: Build EXE
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: Expand-Archive -Path water_desktop_project.zip -DestinationPath .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        working-directory: WaterDesktop
+        run: npm install
+      - name: Copy Excel library
+        working-directory: WaterDesktop
+        run: Copy-Item node_modules/xlsx/dist/xlsx.full.min.js xlsx.full.min.js
+      - name: Build EXE
+        working-directory: WaterDesktop
+        run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe
+          path: WaterDesktop/dist/*.exe
