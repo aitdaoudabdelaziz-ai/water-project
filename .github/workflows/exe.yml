@@ -1,6 +1,5 @@
-name: Build EXE
+name: OLD - Build EXE (قديم)
 on:
-  push:
   workflow_dispatch:
 jobs:
   build:

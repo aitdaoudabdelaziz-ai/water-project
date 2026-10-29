@@ -1,6 +1,5 @@
-name: Build APK
+name: OLD - Build APK (قديم)
 on:
-  push:
   workflow_dispatch:
 jobs:
   build:
