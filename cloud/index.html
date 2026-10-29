@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام إدارة الماء السحابي - الإصدار 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--tx:#1e293b;--mu:#64748b;--pr:#1d4ed8;--prd:#1e3a8a;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--bd:#e2e8f0}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{overflow-x:hidden}
+body{margin:0;font-family:'Cairo',Tahoma,sans-serif;background:var(--bg);color:var(--tx)}
+.app{display:flex;min-height:100vh}
+aside{width:230px;background:var(--prd);color:#fff;padding:18px 12px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+aside h2{font-size:18px;text-align:center;margin:0 0 20px}
+.nav button{display:block;width:100%;text-align:right;background:none;border:0;color:#fff;font:inherit;padding:10px 14px;border-radius:8px;margin-bottom:6px;cursor:pointer}
+.nav button:hover{background:rgba(255,255,255,.1)}
+.nav button.on{background:var(--pr);font-weight:700}
+aside .ver{margin-top:auto;font-size:12px;color:#93c5fd;text-align:center}
+main{flex:1;min-width:0;padding-bottom:80px}
+header{background:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+header h1{font-size:18px;margin:0}
+header .who{font-size:11px;color:var(--mu);display:block;direction:ltr;text-align:right}
+.badge{font-size:12px;padding:3px 10px;border-radius:99px;background:#dcfce7;color:#166534;font-weight:600;white-space:nowrap}
+.badge.no{background:#fee2e2;color:#991b1b}
+.badge.wa{background:#fef3c7;color:#92400e}
+.badge.bl{background:#dbeafe;color:#1e40af}
+.wrap{padding:18px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.wrap>*{min-width:0}
+.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card h3{margin:0 0 12px;font-size:16px}
+.card h4{margin:16px 0 8px;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.st{background:#fff;border-radius:12px;padding:14px;border-right:4px solid var(--pr);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.st p{margin:0;color:var(--mu);font-size:13px}.st b{display:block;font-size:22px;margin-top:4px}
+.st.g{border-color:var(--ok)}.st.a{border-color:var(--warn)}.st.r{border-color:var(--bad)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+label{display:block;font-size:13px;color:var(--mu);margin-bottom:4px}
+input,select,textarea{width:100%;border:1px solid var(--bd);border-radius:8px;padding:9px;font:inherit;font-size:14px;background:#fff}
+textarea{direction:ltr;text-align:left;font-family:monospace;font-size:12px}
+input:focus,select:focus,textarea:focus{outline:2px solid #93c5fd}
+.btn{border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;background:var(--pr);color:#fff}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.s{padding:5px 10px;font-size:13px}
+.btn.g{background:var(--ok)}.btn.r{background:var(--bad)}.btn.l{background:#e2e8f0;color:var(--tx)}
+.btn.w{width:100%}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}
+th{background:#f8fafc;color:var(--mu);font-weight:600}
+tr:hover td{background:#f8fafc}
+.num{direction:ltr;unicode-bidi:isolate}
+.muted{color:var(--mu);font-size:13px}
+.err{color:var(--bad);font-size:14px;min-height:1em}
+.bill{background:#eff6ff;border:1px dashed #93c5fd;border-radius:10px;padding:12px;margin-top:12px;font-size:14px}
+.bill div{display:flex;justify-content:space-between;padding:2px 0}
+.bill .t{font-weight:700;font-size:16px;border-top:1px solid #bfdbfe;margin-top:6px;padding-top:6px}
+.sub-pick{position:relative}
+.sug{position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid var(--bd);border-radius:8px;z-index:5;max-height:220px;overflow:auto;box-shadow:0 6px 16px rgba(0,0,0,.1)}
+.sug div{padding:8px 10px;cursor:pointer}.sug div:hover{background:#eff6ff}
+.page{display:none}.page.on{display:grid}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.on{display:flex}
+.modal .card{width:100%;max-width:520px;max-height:90vh;overflow:auto}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 18px;border-radius:8px;z-index:80;display:none;max-width:90vw;text-align:center}
+.bnav{display:none}
+.scr{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(160deg,#1e3a8a,#1d4ed8)}
+.scr .card{width:100%;max-width:440px;display:grid;gap:12px}
+.scr h2{margin:0;text-align:center;font-size:20px}
+.scr ol{margin:0;padding-right:20px;font-size:14px;line-height:1.8}
+.or{text-align:center;color:var(--mu);font-size:13px}
+#prt{display:none}
+@media (max-width:800px){
+ aside{display:none}
+ .bnav{display:flex;position:fixed;bottom:0;right:0;left:0;background:var(--prd);z-index:40}
+ .bnav button{flex:1;background:none;border:0;color:#cbd5e1;font:inherit;font-size:11px;padding:8px 2px;cursor:pointer}
+ .bnav button.on{color:#fff;font-weight:700;background:var(--pr)}
+ .bnav i{display:block;font-style:normal;font-size:18px}
+ .wrap{padding:12px}
+ header{padding:10px 12px}
+}
+@media print{
+ .app,.bnav,.modal,.toast,.scr{display:none!important}
+ #prt{display:block}
+ body{background:#fff}
+ .inv{page-break-after:always;padding:10mm;font-size:14px}
+ .inv:last-child{page-break-after:auto}
+ .inv h2{text-align:center;margin:0 0 4px}
+ .inv table{margin-top:10px}
+ .inv th,.inv td{border:1px solid #999}
+}
+</style>
+</head>
+<body>
+
+<!-- شاشة الإعداد الأول -->
+<div class="scr" id="scrSetup" hidden><div class="card">
+ <h2>ربط البرنامج بالسحابة</h2>
+ <p class="muted">إذا أرسل لك مسؤول الجمعية رابطاً، افتحه مباشرة ولا تحتاج هذه الخطوة.</p>
+ <div><label>إعدادات Firebase (الصق هنا الجزء firebaseConfig كاملاً)</label><textarea id="fbCfg" rows="7" placeholder='const firebaseConfig = {
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  ...
+};'></textarea></div>
+ <div><label>بريد مسؤول الجمعية (هو من يضيف الأعضاء)</label><input id="fbAdmin" type="email" dir="ltr" placeholder="admin@gmail.com"></div>
+ <div class="err" id="fbErr"></div>
+ <button class="btn w" id="fbSave" type="button">حفظ والاتصال بالسحابة</button>
+ <div class="or">أو</div>
+ <button class="btn l w" id="useLocal" type="button">استعمال البرنامج بدون سحابة (هذا الجهاز فقط)</button>
+</div></div>
+
+<!-- شاشة الدخول -->
+<div class="scr" id="scrLogin" hidden><div class="card">
+ <h2 id="lgTitle">تسجيل الدخول</h2>
+ <div><label>البريد الإلكتروني</label><input id="lgEmail" type="email" dir="ltr" autocomplete="username"></div>
+ <div><label>كلمة السر</label><input id="lgPass" type="password" dir="ltr" autocomplete="current-password"></div>
+ <div class="err" id="lgMsg"></div>
+ <button class="btn w" id="lgIn" type="button">دخول</button>
+ <button class="btn l w" id="lgUp" type="button">إنشاء حساب جديد</button>
+ <button class="btn l w" id="lgReset" type="button" style="background:none;color:var(--pr)">نسيت كلمة السر؟</button>
+ <p class="muted">بعد إنشاء الحساب، يجب أن يضيف المسؤول بريدك إلى قائمة الأعضاء حتى ترى بيانات الجمعية.</p>
+</div></div>
+
+<!-- شاشة الرسائل -->
+<div class="scr" id="scrMsg" hidden><div class="card">
+ <h2 id="msgTitle">نظام إدارة الماء</h2>
+ <p id="msgTxt" style="text-align:center"></p>
+ <div class="acts" id="msgActs" style="justify-content:center"></div>
+</div></div>
+
+<div class="app" id="app" hidden>
+ <aside>
+  <h2 id="asName">إدارة الماء</h2>
+  <div class="nav" id="nav"></div>
+  <div class="ver">الإصدار 3.0 — سحابي</div>
+ </aside>
+ <main>
+  <header><div><h1 id="pgTitle">لوحة القيادة</h1><span class="who" id="who"></span></div><span class="badge" id="saveBadge">...</span></header>
+
+  <!-- لوحة القيادة -->
+  <section class="wrap page on" id="p-dash">
+   <div class="row" style="max-width:320px"><div><label>الشهر</label><input type="month" id="dMonth"></div></div>
+   <div class="stats" id="dStats"></div>
+   <div class="card"><h3>أكبر المتأخرين عن الأداء</h3><div class="tbl"><table><thead><tr><th>العداد</th><th>المشترك</th><th>فواتير غير مؤداة</th><th>المبلغ المستحق</th></tr></thead><tbody id="dLate"></tbody></table></div></div>
+  </section>
+
+  <!-- المشتركون -->
+  <section class="wrap page" id="p-subs">
+   <div class="card">
+    <h3 id="sFormTitle">إضافة مشترك</h3>
+    <form id="sForm" class="row">
+     <input type="hidden" id="sId">
+     <div><label>رقم العداد *</label><input id="sMeter" required></div>
+     <div><label>الاسم الكامل *</label><input id="sName" required></div>
+     <div><label>الهاتف</label><input id="sPhone" inputmode="tel"></div>
+     <div><label>الدوار / العنوان</label><input id="sAddr"></div>
+     <div><label>القراءة الأولى للعداد</label><input id="sInit" type="number" min="0" step="any" value="0"></div>
+     <div class="acts"><button class="btn" type="submit">حفظ</button><button class="btn l" type="button" id="sCancel">إلغاء</button></div>
+    </form>
+   </div>
+   <div class="card">
+    <div class="row" style="margin-bottom:10px"><div><label>بحث</label><input id="sSearch" placeholder="رقم العداد أو الاسم"></div></div>
+    <div class="tbl"><table><thead><tr><th>العداد</th><th>الاسم</th><th>الهاتف</th><th>العنوان</th><th>آخر قراءة</th><th>المستحق</th><th></th></tr></thead><tbody id="sBody"></tbody></table></div>
+    <p class="muted" id="sCount"></p>
+   </div>
+  </section>
+
+  <!-- إدخال القراءات -->
+  <section class="wrap page" id="p-read">
+   <div class="card">
+    <h3>إدخال قراءة جديدة</h3>
+    <form id="rForm">
+     <div class="row">
+      <div><label>الشهر</label><input type="month" id="rMonth" required></div>
+      <div class="sub-pick"><label>المشترك (رقم العداد أو الاسم)</label><input id="rSubQ" autocomplete="off" placeholder="ابحث..."><div class="sug" id="rSug" hidden></div></div>
+      <div><label>القراءة السابقة</label><input id="rPrev" type="number" readonly style="background:#f8fafc"></div>
+      <div><label>القراءة الحالية *</label><input id="rCurr" type="number" min="0" step="any" required inputmode="decimal"></div>
+     </div>
+     <div id="rInfo" class="muted" style="margin-top:8px"></div>
+     <div class="bill" id="rBill" hidden></div>
+     <div class="acts" style="margin-top:12px"><button class="btn" type="submit">حفظ الفاتورة</button><button class="btn l" type="button" id="rNext">المشترك التالي بدون قراءة</button></div>
+    </form>
+   </div>
+   <div class="card"><h3>قراءات هذا الشهر <span class="muted" id="rProg"></span></h3>
+    <div class="tbl"><table><thead><tr><th>العداد</th><th>المشترك</th><th>السابقة</th><th>الحالية</th><th>الاستهلاك</th><th>المبلغ</th><th>أدخلها</th></tr></thead><tbody id="rBody"></tbody></table></div>
+   </div>
+  </section>
+
+  <!-- الفواتير -->
+  <section class="wrap page" id="p-inv">
+   <div class="card">
+    <div class="row">
+     <div><label>الشهر</label><input type="month" id="iMonth"></div>
+     <div><label>الحالة</label><select id="iStatus"><option value="">الكل</option><option value="0">غير مؤداة</option><option value="1">مؤداة</option></select></div>
+     <div><label>بحث</label><input id="iSearch" placeholder="العداد أو الاسم"></div>
+     <div class="acts"><button class="btn l" id="iPrintAll" type="button">طباعة الفواتير</button><button class="btn l" id="iCsv" type="button">تصدير Excel</button></div>
+    </div>
+    <p class="muted" id="iNote" hidden>تظهر هنا فواتير آخر 12 شهراً وكل الفواتير غير المؤداة. الفواتير الأقدم موجودة في النسخة الاحتياطية الكاملة.</p>
+   </div>
+   <div class="card"><div class="tbl"><table><thead><tr><th>الشهر</th><th>العداد</th><th>المشترك</th><th>الاستهلاك</th><th>المبلغ</th><th>الحالة</th><th></th></tr></thead><tbody id="iBody"></tbody></table></div><p class="muted" id="iSum"></p></div>
+  </section>
+
+  <!-- الإعدادات -->
+  <section class="wrap page" id="p-set">
+   <div class="card" id="cloudCard">
+    <h3>السحابة</h3>
+    <p id="clStatus"></p>
+    <div id="clCloud" hidden>
+     <div class="acts">
+      <button class="btn" id="clLink" type="button">رابط دعوة الأعضاء</button>
+      <button class="btn l" id="clRules" type="button">قواعد الحماية</button>
+      <button class="btn l" id="clUpload" type="button">رفع بيانات هذا الجهاز إلى السحابة</button>
+      <button class="btn l" id="clOut" type="button">تسجيل الخروج</button>
+      <button class="btn r" id="clReset" type="button">فصل السحابة عن هذا الجهاز</button>
+     </div>
+     <div id="clMembers" hidden>
+      <h4>الأعضاء المسموح لهم</h4>
+      <p class="muted">أضف بريد كل عضو هنا، ثم يفتح رابط الدعوة وينشئ حسابه بنفس البريد.</p>
+      <div class="row"><div><label>البريد الإلكتروني</label><input id="mEmail" type="email" dir="ltr"></div><div><label>الاسم (اختياري)</label><input id="mName"></div><div><button class="btn g" id="mAdd" type="button">إضافة عضو</button></div></div>
+      <div class="tbl" style="margin-top:10px"><table><thead><tr><th>البريد</th><th>الاسم</th><th></th></tr></thead><tbody id="mBody"></tbody></table></div>
+     </div>
+    </div>
+    <div id="clLocal" hidden><button class="btn" id="clConnect" type="button">ربط البرنامج بالسحابة</button></div>
+   </div>
+   <div class="card">
+    <h3>معلومات الجمعية</h3>
+    <div class="row"><div><label>اسم الجمعية</label><input id="cName"></div><div><label>الهاتف</label><input id="cPhone"></div></div>
+   </div>
+   <div class="card">
+    <h3>التعريفة (الشرائح)</h3>
+    <div class="row">
+     <div><label>الشريحة 1: حتى (م³)</label><input id="t1to" type="number" min="1"></div>
+     <div><label>ثمن الشريحة 1 (درهم/م³)</label><input id="t1p" type="number" step="0.01" min="0"></div>
+     <div><label>الشريحة 2: حتى (م³)</label><input id="t2to" type="number" min="1"></div>
+     <div><label>ثمن الشريحة 2</label><input id="t2p" type="number" step="0.01" min="0"></div>
+     <div><label>ثمن ما فوق ذلك</label><input id="t3p" type="number" step="0.01" min="0"></div>
+     <div><label>الواجب الثابت (درهم)</label><input id="cFee" type="number" step="0.01" min="0"></div>
+    </div>
+    <p class="muted">تُطبَّق التعريفة الجديدة على الفواتير القادمة فقط، والفواتير القديمة تحتفظ بأسعارها.</p>
+    <button class="btn" id="cSave" type="button">حفظ الإعدادات</button>
+   </div>
+   <div class="card">
+    <h3>النسخ الاحتياطي</h3>
+    <p class="muted" id="bNote">احفظ نسخة احتياطية بانتظام على هاتفك أو حاسوبك أو مفتاح USB.</p>
+    <div class="acts"><button class="btn g" id="bExport" type="button">تنزيل نسخة احتياطية كاملة</button><button class="btn l" id="bImport" type="button">استرجاع نسخة</button><input type="file" id="bFile" accept=".json,application/json" hidden></div>
+    <p class="muted" id="bLast"></p>
+   </div>
+  </section>
+ </main>
+</div>
+<div class="bnav" id="bnav" hidden></div>
+
+<!-- نافذة الأداء -->
+<div class="modal" id="payM"><div class="card">
+ <h3>تسجيل الأداء</h3>
+ <p id="payInfo"></p>
+ <div class="row"><div><label>طريقة الأداء</label><select id="payMeth"><option value="cash">نقداً</option><option value="bank">بنكياً / تحويل</option></select></div><div><label>تاريخ الأداء</label><input type="date" id="payDate"></div></div>
+ <div class="acts" style="margin-top:12px"><button class="btn g" id="payOk" type="button">تأكيد الأداء</button><button class="btn l" type="button" onclick="closeM('payM')">إلغاء</button></div>
+</div></div>
+
+<!-- نافذة نص للنسخ -->
+<div class="modal" id="txtM"><div class="card">
+ <h3 id="txtTitle"></h3>
+ <p class="muted" id="txtNote"></p>
+ <textarea id="txtBox" rows="9" readonly></textarea>
+ <div class="acts" style="margin-top:12px"><button class="btn" id="txtCopy" type="button">نسخ</button><button class="btn l" type="button" onclick="closeM('txtM')">إغلاق</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<div id="prt"></div>
+
+<script>
+'use strict';
+// يمكن للمسؤول وضع الإعدادات هنا مباشرة بدل لصقها في الشاشة: {cfg:{apiKey:"...",...},admin:"email"}
+const FB_SETUP=null;
+const FBV='10.14.1';
+const KEY='wcloud2',FBKEY='wcloud_fb',MODEKEY='wcloud_mode',LBKEY='wcloud_lb';
+const PAGES=[['dash','لوحة القيادة','📊'],['subs','المشتركون','👥'],['read','إدخال القراءات','✏️'],['inv','الفواتير','🧾'],['set','الإعدادات','⚙️']];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>(Math.round(n*100)/100).toFixed(2);
+const N=v=>`<span class="num">${esc(v)}</span>`;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const thisMonth=()=>new Date().toISOString().slice(0,7);
+const today=()=>new Date().toISOString().slice(0,10);
+const monthsAgo=k=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-k);return d.toISOString().slice(0,7)};
+const monthAr=m=>{if(!m)return'';const[y,mo]=m.split('-');const n=['يناير','فبراير','مارس','أبريل','ماي','يونيو','يوليوز','غشت','شتنبر','أكتوبر','نونبر','دجنبر'];return n[+mo-1]+' '+y};
+const clean=o=>JSON.parse(JSON.stringify(o));
+const byMeter=(a,b)=>String(a.meter).localeCompare(String(b.meter),undefined,{numeric:true});
+const validEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+let MODE=null,db=null,auth=null,USER=null,FB=null,MEM=[];
+function defCfg(){return{name:'جمعية الماء',phone:'',fee:15,tiers:[{to:6,price:3.5},{to:12,price:5},{to:null,price:8}]}}
+let D={cfg:defCfg(),subs:[],inv:[]};
+
+// ================= الحفظ المحلي =================
+function loadLocal(){
+ try{const s=localStorage.getItem(KEY);D=s?JSON.parse(s):{cfg:defCfg(),subs:[],inv:[]}}catch(e){D={cfg:defCfg(),subs:[],inv:[]}}
+ if(!D.cfg)D.cfg=defCfg();D.subs=D.subs||[];D.inv=D.inv||[];
+}
+let saveT=null;
+function save(){clearTimeout(saveT);saveT=setTimeout(flush,250)}
+function flush(){
+ clearTimeout(saveT);
+ if(MODE!=='local')return;
+ try{
+  localStorage.setItem(KEY,JSON.stringify(D));
+  const day=today();
+  if(localStorage.getItem(KEY+'_day')!==day){localStorage.setItem(KEY+'_snap',JSON.stringify(D));localStorage.setItem(KEY+'_day',day)}
+  setBadge('محفوظ على الجهاز','');
+ }catch(e){setBadge('تعذر الحفظ!','no')}
+}
+window.addEventListener('beforeunload',()=>{if(MODE==='local'&&!window.__nf)flush()});
+
+// ================= طبقة الكتابة (محلي أو سحابي) =================
+function upsert(arr,o){const k=arr.findIndex(x=>x.id===o.id);if(k<0)arr.push(o);else arr[k]=o}
+function werr(e){toast(e&&e.code==='permission-denied'?'ليست لديك صلاحية الحفظ. تأكد أن المسؤول أضاف بريدك.':'تعذر الحفظ في السحابة: '+(e&&e.message||e))}
+const W={
+ put(col,o){
+  upsert(D[col],o);
+  if(MODE==='cloud'){o.by=USER.email;o.at=Date.now();db.collection(col).doc(o.id).set(clean(o)).catch(werr)}
+  else save();
+  sched();
+ },
+ del(col,id){
+  D[col]=D[col].filter(x=>x.id!==id);
+  if(MODE==='cloud')db.collection(col).doc(id).delete().catch(werr);else save();
+  sched();
+ },
+ cfg(c){
+  D.cfg=c;
+  if(MODE==='cloud')db.collection('settings').doc('main').set(clean(c)).catch(werr);else save();
+  sched();
+ }
+};
+
+// ================= الحساب =================
+function tierCalc(c,tiers){
+ const lines=[];let from=0,amt=0;
+ for(const t of tiers){
+  const upto=t.to==null?Infinity:t.to;
+  const q=Math.max(0,Math.min(c,upto)-from);
+  if(q>0){lines.push({from,to:t.to,q,price:t.price,amt:q*t.price});amt+=q*t.price}
+  from=upto;if(c<=upto)break;
+ }
+ return{amt,lines};
+}
+function invTotal(i){return tierCalc(i.cons,i.tiers).amt+i.fee}
+const subById=id=>D.subs.find(s=>s.id===id);
+function lastReading(sid,beforeMonth){
+ const list=D.inv.filter(i=>i.sid===sid&&(!beforeMonth||i.month<beforeMonth)).sort((a,b)=>a.month<b.month?1:-1);
+ if(list.length)return list[0].curr;
+ const s=subById(sid);if(!s)return 0;
+ if(s.lastMonth!=null&&s.lastCurr!=null&&(!beforeMonth||s.lastMonth<beforeMonth))return s.lastCurr;
+ return +s.init||0;
+}
+function updLast(sid){
+ const s=subById(sid);if(!s)return;
+ const l=D.inv.filter(i=>i.sid===sid).sort((a,b)=>a.month<b.month?1:-1)[0];
+ const lm=l?l.month:null,lc=l?l.curr:null;
+ if(s.lastMonth!==lm||s.lastCurr!==lc){const o=Object.assign({},s,{lastMonth:lm,lastCurr:lc});W.put('subs',o)}
+}
+const dueOf=sid=>D.inv.filter(i=>i.sid===sid&&!i.paid).reduce((a,i)=>a+i.total,0);
+
+// ================= الشاشات =================
+function showScr(id){
+ ['scrSetup','scrLogin','scrMsg'].forEach(x=>$(x).hidden=x!==id);
+ $('app').hidden=true;$('bnav').hidden=true;
+}
+function showApp(){['scrSetup','scrLogin','scrMsg'].forEach(x=>$(x).hidden=true);$('app').hidden=false;$('bnav').hidden=false}
+function showMsg(txt,acts){
+ $('msgTxt').textContent=txt;
+ const box=$('msgActs');box.innerHTML='';
+ (acts||[]).forEach(([lbl,fn,cls])=>{const b=document.createElement('button');b.className='btn '+(cls||'');b.type='button';b.textContent=lbl;b.onclick=fn;box.appendChild(b)});
+ showScr('scrMsg');
+}
+function setBadge(t,c){const b=$('saveBadge');b.textContent=t;b.className='badge '+(c||'')}
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2600)}
+function closeM(id){$(id).classList.remove('on')}
+function showTxt(title,note,text){$('txtTitle').textContent=title;$('txtNote').textContent=note||'';$('txtBox').value=text;$('txtM').classList.add('on')}
+$('txtCopy').onclick=()=>{
+ const t=$('txtBox');
+ const done=()=>toast('تم النسخ ✔');
+ if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t.value).then(done,()=>{t.select();document.execCommand('copy');done()});
+ else{t.removeAttribute('readonly');t.select();document.execCommand('copy');t.setAttribute('readonly','');done()}
+};
+
+// ================= التنقل =================
+function buildNav(){
+ $('nav').innerHTML=PAGES.map(p=>`<button data-p="${p[0]}">${p[1]}</button>`).join('');
+ $('bnav').innerHTML=PAGES.map(p=>`<button data-p="${p[0]}"><i>${p[2]}</i>${p[1].replace('إدخال ','')}</button>`).join('');
+ document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>go(b.dataset.p));
+}
+let cur='dash';
+function go(p){
+ cur=p;
+ document.querySelectorAll('.page').forEach(s=>s.classList.toggle('on',s.id==='p-'+p));
+ document.querySelectorAll('[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+ $('pgTitle').textContent=PAGES.find(x=>x[0]===p)[1];
+ render();window.scrollTo(0,0);
+}
+function render(){
+ $('asName').textContent=D.cfg.name||'إدارة الماء';
+ ({dash:rDash,subs:rSubs,read:rRead,inv:rInv,set:rSet})[cur]();
+}
+let rT=null;
+function sched(){clearTimeout(rT);rT=setTimeout(()=>{if($('app').hidden)return;$('asName').textContent=D.cfg.name||'إدارة الماء';if(cur==='set')rCloud();else render()},60)}
+
+// ================= لوحة القيادة =================
+function rDash(){
+ const m=$('dMonth').value||thisMonth();$('dMonth').value=m;
+ const inv=D.inv.filter(i=>i.month===m);
+ const cons=inv.reduce((a,i)=>a+i.cons,0);
+ const billed=inv.reduce((a,i)=>a+i.total,0);
+ const paid=inv.filter(i=>i.paid).reduce((a,i)=>a+i.total,0);
+ const allDue=D.inv.filter(i=>!i.paid).reduce((a,i)=>a+i.total,0);
+ $('dStats').innerHTML=`
+  <div class="st"><p>عدد المشتركين</p><b>${N(D.subs.length)}</b></div>
+  <div class="st"><p>قراءات ${esc(monthAr(m))}</p><b>${N(inv.length+' / '+D.subs.length)}</b></div>
+  <div class="st g"><p>الاستهلاك (م³)</p><b>${N(cons)}</b></div>
+  <div class="st a"><p>مبلغ الفواتير (درهم)</p><b>${N(money(billed))}</b></div>
+  <div class="st g"><p>المحصَّل هذا الشهر</p><b>${N(money(paid))}</b></div>
+  <div class="st r"><p>مجموع المستحق (كل الأشهر)</p><b>${N(money(allDue))}</b></div>`;
+ const late=D.subs.map(s=>{const u=D.inv.filter(i=>i.sid===s.id&&!i.paid);return{s,n:u.length,d:u.reduce((a,i)=>a+i.total,0)}}).filter(x=>x.n).sort((a,b)=>b.d-a.d).slice(0,10);
+ $('dLate').innerHTML=late.length?late.map(x=>`<tr><td>${N(x.s.meter)}</td><td>${esc(x.s.name)}</td><td>${N(x.n)}</td><td><b>${N(money(x.d))}</b></td></tr>`).join(''):'<tr><td colspan="4" class="muted">لا توجد فواتير غير مؤداة</td></tr>';
+}
+$('dMonth').onchange=rDash;
+
+// ================= المشتركون =================
+function rSubs(){
+ const q=$('sSearch').value.trim().toLowerCase();
+ const list=D.subs.filter(s=>!q||String(s.meter).toLowerCase().includes(q)||String(s.name).toLowerCase().includes(q)).sort(byMeter);
+ $('sBody').innerHTML=list.slice(0,300).map(s=>{const d=dueOf(s.id);return`<tr><td>${N(s.meter)}</td><td>${esc(s.name)}</td><td>${N(s.phone)}</td><td>${esc(s.addr)}</td><td>${N(lastReading(s.id))}</td><td>${d?'<b style="color:var(--bad)">'+N(money(d))+'</b>':'—'}</td><td class="acts"><button class="btn s l" onclick="editSub('${s.id}')">تعديل</button><button class="btn s r" onclick="delSub('${s.id}')">حذف</button></td></tr>`}).join('')||'<tr><td colspan="7" class="muted">لا يوجد مشتركون بعد. أضف أول مشترك من النموذج أعلاه.</td></tr>';
+ $('sCount').textContent=list.length>300?`يظهر 300 من ${list.length}، استعمل البحث`:`${list.length} مشترك`;
+}
+function resetSubForm(){$('sForm').reset();$('sId').value='';$('sInit').value=0;$('sFormTitle').textContent='إضافة مشترك'}
+$('sForm').onsubmit=e=>{
+ e.preventDefault();
+ const id=$('sId').value,meter=$('sMeter').value.trim(),name=$('sName').value.trim();
+ if(D.subs.some(s=>s.id!==id&&String(s.meter)===meter)){alert('رقم العداد هذا مستعمل لمشترك آخر');return}
+ const o={meter,name,phone:$('sPhone').value.trim(),addr:$('sAddr').value.trim(),init:+$('sInit').value||0};
+ if(id)W.put('subs',Object.assign({},subById(id),o));else W.put('subs',Object.assign({id:uid()},o));
+ resetSubForm();rSubs();toast(id?'تم تعديل المشترك':'تمت إضافة المشترك');
+};
+$('sCancel').onclick=resetSubForm;
+$('sSearch').oninput=rSubs;
+function editSub(id){const s=subById(id);$('sId').value=id;$('sMeter').value=s.meter;$('sName').value=s.name;$('sPhone').value=s.phone||'';$('sAddr').value=s.addr||'';$('sInit').value=s.init||0;$('sFormTitle').textContent='تعديل المشترك: '+s.name;window.scrollTo(0,0)}
+function delSub(id){
+ const s=subById(id),n=D.inv.filter(i=>i.sid===id).length;
+ if(!confirm(`حذف المشترك "${s.name}" مع كل فواتيره${n?` (${n})`:''}؟ لا يمكن التراجع.`))return;
+ D.subs=D.subs.filter(x=>x.id!==id);D.inv=D.inv.filter(i=>i.sid!==id);
+ if(MODE==='cloud'){
+  db.collection('inv').where('sid','==',id).get().then(q=>{const b=db.batch();q.docs.forEach(d=>b.delete(d.ref));b.delete(db.collection('subs').doc(id));return b.commit()}).catch(werr);
+ }else save();
+ rSubs();toast('تم الحذف');
+}
+
+// ================= القراءات =================
+let rSel=null;
+function rRead(){
+ if(!$('rMonth').value)$('rMonth').value=thisMonth();
+ const m=$('rMonth').value;
+ const inv=D.inv.filter(i=>i.month===m).sort((a,b)=>(b.created||0)-(a.created||0));
+ $('rProg').textContent=`(${inv.length} من ${D.subs.length})`;
+ $('rBody').innerHTML=inv.map(i=>{const s=subById(i.sid)||{};return`<tr><td>${N(s.meter)}</td><td>${esc(s.name)}</td><td>${N(i.prev)}</td><td>${N(i.curr)}</td><td><b style="color:var(--pr)">${N(i.cons)}</b></td><td><b>${N(money(i.total))}</b></td><td class="muted">${N(i.by?i.by.split('@')[0]:'')}</td></tr>`}).join('')||'<tr><td colspan="7" class="muted">لا توجد قراءات لهذا الشهر بعد</td></tr>';
+ if(rSel&&!subById(rSel.id)){rSel=null;$('rSubQ').value='';$('rPrev').value=''}
+ updBill();
+}
+function pickSub(id){
+ rSel=subById(id);$('rSug').hidden=true;
+ const m=$('rMonth').value;
+ $('rSubQ').value=rSel.meter+' — '+rSel.name;
+ const ex=D.inv.find(i=>i.sid===id&&i.month===m);
+ $('rPrev').value=ex?ex.prev:lastReading(id,m);
+ $('rCurr').value=ex?ex.curr:'';
+ const d=dueOf(id)-(ex&&!ex.paid?ex.total:0);
+ $('rInfo').innerHTML=(ex?`<span class="badge wa">توجد فاتورة لهذا الشهر${ex.by?' أدخلها '+esc(ex.by.split('@')[0]):''}، الحفظ سيعدّلها</span> `:'')+(d?`<span class="badge no">مستحقات سابقة: ${N(money(d))} درهم</span>`:'');
+ updBill();$('rCurr').focus();
+}
+$('rSubQ').oninput=()=>{
+ rSel=null;$('rPrev').value='';$('rInfo').innerHTML='';updBill();
+ const q=$('rSubQ').value.trim().toLowerCase();
+ if(!q){$('rSug').hidden=true;return}
+ const m=$('rMonth').value;
+ const l=D.subs.filter(s=>String(s.meter).toLowerCase().startsWith(q)||String(s.name).toLowerCase().includes(q)).slice(0,12);
+ $('rSug').innerHTML=l.map(s=>`<div onclick="pickSub('${s.id}')">${N(s.meter)} — ${esc(s.name)}${D.inv.some(i=>i.sid===s.id&&i.month===m)?' ✔':''}</div>`).join('')||'<div class="muted">لا نتيجة</div>';
+ $('rSug').hidden=false;
+};
+$('rSubQ').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const f=$('rSug').querySelector('div[onclick]');if(f)f.click()}};
+document.addEventListener('click',e=>{if(!e.target.closest('.sub-pick'))$('rSug').hidden=true});
+$('rCurr').oninput=updBill;
+$('rMonth').onchange=()=>{if(rSel)pickSub(rSel.id);rRead()};
+function updBill(){
+ const b=$('rBill');
+ if(!rSel||$('rCurr').value===''){b.hidden=true;return}
+ const prev=+$('rPrev').value,curr=+$('rCurr').value,c=curr-prev;
+ b.hidden=false;
+ if(c<0){b.innerHTML='<div style="color:var(--bad)">القراءة الحالية أقل من السابقة!</div>';return}
+ const r=tierCalc(c,D.cfg.tiers);
+ b.innerHTML=`<div><span>الاستهلاك</span><b>${N(c+' م³')}</b></div>`+r.lines.map(l=>`<div><span>${l.to==null?'أكثر من '+l.from:'من '+(l.from+1)+' إلى '+l.to} م³: ${N(l.q+' × '+money(l.price))}</span><span>${N(money(l.amt))}</span></div>`).join('')+`<div><span>الواجب الثابت</span><span>${N(money(D.cfg.fee))}</span></div><div class="t"><span>المجموع</span><span>${N(money(r.amt+D.cfg.fee)+' درهم')}</span></div>`;
+}
+$('rForm').onsubmit=e=>{
+ e.preventDefault();
+ if(!rSel){alert('اختر المشترك من القائمة أولاً');$('rSubQ').focus();return}
+ const m=$('rMonth').value,prev=+$('rPrev').value,curr=+$('rCurr').value,cons=curr-prev;
+ if(cons<0){alert('خطأ: القراءة الحالية أقل من القراءة السابقة!');return}
+ if(cons>200&&!confirm(`الاستهلاك ${cons} م³ مرتفع جداً. هل القراءة صحيحة؟`))return;
+ const ex=D.inv.find(x=>x.sid===rSel.id&&x.month===m);
+ if(ex&&ex.paid&&!confirm('هذه الفاتورة مؤداة. تعديلها سيلغي الأداء. متابعة؟'))return;
+ const tiers=clean(D.cfg.tiers);
+ const i=Object.assign({},ex||{id:rSel.id+'_'+m,sid:rSel.id,month:m,created:Date.now()},{prev,curr,cons,tiers,fee:D.cfg.fee,paid:false,payMeth:null,payDate:null});
+ i.total=Math.round(invTotal(i)*100)/100;
+ W.put('inv',i);updLast(i.sid);
+ toast(`تم حفظ فاتورة ${rSel.name}: ${money(i.total)} درهم`);
+ rSel=null;$('rSubQ').value='';$('rPrev').value='';$('rCurr').value='';$('rInfo').innerHTML='';
+ rRead();nextSub();
+};
+function nextSub(){
+ const m=$('rMonth').value;
+ const done=new Set(D.inv.filter(i=>i.month===m).map(i=>i.sid));
+ const s=D.subs.slice().sort(byMeter).find(s=>!done.has(s.id));
+ if(s)pickSub(s.id);else{$('rSubQ').focus();if(D.subs.length)toast('تم إدخال قراءات جميع المشتركين لهذا الشهر ✔')}
+}
+$('rNext').onclick=nextSub;
+
+// ================= الفواتير =================
+function invList(){
+ const m=$('iMonth').value,st=$('iStatus').value,q=$('iSearch').value.trim().toLowerCase();
+ return D.inv.filter(i=>{const s=subById(i.sid)||{};return(!m||i.month===m)&&(st===''||String(+!!i.paid)===st)&&(!q||String(s.meter).toLowerCase().includes(q)||String(s.name||'').toLowerCase().includes(q))})
+  .sort((a,b)=>a.month===b.month?byMeter(subById(a.sid)||{},subById(b.sid)||{}):(a.month<b.month?1:-1));
+}
+function rInv(){
+ if($('iMonth').value===''&&!$('iMonth')._init){$('iMonth').value=thisMonth();$('iMonth')._init=1}
+ $('iNote').hidden=MODE!=='cloud';
+ const l=invList();
+ $('iBody').innerHTML=l.slice(0,400).map(i=>{const s=subById(i.sid)||{};return`<tr><td>${esc(monthAr(i.month))}</td><td>${N(s.meter)}</td><td>${esc(s.name)}</td><td>${N(i.cons)}</td><td><b>${N(money(i.total))}</b></td><td>${i.paid?`<span class="badge">مؤداة ${i.payMeth==='bank'?'بنكياً':'نقداً'}</span>`:'<span class="badge no">غير مؤداة</span>'}</td><td class="acts">${i.paid?`<button class="btn s l" onclick="unpay('${i.id}')">إلغاء الأداء</button>`:`<button class="btn s g" onclick="payAsk('${i.id}')">أداء</button>`}<button class="btn s l" onclick="printInv(['${i.id}'])">طباعة</button><button class="btn s r" onclick="delInv('${i.id}')">حذف</button></td></tr>`}).join('')||'<tr><td colspan="7" class="muted">لا توجد فواتير</td></tr>';
+ const tot=l.reduce((a,i)=>a+i.total,0),pd=l.filter(i=>i.paid).reduce((a,i)=>a+i.total,0);
+ $('iSum').innerHTML=`${l.length} فاتورة — المجموع ${N(money(tot))} — المؤدى ${N(money(pd))} — الباقي ${N(money(tot-pd))} درهم`;
+}
+['iMonth','iStatus'].forEach(x=>$(x).onchange=rInv);$('iSearch').oninput=rInv;
+let payId=null;
+function payAsk(id){const i=D.inv.find(x=>x.id===id),s=subById(i.sid)||{};payId=id;$('payInfo').innerHTML=`${esc(s.name)} — ${esc(monthAr(i.month))}<br><b>${N(money(i.total))} درهم</b>`;$('payDate').value=today();$('payM').classList.add('on')}
+$('payOk').onclick=()=>{const i=D.inv.find(x=>x.id===payId);if(!i)return closeM('payM');W.put('inv',Object.assign({},i,{paid:true,payMeth:$('payMeth').value,payDate:$('payDate').value||today()}));closeM('payM');rInv();toast('تم تسجيل الأداء')};
+function unpay(id){if(!confirm('إلغاء تسجيل الأداء لهذه الفاتورة؟'))return;const i=D.inv.find(x=>x.id===id);W.put('inv',Object.assign({},i,{paid:false,payMeth:null,payDate:null}));rInv()}
+function delInv(id){if(!confirm('حذف هذه الفاتورة نهائياً؟'))return;const i=D.inv.find(x=>x.id===id);W.del('inv',id);if(i)updLast(i.sid);rInv();toast('تم الحذف')}
+function printInv(ids){
+ const c=D.cfg;
+ $('prt').innerHTML=ids.map(id=>{const i=D.inv.find(x=>x.id===id),s=subById(i.sid)||{},r=tierCalc(i.cons,i.tiers);
+  return`<div class="inv"><h2>${esc(c.name)}</h2><p style="text-align:center;margin:0">${esc(c.phone)}</p><h3 style="text-align:center">فاتورة الماء — ${esc(monthAr(i.month))}</h3>
+  <p>المشترك: <b>${esc(s.name)}</b> &nbsp; رقم العداد: <b>${N(s.meter)}</b> ${s.addr?'&nbsp; العنوان: '+esc(s.addr):''}</p>
+  <table><tr><th>القراءة السابقة</th><th>القراءة الحالية</th><th>الاستهلاك (م³)</th></tr><tr><td>${N(i.prev)}</td><td>${N(i.curr)}</td><td>${N(i.cons)}</td></tr></table>
+  <table><tr><th>البيان</th><th>الكمية × الثمن</th><th>المبلغ</th></tr>${r.lines.map(l=>`<tr><td>${l.to==null?'أكثر من '+l.from:'من '+(l.from+1)+' إلى '+l.to} م³</td><td>${N(l.q+' × '+money(l.price))}</td><td>${N(money(l.amt))}</td></tr>`).join('')}<tr><td>الواجب الثابت</td><td></td><td>${N(money(i.fee))}</td></tr><tr><th colspan="2">المجموع (درهم)</th><th>${N(money(i.total))}</th></tr></table>
+  <p>الحالة: <b>${i.paid?'مؤداة بتاريخ '+esc(i.payDate):'غير مؤداة'}</b></p></div>`}).join('');
+ setTimeout(()=>window.print(),50);
+}
+$('iPrintAll').onclick=()=>{const l=invList();if(!l.length)return toast('لا توجد فواتير للطباعة');printInv(l.map(i=>i.id))};
+$('iCsv').onclick=()=>{
+ const l=invList();if(!l.length)return toast('لا توجد فواتير للتصدير');
+ const rows=[['الشهر','رقم العداد','المشترك','القراءة السابقة','القراءة الحالية','الاستهلاك','المبلغ','الحالة','طريقة الأداء','تاريخ الأداء','أدخلها']];
+ l.forEach(i=>{const s=subById(i.sid)||{};rows.push([i.month,s.meter,s.name,i.prev,i.curr,i.cons,money(i.total),i.paid?'مؤداة':'غير مؤداة',i.paid?(i.payMeth==='bank'?'بنكياً':'نقداً'):'',i.payDate||'',i.by||''])});
+ const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ dl(new Blob([csv],{type:'text/csv;charset=utf-8'}),'factures_'+($('iMonth').value||'all')+'.csv');
+};
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+
+// ================= الإعدادات =================
+function rSet(){
+ const c=D.cfg,t=c.tiers;
+ $('cName').value=c.name;$('cPhone').value=c.phone||'';$('cFee').value=c.fee;
+ $('t1to').value=t[0].to;$('t1p').value=t[0].price;$('t2to').value=t[1].to;$('t2p').value=t[1].price;$('t3p').value=t[2].price;
+ const lb=localStorage.getItem(LBKEY);
+ $('bLast').textContent=lb?'آخر نسخة احتياطية من هذا الجهاز: '+new Date(+lb).toLocaleString('ar-MA'):'لم تُنزَّل أي نسخة احتياطية من هذا الجهاز بعد.';
+ $('bNote').textContent=MODE==='cloud'?'البيانات محفوظة في السحابة. ومع ذلك احفظ نسخة احتياطية كل شهر على حاسوب أو مفتاح USB.':'البيانات محفوظة داخل هذا المتصفح فقط. احفظ نسخة احتياطية بانتظام.';
+ rCloud();
+}
+function rCloud(){
+ const cl=MODE==='cloud';
+ $('clCloud').hidden=!cl;$('clLocal').hidden=cl;
+ $('clStatus').innerHTML=cl?`متصل بمشروع <b class="num">${esc(FB.cfg.projectId)}</b> باسم <b class="num">${esc(USER&&USER.email)}</b>${isAdmin()?' (المسؤول)':''}`:'البرنامج يعمل على هذا الجهاز فقط. اربطه بالسحابة ليعمل عليه عدة أعضاء من هواتف مختلفة.';
+ $('clMembers').hidden=!(cl&&isAdmin());
+ $('clRules').hidden=!(cl&&isAdmin());
+ const hasLocal=!!localStorage.getItem(KEY);
+ $('clUpload').hidden=!(cl&&isAdmin()&&hasLocal);
+ if(cl&&isAdmin())rMembers();
+}
+$('cSave').onclick=()=>{
+ const a=+$('t1to').value,b=+$('t2to').value;
+ if(!(a>0&&b>a)){alert('حد الشريحة 2 يجب أن يكون أكبر من حد الشريحة 1');return}
+ W.cfg({name:$('cName').value.trim()||'جمعية الماء',phone:$('cPhone').value.trim(),fee:+$('cFee').value||0,tiers:[{to:a,price:+$('t1p').value||0},{to:b,price:+$('t2p').value||0},{to:null,price:+$('t3p').value||0}]});
+ $('asName').textContent=D.cfg.name;toast('تم حفظ الإعدادات');
+};
+async function fullData(){
+ if(MODE!=='cloud')return D;
+ const [s,i]=await Promise.all([db.collection('subs').get(),db.collection('inv').get()]);
+ return{v:3,cfg:D.cfg,subs:s.docs.map(d=>d.data()),inv:i.docs.map(d=>d.data())};
+}
+$('bExport').onclick=async()=>{
+ const b=$('bExport');b.disabled=true;
+ try{const x=await fullData();dl(new Blob([JSON.stringify(x,null,1)],{type:'application/json'}),'water_backup_'+today()+'.json');localStorage.setItem(LBKEY,Date.now());rSet()}
+ catch(e){toast('تعذر تحميل كل البيانات من السحابة: '+(e.message||e))}
+ b.disabled=false;
+};
+$('bImport').onclick=()=>$('bFile').click();
+$('bFile').onchange=e=>{
+ const f=e.target.files[0];if(!f)return;
+ const rd=new FileReader();
+ rd.onload=()=>{
+  let x;try{x=JSON.parse(rd.result);if(!x||!Array.isArray(x.subs)||!Array.isArray(x.inv)||!x.cfg)throw 0}catch(_){alert('الملف غير صالح أو ليس نسخة احتياطية لهذا البرنامج');return}
+  if(MODE==='cloud'){uploadData(x);return}
+  if(!confirm(`استرجاع النسخة: ${x.subs.length} مشترك و${x.inv.length} فاتورة؟ ستُستبدل البيانات الحالية (ستُحفظ نسخة أمان منها).`))return;
+  try{localStorage.setItem(KEY+'_pre',JSON.stringify(D))}catch(_){}
+  window.__nf=1;localStorage.setItem(KEY,JSON.stringify(x));location.reload();
+ };
+ rd.readAsText(f);e.target.value='';
+};
+
+// ================= السحابة =================
+const isAdmin=()=>!!(USER&&FB&&String(USER.email).toLowerCase()===FB.admin);
+function b64e(s){return btoa(unescape(encodeURIComponent(s)))}
+function b64d(s){return decodeURIComponent(escape(atob(s)))}
+function parseCfg(t){
+ t=String(t||'').trim();
+ try{const j=JSON.parse(t);if(j&&j.apiKey&&j.projectId)return j}catch(e){}
+ const o={};t.replace(/["']?(\w+)["']?\s*:\s*["']([^"']*)["']/g,(m,k,v)=>{o[k]=v});
+ return o.apiKey&&o.projectId?o:null;
+}
+function getFb(){
+ if(FB_SETUP)return FB_SETUP;
+ try{const s=localStorage.getItem(FBKEY);if(s){const x=JSON.parse(s);if(x&&x.cfg&&x.cfg.apiKey)return x}}catch(e){}
+ return null;
+}
+function readHash(){
+ const h=location.hash;
+ if(!h.startsWith('#c='))return;
+ try{const x=JSON.parse(b64d(h.slice(3)));if(x&&x.cfg&&x.cfg.apiKey){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY)}}catch(e){}
+ history.replaceState(null,'',location.href.split('#')[0]);
+}
+function inviteLink(){return location.href.split('#')[0]+'#c='+b64e(JSON.stringify(FB))}
+function rulesText(admin){return`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == '${admin}';
+    }
+    function isMember() {
+      return request.auth != null && (isAdmin() ||
+        exists(/databases/$(database)/documents/members/$(request.auth.token.email)));
+    }
+    match /members/{email} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+    match /{col}/{id} {
+      allow read, write: if isMember() && col in ['subs', 'inv', 'settings'];
+    }
+  }
+}`}
+function loadJs(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+async function loadFirebase(){
+ if(window.firebase&&firebase.firestore)return;
+ for(const m of['app','auth','firestore'])await loadJs(`https://www.gstatic.com/firebasejs/${FBV}/firebase-${m}-compat.js`);
+}
+let unsubs=[],invA=new Map(),invB=new Map(),SY={};
+function stopListen(){unsubs.forEach(u=>{try{u()}catch(e){}});unsubs=[];SY={}}
+function mergeInv(){const m=new Map(invA);invB.forEach((v,k)=>m.set(k,v));D.inv=[...m.values()];sched()}
+function mark(k,s){SY[k]={p:s.metadata.hasPendingWrites,c:s.metadata.fromCache};updBadge()}
+function updBadge(){
+ if(MODE!=='cloud')return;
+ const v=Object.values(SY);
+ if(!navigator.onLine)setBadge('غير متصل — سيُرفع لاحقاً','wa');
+ else if(v.some(x=>x.p))setBadge('جارٍ الرفع...','bl');
+ else if(!v.length||v.some(x=>x.c))setBadge('جارٍ الاتصال...','bl');
+ else setBadge('متزامن مع السحابة ☁','');
+}
+window.addEventListener('online',updBadge);window.addEventListener('offline',updBadge);
+let denied=false;
+function lErr(e){
+ if(e&&e.code==='permission-denied'){
+  if(denied)return;denied=true;stopListen();
+  const retry=['إعادة المحاولة',()=>{denied=false;showApp();listen();go(cur)}],out=['تسجيل الخروج',()=>auth.signOut(),'l'];
+  if(isAdmin())showMsg('أنت المسؤول، لكن قواعد الحماية لم تُنشر بعد في Firebase. اضغط «عرض قواعد الحماية»، انسخها والصقها في Firestore Database ← Rules ثم اضغط Publish، ثم ارجع واضغط «إعادة المحاولة».',[['عرض قواعد الحماية',()=>showTxt('قواعد الحماية','انسخ هذا النص والصقه في Firebase ← Firestore Database ← Rules، ثم اضغط Publish.',rulesText(FB.admin)),'g'],retry,out]);
+  else showMsg(`بريدك ${USER?USER.email:''} غير مفعّل بعد. اطلب من مسؤول الجمعية إضافته في قائمة الأعضاء، ثم اضغط «إعادة المحاولة».`,[retry,out]);
+ }else toast('خطأ في الاتصال بالسحابة: '+(e&&e.message||e));
+}
+function listen(){
+ stopListen();denied=false;
+ const opt={includeMetadataChanges:true};
+ unsubs.push(db.collection('subs').onSnapshot(opt,s=>{D.subs=s.docs.map(d=>d.data());mark('s',s);sched()},lErr));
+ unsubs.push(db.collection('inv').where('month','>=',monthsAgo(12)).onSnapshot(opt,s=>{invA=new Map(s.docs.map(d=>[d.id,d.data()]));mark('a',s);mergeInv()},lErr));
+ unsubs.push(db.collection('inv').where('paid','==',false).onSnapshot(opt,s=>{invB=new Map(s.docs.map(d=>[d.id,d.data()]));mark('b',s);mergeInv()},lErr));
+ unsubs.push(db.collection('settings').doc('main').onSnapshot(d=>{if(d.exists)D.cfg=Object.assign(defCfg(),d.data());sched()},lErr));
+ if(isAdmin())unsubs.push(db.collection('members').onSnapshot(s=>{MEM=s.docs.map(d=>d.data());if(cur==='set')rMembers()},()=>{}));
+}
+async function bootCloud(){
+ MODE='cloud';D={cfg:defCfg(),subs:[],inv:[]};
+ showMsg('جارٍ الاتصال بالسحابة...');
+ try{await loadFirebase()}catch(e){
+  showMsg('تعذر تحميل مكتبة السحابة. تحقق من اتصال الإنترنت ثم أعد المحاولة.',[['إعادة المحاولة',()=>location.reload()]]);return;
+ }
+ try{
+  if(!firebase.apps.length){
+   firebase.initializeApp(FB.cfg);
+   db=firebase.firestore();
+   db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+  }else db=firebase.firestore();
+  auth=firebase.auth();
+ }catch(e){
+  showMsg('إعدادات Firebase غير صحيحة: '+e.message,[['إدخال الإعدادات من جديد',resetCloud,'r']]);return;
+ }
+ auth.onAuthStateChanged(u=>{
+  USER=u;
+  if(!u){stopListen();D={cfg:defCfg(),subs:[],inv:[]};$('lgMsg').textContent='';showScr('scrLogin');return}
+  $('who').textContent=u.email;
+  showApp();listen();go(cur);
+ });
+}
+function resetCloud(){
+ if(!confirm('فصل هذا الجهاز عن السحابة؟ بيانات الجمعية تبقى في السحابة، وستحتاج رابط الدعوة أو الإعدادات للاتصال من جديد.'))return;
+ const done=()=>{localStorage.removeItem(FBKEY);localStorage.removeItem(MODEKEY);location.reload()};
+ if(auth)auth.signOut().then(done,done);else done();
+}
+async function uploadData(src){
+ const subs=src.subs||[],inv=src.inv||[];
+ if(!confirm(`رفع ${subs.length} مشترك و${inv.length} فاتورة إلى السحابة؟ إذا كان المشترك أو الفاتورة موجوداً، سيُستبدل بهذه النسخة.`))return;
+ const last={};inv.forEach(i=>{if(!last[i.sid]||i.month>=last[i.sid].month)last[i.sid]={month:i.month,curr:i.curr}});
+ const ops=[];
+ subs.forEach(s=>{const o=Object.assign({},s);if(last[s.id]){o.lastMonth=last[s.id].month;o.lastCurr=last[s.id].curr}ops.push(['subs',o.id,o])});
+ inv.forEach(i=>{const o=Object.assign({},i,{id:i.sid+'_'+i.month});if(o.total==null)o.total=Math.round(invTotal(o)*100)/100;ops.push(['inv',o.id,o])});
+ try{
+  for(let k=0;k<ops.length;k+=400){
+   const b=db.batch();
+   ops.slice(k,k+400).forEach(([c,id,o])=>{o.by=o.by||USER.email;b.set(db.collection(c).doc(id),clean(o))});
+   await b.commit();
+   toast(`تم رفع ${Math.min(k+400,ops.length)} من ${ops.length}`);
+  }
+  if(src.cfg){const c=src.cfg;await db.collection('settings').doc('main').set(clean({name:c.name,phone:c.phone||'',fee:c.fee,tiers:c.tiers}))}
+  toast('تم رفع البيانات إلى السحابة بنجاح ✔');
+ }catch(e){werr(e)}
+}
+function rMembers(){
+ const rows=[{email:FB.admin,name:'المسؤول',_a:1}].concat(MEM.filter(m=>m.email!==FB.admin).sort((a,b)=>a.email<b.email?-1:1));
+ $('mBody').innerHTML=rows.map(m=>`<tr><td>${N(m.email)}</td><td>${esc(m.name||'')}</td><td>${m._a?'<span class="badge bl">المسؤول</span>':`<button class="btn s r" onclick="delMember('${esc(m.email)}')">إزالة</button>`}</td></tr>`).join('');
+}
+$('mAdd').onclick=()=>{
+ const e=$('mEmail').value.trim().toLowerCase();
+ if(!validEmail(e))return alert('اكتب بريداً إلكترونياً صحيحاً');
+ db.collection('members').doc(e).set({email:e,name:$('mName').value.trim(),added:Date.now(),by:USER.email}).then(()=>toast('تمت إضافة العضو ✔')).catch(werr);
+ $('mEmail').value='';$('mName').value='';
+};
+function delMember(e){if(!confirm(`إزالة العضو ${e}؟ لن يستطيع رؤية بيانات الجمعية.`))return;db.collection('members').doc(e).delete().then(()=>toast('تمت الإزالة')).catch(werr)}
+$('clLink').onclick=()=>showTxt('رابط دعوة الأعضاء',location.protocol==='file:'?'تنبيه: البرنامج مفتوح من ملف على الجهاز، لذلك هذا الرابط لن يعمل على هاتف آخر. انشر البرنامج على الإنترنت أولاً (انظر الدليل)، ثم افتحه من هناك وانسخ الرابط من جديد.':'أرسل هذا الرابط للأعضاء عبر واتساب. يفتحونه، وينشئون حساباً بالبريد الذي أضفته لهم.',inviteLink());
+$('clRules').onclick=()=>showTxt('قواعد الحماية','انسخ هذا النص والصقه في Firebase ← Firestore Database ← Rules، ثم اضغط Publish.',rulesText(FB.admin));
+$('clUpload').onclick=()=>{try{const x=JSON.parse(localStorage.getItem(KEY));uploadData(x)}catch(e){toast('لا توجد بيانات محلية')}};
+$('clOut').onclick=()=>{if(confirm('تسجيل الخروج من هذا الجهاز؟'))auth.signOut()};
+$('clReset').onclick=resetCloud;
+$('clConnect').onclick=()=>{flush();$('useLocal').textContent='رجوع';showScr('scrSetup')};
+
+// شاشة الإعداد
+$('fbSave').onclick=()=>{
+ const c=parseCfg($('fbCfg').value),ad=$('fbAdmin').value.trim().toLowerCase();
+ if(!c){$('fbErr').textContent='لم أتعرف على الإعدادات. انسخ كامل الجزء firebaseConfig من صفحة Firebase.';return}
+ if(!validEmail(ad)){$('fbErr').textContent='اكتب بريد المسؤول بشكل صحيح.';return}
+ flush();window.__nf=1;
+ localStorage.setItem(FBKEY,JSON.stringify({cfg:c,admin:ad}));localStorage.removeItem(MODEKEY);
+ location.reload();
+};
+$('useLocal').onclick=()=>{localStorage.setItem(MODEKEY,'local');startLocal()};
+
+// شاشة الدخول
+const em=()=>$('lgEmail').value.trim().toLowerCase(),pw=()=>$('lgPass').value;
+function authErr(e){
+ const c=e&&e.code||'';
+ const m={'auth/invalid-credential':'البريد أو كلمة السر غير صحيحة','auth/wrong-password':'البريد أو كلمة السر غير صحيحة','auth/user-not-found':'لا يوجد حساب بهذا البريد. اضغط «إنشاء حساب جديد»','auth/invalid-login-credentials':'البريد أو كلمة السر غير صحيحة','auth/email-already-in-use':'هذا البريد لديه حساب، استعمل زر الدخول','auth/weak-password':'كلمة السر قصيرة (6 أحرف على الأقل)','auth/invalid-email':'البريد الإلكتروني غير صحيح','auth/missing-password':'اكتب كلمة السر','auth/network-request-failed':'لا يوجد اتصال بالإنترنت','auth/too-many-requests':'محاولات كثيرة، انتظر قليلاً ثم أعد المحاولة','auth/operation-not-allowed':'يجب تفعيل الدخول بالبريد وكلمة السر في Firebase (Authentication)'};
+ $('lgMsg').textContent=m[c]||('خطأ: '+(e&&e.message||e));
+}
+function busy(on){['lgIn','lgUp','lgReset'].forEach(x=>$(x).disabled=on)}
+$('lgIn').onclick=()=>{if(!validEmail(em()))return authErr({code:'auth/invalid-email'});busy(true);auth.signInWithEmailAndPassword(em(),pw()).catch(authErr).finally(()=>busy(false))};
+$('lgUp').onclick=()=>{if(!validEmail(em()))return authErr({code:'auth/invalid-email'});if(pw().length<6)return authErr({code:'auth/weak-password'});busy(true);auth.createUserWithEmailAndPassword(em(),pw()).catch(authErr).finally(()=>busy(false))};
+$('lgReset').onclick=()=>{if(!validEmail(em()))return $('lgMsg').textContent='اكتب بريدك أولاً ثم اضغط «نسيت كلمة السر»';auth.sendPasswordResetEmail(em()).then(()=>$('lgMsg').textContent='أرسلنا رابط تغيير كلمة السر إلى بريدك').catch(authErr)};
+$('lgPass').onkeydown=e=>{if(e.key==='Enter')$('lgIn').click()};
+
+// ================= التشغيل =================
+function startLocal(){MODE='local';loadLocal();$('who').textContent='';showApp();setBadge('محفوظ على الجهاز','');go('dash')}
+function boot(){
+ buildNav();readHash();FB=getFb();
+ const mode=localStorage.getItem(MODEKEY);
+ if(FB&&mode!=='local')bootCloud();
+ else if(mode==='local')startLocal();
+ else showScr('scrSetup');
+}
+boot();
+</script>
+</body>
+</html>
