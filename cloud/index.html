@@ -1266,7 +1266,11 @@ window.__clUI=function(){$("#cnt").textContent=D.subs.length+" مشترك";[["cp
 .cl_tb{width:100%;border-collapse:collapse;font-size:13px}.cl_tb td{padding:6px;border-bottom:1px solid #ECEFF1}
 .cl_ltr{direction:ltr;unicode-bidi:isolate}
 #cl_chip{background:#fff3;color:#fff;border:1px solid #fff6;border-radius:14px;padding:3px 9px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap}
-#cl_chip.cl_ok{background:#2E7D32}#cl_chip.cl_wa{background:#EF6C00}#cl_chip.cl_no{background:#C62828}
+#cl_chip.cl_ok{background:#2E7D32}
+#cl_chip i{font-style:normal}
+@media (max-width:700px){#cl_chip .cl_ct{display:none}#cl_chip{padding:3px 8px;font-size:14px;flex:none}header{flex-wrap:wrap;row-gap:6px}}
+@media (max-width:440px){header #cnt{display:none}}
+html,body{max-width:100%}#cl_chip.cl_wa{background:#EF6C00}#cl_chip.cl_no{background:#C62828}
 #cl_toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 16px;border-radius:8px;z-index:9200;display:none;max-width:90vw;text-align:center;font-family:Tahoma,Arial,sans-serif}
 @media print{.cl_scr,.cl_m,#cl_chip,#cl_toast{display:none!important}}
 </style>
@@ -1506,11 +1510,12 @@ window.__clRestore=function(x){if(!ready)return alert('انتظر حتى يتم 
 let lastMeta={p:false,c:true};
 function chip(){
  const c=g('cl_chip');if(!c)return;
- if(!window.__cl){c.textContent='☁ بدون سحابة';c.className='';return}
- if(!navigator.onLine){c.textContent='☁ غير متصل';c.className='cl_wa'}
- else if(lastMeta.p){c.textContent='☁ جارٍ الرفع';c.className='cl_wa'}
- else if(ready&&!lastMeta.c){c.textContent='☁ متزامن';c.className='cl_ok'}
- else{c.textContent='☁ جارٍ الاتصال';c.className='cl_wa'}
+ const set=(t,k)=>{c.innerHTML='<i>☁</i> <span class="cl_ct">'+t+'</span>';c.className=k;c.title=t};
+ if(!window.__cl){set('بدون سحابة','');return}
+ if(!navigator.onLine)set('غير متصل','cl_wa');
+ else if(lastMeta.p)set('جارٍ الرفع','cl_wa');
+ else if(ready&&!lastMeta.c)set('متزامن','cl_ok');
+ else set('جارٍ الاتصال','cl_wa');
 }
 addEventListener('online',chip);addEventListener('offline',chip);
 function showApp(){['cl_setup','cl_login','cl_msg'].forEach(x=>g(x).hidden=true)}
