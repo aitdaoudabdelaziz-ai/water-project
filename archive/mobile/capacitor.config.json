@@ -1,0 +1,6 @@
+{
+  "appId": "ma.alfath.archive",
+  "appName": "أرشيف الفتح",
+  "webDir": "www",
+  "android": { "allowMixedContent": false }
+}

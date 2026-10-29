@@ -1,0 +1,31 @@
+name: archive-exe (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'archive/desktop/**'
+      - '.github/workflows/archive-exe.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: archive/desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm install
+      - name: Build EXE (installer + portable)
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AlFath-Archive-Windows
+          path: archive/desktop/dist/*.exe
+          if-no-files-found: error

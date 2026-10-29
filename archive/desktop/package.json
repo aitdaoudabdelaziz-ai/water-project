@@ -1,0 +1,33 @@
+{
+  "name": "alfath-archive",
+  "version": "1.0.0",
+  "description": "نظام الإدارة والأرشفة — جمعية الفتح للتنمية و التعاون",
+  "author": "جمعية الفتح للتنمية و التعاون",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "ma.alfath.archive",
+    "productName": "AlFath Archive",
+    "files": ["main.js", "preload.js", "app/**", "build/icon.png"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": { "icon": "build/icon.ico", "target": ["nsis", "portable"] },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "أرشيف جمعية الفتح",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "AlFath-Archive-Setup-${version}.exe"
+    },
+    "portable": { "artifactName": "AlFath-Archive-Portable-${version}.exe" }
+  }
+}
