@@ -3,6 +3,8 @@ on:
   push:
     branches: [ wydad-apk ]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,3 +29,9 @@ jobs:
         with:
           name: WydadAsserghine-apk
           path: WydadAsserghine.apk
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete wydad-latest -y --cleanup-tag -R ${{ github.repository }} || true
+          gh release create wydad-latest WydadAsserghine.apk -R ${{ github.repository }} --target ${{ github.sha }} --title "وداد أسرغين APK" --notes "آخر نسخة من تطبيق وداد أسرغين" --prerelease
