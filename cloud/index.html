@@ -892,7 +892,8 @@ const RN=["الجولة 1 (يناير - مارس)","الجولة 2 (أبريل -
 const FD=["01/01","01/04","01/07","01/10"],LD=["31/03","30/06","30/09","31/12"];
 const CL=["يلتزم المشترك بأداء مبلغ الاستهلاك حسب القراءة الدورية للعداد وبالثمن المعمول به لدى الجمعية.","يلتزم بأداء الفاتورة داخل الأجل المحدد فيها، وللجمعية الحق في توقيف التزويد عند التأخر عن الأداء.","يلتزم بالمحافظة على العداد والشبكة وعدم العبث بهما، وبإشعار الجمعية فوراً بأي عطب أو تسرب.","يمنع عليه تزويد الغير من اشتراكه أو استعمال الماء في غير الغرض المخصص له.","يلتزم باحترام القانون الداخلي للجمعية وقرارات مكتبها المسير.","يقرّ بصحة المعلومات المصرّح بها أعلاه، ويلتزم بإشعار الجمعية بأي تغيير يطرأ عليها."].join("\n");
 const AS="جمعية الفتح للتنمية والتعاون",CT="أقايغان - إقليم طاطا",LC="جمعية تنموية - مرخصة لتوزيع الماء الصالح للشرب";
-let D;try{D=JSON.parse(localStorage.getItem("w1"))}catch(e){}
+window.__cl=(()=>{try{return location.hash.indexOf("#c=")===0||(!!localStorage.getItem("wcloud_fb")&&localStorage.getItem("wcloud_mode")!=="local")}catch(e){return false}})();const WK=window.__cl?"w1c":"w1";window.__clWK=WK;function NID(k){let v=(+D[k]||0)+1;if(window.__cl)v=Math.max(v,Date.now());D[k]=v;return v}
+let D;try{D=JSON.parse(localStorage.getItem(WK))}catch(e){}
 D=D||{subs:[],reads:{},invs:[],sid:0,seq:0,fin:[],fid:0,cfg:{price:3,fee:0,due:15,phone:"0528",email:"association.elfath@gmail.com"}};
 D.fin=D.fin||[];D.fid=D.fid||0;D.users=D.users||[];D.uid=D.uid||0;
 let _sm=null,_dt=null,_ok=1,_db=0;
@@ -900,8 +901,8 @@ function svStamp(){let e=document.getElementById("svs");if(e){let d=new Date();e
 function autoBk(s){try{if(!_db)return;let t=td(),A=JSON.parse(localStorage.getItem("w1b")||"[]"),mx=s.length>8e5?1:s.length>4e5?2:3;
  if(A.length&&A[A.length-1].t==t)A[A.length-1].d=s;else A.push({t,d:s});while(A.length>mx)A.shift();
  localStorage.setItem("w1b",JSON.stringify(A));_db=0}catch(e){}}
-function flush(bk){if(window.__nf)return;if(_dt){clearTimeout(_dt);_dt=null}try{let s=JSON.stringify(D);localStorage.setItem("w1",s);_ok=1;svStamp();if(bk)autoBk(s)}catch(e){if(_ok){_ok=0;alert("تعذّر الحفظ في الهاتف")}}}
-const save=()=>{_sm=null;_db=1;_dt||(_dt=setTimeout(flush,300))};
+function flush(bk){if(window.__nf)return;if(_dt){clearTimeout(_dt);_dt=null}try{let s=JSON.stringify(D);localStorage.setItem(WK,s);_ok=1;window.__cs&&window.__cs();svStamp();if(bk)autoBk(s)}catch(e){if(_ok){_ok=0;alert("تعذّر الحفظ في الهاتف")}}}
+const save=()=>{_sm=null;_db=1;_dt||(_dt=setTimeout(flush,300))};window.__clD=()=>D;window.__clCache=()=>{try{localStorage.setItem(WK,JSON.stringify(D))}catch(e){}};
 const SB=id=>{if(!_sm||_sm.size!=D.subs.length)_sm=new Map(D.subs.map(s=>[s.id,s]));return _sm.get(id)};
 const afocus=(s,box)=>{let a=document.activeElement;if(!(a&&a.closest&&a.closest(box)&&a.matches("input,select,textarea")))$(s).focus()};
 const dbn=f=>{clearTimeout(f._t);f._t=setTimeout(f,220)};
@@ -989,7 +990,7 @@ function addSub(){let s={name:$("#n").value.trim(),meter:$("#m").value.trim(),ci
  if(!s.name||!s.meter)return alert("الاسم ورقم العداد إجباريان");
  if(D.subs.some(x=>x.meter==s.meter&&x.id!=eid))return alert("رقم العداد موجود مسبقاً");
  s.fl=FLCUR.slice();FLDEL.forEach(flDel);FLSV=true;FLNEW=[];FLDEL=[];
- if(eid){Object.assign(D.subs.find(x=>x.id==eid),s)}else{s.id=++D.sid;D.subs.push(s)}
+ if(eid){Object.assign(D.subs.find(x=>x.id==eid),s)}else{s.id=NID("sid");D.subs.push(s)}
  eid=null;["n","m","ci","p","a"].forEach(k=>$("#"+k).value="");save();closeM("msub");render()}
 function newSub(){eid=null;["n","m","ci","p","a"].forEach(k=>$("#"+k).value="");$("#mst").textContent="إضافة مشترك";FLCUR=[];FLNEW=[];FLDEL=[];flRender();openM("msub");setTimeout(()=>afocus("#n","#msub"),60)}
 function ed(id){let s=D.subs.find(x=>x.id==id);eid=id;$("#n").value=s.name;$("#m").value=s.meter;$("#ci").value=s.cin||"";$("#p").value=s.phone;$("#a").value=s.addr;$("#mst").textContent="تعديل مشترك";FLCUR=(s.fl||[]).slice();FLNEW=[];FLDEL=[];flRender();openM("msub")}
@@ -1092,7 +1093,7 @@ function imp(el){let f=el.files[0];if(!f)return;if(needX()===undefined){el.value
   let m=String(g(r,"meter")).trim().replace(/\.0$/,"");if(!m){bad.push(lab+": رقم العداد فارغ");return}
   let nm=String(g(r,"name")).trim(),s=D.subs.find(x=>x.meter==m);
   if(seen[m]){bad.push(lab+": رقم العداد "+m+" مكرر في الملف (سطر "+seen[m]+")");return}seen[m]=lab;
-  if(!s){if(!nm){bad.push(lab+": الاسم فارغ (العداد "+m+")");return}s={id:++D.sid,name:nm,meter:m,cin:"",phone:"",addr:""};D.subs.push(s);a++}else up++;
+  if(!s){if(!nm){bad.push(lab+": الاسم فارغ (العداد "+m+")");return}s={id:NID("sid"),name:nm,meter:m,cin:"",phone:"",addr:""};D.subs.push(s);a++}else up++;
   if(nm)s.name=nm;if(g(r,"cin")!=="")s.cin=String(g(r,"cin")).trim().toUpperCase();if(g(r,"phone")!=="")s.phone=String(g(r,"phone"));if(g(r,"addr")!=="")s.addr=String(g(r,"addr"));
   let n=parseFloat(g(r,"nw"));if(!isNaN(n)){let o=parseFloat(g(r,"old"));if(isNaN(o))o=prevNew(s.id,Y,R)||0;if(n>=o){D.reads[key(s.id,Y,R)]={o,n};rr++}else bad.push(lab+": القراءة الجديدة ("+n+") أصغر من القديمة ("+o+") - العداد "+m)}})});
  if(!sheets)throw Error("يجب وجود عمود: رقم العداد");
@@ -1114,7 +1115,7 @@ function per(){let y=+$("#fyr").value,m=$("#fmo").value,s=m===""?y+"-01-01":y+"-
 function ftc(){let t=$("#ftp").value,f=FS();$("#dli").innerHTML=f.inCats.map(c=>`<option value="${esc(c)}">`).join("");$("#dlo").innerHTML=f.outCats.map(c=>`<option value="${esc(c)}">`).join("");$("#fcat").setAttribute("list",t=="in"?"dli":"dlo");$("#fac").hidden=t=="dep"||t=="wd";$("#flkw").hidden=!(t=="dep"||t=="wd");$("#flkl").textContent=t=="dep"?"إيداع نقدي: يُخصم من الصندوق":"سحب نقدي: يُضاف إلى الصندوق"}
 function addFin(){let t=$("#ftp").value,x={t,w:t=="in"||t=="out"?$("#fac").value:"b",d:$("#fdt").value||td(),c:$("#fcat").value.trim()||(t=="dep"?"إيداع بنكي":t=="wd"?"سحب بنكي":""),a:parseFloat($("#fam").value),n:$("#fnt").value.trim()};x.lk=(t=="dep"||t=="wd")?($("#flk").checked?1:0):undefined;
  if(!x.c||!(x.a>0))return alert("اكتب البيان ومبلغاً صحيحاً");
- if(feid)Object.assign(D.fin.find(y=>y.id==feid),x);else{x.id=++D.fid;D.fin.push(x)}
+ if(feid)Object.assign(D.fin.find(y=>y.id==feid),x);else{x.id=NID("fid");D.fin.push(x)}
  feid=null;["fcat","fam","fnt"].forEach(k=>$("#"+k).value="");save();closeM("mfin");lFin()}
 function newFin(){feid=null;$("#flk").checked=false;$("#ftp").value="in";ftc();$("#fac").value="c";$("#fdt").value=td();["fcat","fam","fnt"].forEach(k=>$("#"+k).value="");$("#mft").textContent="عملية مالية جديدة";openM("mfin");setTimeout(()=>afocus("#fcat","#mfin"),60)}
 function edFin(id){let x=D.fin.find(y=>y.id==id);feid=id;$("#ftp").value=x.t;ftc();$("#flk").checked=x.lk!==0;$("#fac").value=x.w||"c";$("#fdt").value=x.d;$("#fcat").value=x.c;$("#fam").value=x.a;$("#fnt").value=x.n;$("#mft").textContent="تعديل عملية";openM("mfin")}
@@ -1151,7 +1152,7 @@ async function forgot(){let c=prompt("أدخل رمز الاسترجاع الذ�
 async function addUser(){if(!isAd())return;let u=$("#uu").value.trim().toLowerCase(),p=$("#up").value;
  if(!u||p.length<4)return alert("اكتب رمز الدخول وكلمة سر من 4 أحرف على الأقل");if(D.users.some(x=>x.u==u))return alert("رمز الدخول مستعمل مسبقاً");
  let fu=!D.users.length,r=fu?"a":$("#ur").value,pm=r=="a"?null:pk($("#upp"));if(pm&&!pm.some(k=>k[0]=="v"))return alert("اختر صلاحية الاطلاع على قسم واحد على الأقل");
- let s=rnd(),x={id:++D.uid,u,s,h:await hs(p,s),r,p:pm};D.users.push(x);
+ let s=rnd(),x={id:NID("uid"),u,s,h:await hs(p,s),r,p:pm};D.users.push(x);
  if(fu){let c=rnd();D.rc=await hs(c,"rc");CU={id:x.id};sessionStorage.setItem("wu",JSON.stringify(CU));alert("رمز الاسترجاع (لحالة نسيان كلمة السر):\n\n"+c+"\n\nاكتبه واحفظه في مكان آمن، فلن يظهر مرة أخرى.")}
  save();$("#uu").value=$("#up").value="";gate();lUsers()}
 function lUsers(){$("#ul").innerHTML=D.users.map(u=>`<div class="c"><b>${esc(u.u)}</b> <span class="bd ${u.r=="a"?"y":"n"}">${u.r=="a"?"مسؤول":"مستخدم"}</span> ${CU&&u.id==CU.id?"<small>(أنت)</small>":""}<div class="bt"><button class="o" onclick="chPw(${u.id})">كلمة السر</button>${u.r=="a"?"":`<button class="b" onclick="togP(${u.id})">الصلاحيات</button>`}<button class="k" onclick="chRole(${u.id})">${u.r=="a"?"جعله مستخدماً":"جعله مسؤولاً"}</button><button class="r" onclick="delUser(${u.id})">حذف</button></div>${u.r=="a"?"":`<div id="pe${u.id}" hidden>${permBox(u.p||ALL)}<button class="g" onclick="savP(${u.id})">حفظ الصلاحيات</button></div>`}</div>`).join("")}
@@ -1229,7 +1230,7 @@ function askPersist(){if(!(navigator.storage&&navigator.storage.persist))return 
 function bkNote(){let d=D.lastBk,days=d?Math.floor((Date.now()-new Date(d).getTime())/864e5):null,el=$("#bkn");el.hidden=!(isAd()&&(D.subs||D.ben||[]).length>0&&(days===null||days>=7));el.querySelector("span").textContent=days===null?"لم تأخذ أي نسخة احتياطية بعد":"آخر نسخة احتياطية منذ "+days+" يوماً"}
 const sheet=(wb,n,A)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(A),n);
 const finRows=()=>[["التاريخ","النوع","الحساب","البيان","المبلغ","ملاحظة"]].concat(D.fin.map(x=>[fd(x.d),TN[x.t],x.t=="dep"?"صندوق ← بنك":x.t=="wd"?"بنك ← صندوق":x.w=="b"?"بنكي":"الصندوق",x.c,x.a,x.n||""]));
-const SK="w1",RECS=()=>D.subs.length+" مشترك، "+D.invs.length+" فاتورة، "+Object.keys(D.reads).length+" قراءة";
+const SK=WK,RECS=()=>D.subs.length+" مشترك، "+D.invs.length+" فاتورة، "+Object.keys(D.reads).length+" قراءة";
 function expAll(){if(needX()===undefined)return;let S=D.subs,nm=id=>S.find(x=>x.id==id)||{},wb=XLSX.utils.book_new();
  sheet(wb,"المشتركون",[["الاسم","رقم العداد","البطاقة الوطنية","الهاتف","العنوان","العقد"]].concat(S.map(s=>[s.name,s.meter,s.cin||"",s.phone||"",s.addr||"",s.ct?"موقّع":"غير موقّع"])));
  sheet(wb,"القراءات",[["المشترك","العداد","السنة","الجولة","القديمة","الجديدة","الاستهلاك"]].concat(Object.keys(D.reads).map(k=>{let [id,y,r]=k.split("|"),v=D.reads[k],s=nm(+id);return[s.name||"",s.meter||"",+y,RN[+r],v.o,v.n,cs(v.o,v.n)]})));
@@ -1238,14 +1239,14 @@ function expAll(){if(needX()===undefined)return;let S=D.subs,nm=id=>S.find(x=>x.
 
 // نسخة احتياطية
 function bk(){if(window.desk){deskBk();return}bkFull()}
-function rs(el){let f=el.files[0];if(!f)return;let r=new FileReader();r.onload=e=>{try{let x=JSON.parse(e.target.result);if(!x.subs||!x.reads)throw 0;if(confirm("استبدال كل البيانات الحالية بالنسخة؟")){try{localStorage.setItem("w1pre",JSON.stringify(D))}catch(_){}let go=()=>{delete x.__files;D=x;flush();location.reload()};if(x.__files&&x.__files.length)flRestore(x.__files).then(go,()=>alert("تعذّر استرجاع المرفقات"));else go()}}catch(_){alert("ملف غير صالح")}};r.readAsText(f);el.value=""}
+function rs(el){let f=el.files[0];if(!f)return;let r=new FileReader();r.onload=e=>{try{let x=JSON.parse(e.target.result);if(!x.subs||!x.reads)throw 0;if(confirm("استبدال كل البيانات الحالية بالنسخة؟")){try{localStorage.setItem("w1pre",JSON.stringify(D))}catch(_){}let go=()=>{delete x.__files;if(window.__cl&&window.__clRestore){window.__clRestore(x);return}D=x;flush();location.reload()};if(x.__files&&x.__files.length)flRestore(x.__files).then(go,()=>alert("تعذّر استرجاع المرفقات"));else go()}}catch(_){alert("ملف غير صالح")}};r.readAsText(f);el.value=""}
 
 function abList(){let e=document.getElementById("abk");if(!e)return;let A=[];try{A=JSON.parse(localStorage.getItem("w1b")||"[]")}catch(_){}let P=localStorage.getItem("w1pre");
  let rows=A.slice().reverse().map((x,i)=>{let n="?";try{let d=JSON.parse(x.d);n=d.subs.length+" مشترك، "+d.invs.length+" فاتورة"}catch(_){}return `<div class="abr"><span style="flex:1">${fd(x.t)} — ${n}</span><button class="o" onclick="abRs(${A.length-1-i})">استرجاع</button></div>`});
  if(P)rows.push(`<div class="abr nb0"><span style="flex:1">الحالة قبل آخر استرجاع</span><button class="o" onclick="abRs(-1)">استرجاع</button></div>`);
  e.innerHTML=rows.join("")||"<small>لا توجد نسخ تلقائية بعد.</small>"}
 function abRs(i){try{let s=i<0?localStorage.getItem("w1pre"):JSON.parse(localStorage.getItem("w1b")||"[]")[i].d;JSON.parse(s);if(!confirm("استبدال البيانات الحالية بهذه النسخة؟ (تُحفظ الحالة الحالية للتراجع)"))return;
- window.__nf=1;localStorage.setItem("w1pre",JSON.stringify(D));localStorage.setItem("w1",s);location.reload()}catch(e){alert("تعذّر استرجاع هذه النسخة")}}
+ window.__nf=1;localStorage.setItem("w1pre",JSON.stringify(D));localStorage.setItem(WK,s);try{if(window.__cl)localStorage.setItem("cl_restored","1")}catch(e){}location.reload()}catch(e){alert("تعذّر استرجاع هذه النسخة")}}
 function deskNote(s){D.lastBk=td();save();bkNote();deskShow(s)}
 function deskShow(s){let e=document.getElementById("dskst");if(!e||!s)return;let l=s.last?new Date(s.last.at).toLocaleString("ar-MA")+" ("+s.last.reason+")":"لا توجد نسخة بعد";e.innerHTML="الإصدار: <b>"+s.version+"</b><br>آخر نسخة: <b>"+l+"</b><br>عدد النسخ: <b>"+s.count+"</b><br>المجلد 1: <span dir=ltr>"+s.dir1+"</span><br>المجلد 2: <span dir=ltr>"+(s.dir2||"— غير مفعّل —")+"</span>"}
 async function deskInit(){let c=document.getElementById("dsk");if(!c||!window.desk)return;c.hidden=false;try{deskShow(await desk.status())}catch(e){}}
@@ -1567,7 +1568,366 @@ Object.assign(FRD,{"لوحة الأرقام المنبثقة":"Pavé numérique 
 applyLang(__l,true);
 
 gate();if(!D.users.length||usr())go(first());
-</script><script>
+window.__clUI=function(){$("#cnt").textContent=D.subs.length+" مشترك";[["cp","price"],["cf","fee"],["cd","due"],["cph","phone"],["ce","email"],["cbk","bank"],["crb","rib"],["coc","oc"],["cob","ob"]].forEach(([id,k])=>{let e=$("#"+id);if(e&&document.activeElement!==e)e.value=D.cfg[k]==null?"":D.cfg[k]});let c=$("#csp");if(c)c.value=D.cfg.stampOn===false?"0":"1";[["stt","stT"],["stb","stB"],["stc","stC"],["stk","stK"],["stf","stF"]].forEach(([i,k])=>{let e=$("#"+i);if(e&&document.activeElement!==e)e.value=D.cfg[k]||""});let l=$("#ccl");if(l&&document.activeElement!==l)l.value=D.cfg.clauses||CL;try{stRefresh()}catch(e){}try{if(!$("#trbox")||!$("#trbox").contains(document.activeElement))trInit()}catch(e){}gate();if(!D.users.length||usr())render()};
+</script>
+<style>
+.cl_scr{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(160deg,#1A237E,#1565C0);overflow:auto}
+.cl_scr[hidden],.cl_m[hidden]{display:none!important}
+.cl_card{background:#fff;color:#263238;border-radius:14px;padding:18px;width:100%;max-width:460px;display:grid;gap:10px;box-shadow:0 10px 30px #0004;font-family:"Segoe UI",Tahoma,Arial,sans-serif;text-align:right;direction:rtl;max-height:92vh;overflow:auto}
+.cl_card h2{margin:0;text-align:center;font-size:19px;color:#1A237E}
+.cl_card h4{margin:12px 0 4px;font-size:15px}
+.cl_card label{display:block;font-size:13px;color:#546E7A;margin-bottom:3px}
+.cl_card input,.cl_card textarea{width:100%;box-sizing:border-box;border:1px solid #CFD8DC;border-radius:8px;padding:9px;font:inherit;font-size:14px;background:#fff;color:#263238}
+.cl_card textarea{direction:ltr;text-align:left;font-family:monospace;font-size:12px}
+.cl_b{border:0;border-radius:8px;padding:10px 14px;font:inherit;font-weight:bold;cursor:pointer;background:#1565C0;color:#fff;width:100%}
+.cl_b.cl_l{background:#ECEFF1;color:#263238}.cl_b.cl_g{background:#2E7D32}.cl_b.cl_r{background:#C62828}.cl_b.cl_s{width:auto;padding:5px 10px;font-size:13px}
+.cl_b:disabled{opacity:.6}
+.cl_err{color:#C62828;font-size:14px;min-height:1em}
+.cl_mu{color:#546E7A;font-size:13px;margin:0}
+.cl_m{position:fixed;inset:0;z-index:9100;background:#0008;display:flex;align-items:center;justify-content:center;padding:16px}
+.cl_row{display:flex;gap:6px;flex-wrap:wrap}.cl_row>*{flex:1}
+.cl_tb{width:100%;border-collapse:collapse;font-size:13px}.cl_tb td{padding:6px;border-bottom:1px solid #ECEFF1}
+.cl_ltr{direction:ltr;unicode-bidi:isolate}
+#cl_chip{background:#fff3;color:#fff;border:1px solid #fff6;border-radius:14px;padding:3px 9px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap}
+#cl_chip.cl_ok{background:#2E7D32}
+#cl_chip i{font-style:normal}
+@media (max-width:700px){#cl_chip .cl_ct{display:none}#cl_chip{padding:3px 8px;font-size:14px;flex:none}header{flex-wrap:wrap;row-gap:6px}}
+@media (max-width:440px){header #cnt{display:none}}
+html,body{max-width:100%}#cl_chip.cl_wa{background:#EF6C00}#cl_chip.cl_no{background:#C62828}
+#cl_toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 16px;border-radius:8px;z-index:9200;display:none;max-width:90vw;text-align:center;font-family:Tahoma,Arial,sans-serif}
+@media print{.cl_scr,.cl_m,#cl_chip,#cl_toast{display:none!important}}
+</style>
+
+<div class="cl_scr" id="cl_setup" hidden><div class="cl_card">
+ <h2>ربط البرنامج بالسحابة</h2>
+ <p class="cl_mu">الصق هنا <b>رابط الدعوة</b> الذي أرسله لك مسؤول الجمعية (يبدأ بـ https://…#c=)، ثم اضغط الزر. المسؤول وحده يلصق firebaseConfig ويكتب بريده.</p>
+ <div><label>رابط الدعوة، أو إعدادات firebaseConfig</label><textarea id="cl_cfg" rows="7"></textarea></div>
+ <div><label>بريد مسؤول الجمعية (فقط مع firebaseConfig)</label><input id="cl_adm" type="email" dir="ltr"></div>
+ <div class="cl_err" id="cl_serr"></div>
+ <button class="cl_b" id="cl_ssave" type="button">حفظ والاتصال بالسحابة</button>
+ <button class="cl_b cl_l" id="cl_slocal" type="button">استعمال البرنامج بدون سحابة (هذا الجهاز فقط)</button>
+</div></div>
+
+<div class="cl_scr" id="cl_login" hidden><div class="cl_card">
+ <h2>جمعية الفتح — الدخول إلى السحابة</h2>
+ <div><label>البريد الإلكتروني</label><input id="cl_em" type="email" dir="ltr" autocomplete="username"></div>
+ <div><label>كلمة السر (6 أحرف على الأقل)</label><input id="cl_pw" type="password" dir="ltr" autocomplete="current-password"></div>
+ <div class="cl_err" id="cl_lerr"></div>
+ <button class="cl_b" id="cl_in" type="button">دخول</button>
+ <button class="cl_b cl_l" id="cl_up" type="button">إنشاء حساب جديد (أول مرة فقط)</button>
+ <button class="cl_b cl_l" id="cl_rst" type="button" style="background:none;color:#1565C0">نسيت كلمة السر؟</button>
+ <p class="cl_mu">أول مرة: اكتب بريدك وكلمة سر جديدة واضغط «إنشاء حساب جديد». بعد ذلك استعمل «دخول».</p>
+</div></div>
+
+<div class="cl_scr" id="cl_msg" hidden><div class="cl_card">
+ <h2>جمعية الفتح</h2>
+ <p id="cl_mtxt" style="text-align:center;line-height:1.8"></p>
+ <div class="cl_row" id="cl_macts"></div>
+</div></div>
+
+<div class="cl_m" id="cl_panel" hidden><div class="cl_card">
+ <h2>☁ السحابة</h2>
+ <p id="cl_pst" class="cl_mu"></p>
+ <div id="cl_pcloud">
+  <div class="cl_row" style="margin-bottom:6px">
+   <button class="cl_b" id="cl_link" type="button">رابط دعوة الأعضاء</button>
+   <button class="cl_b cl_l" id="cl_rules" type="button">قواعد الحماية</button>
+  </div>
+  <div class="cl_row" style="margin-bottom:6px">
+   <button class="cl_b cl_l" id="cl_upl" type="button">رفع بيانات هذا الجهاز إلى السحابة</button>
+  </div>
+  <div class="cl_row">
+   <button class="cl_b cl_l" id="cl_out" type="button">تسجيل الخروج</button>
+   <button class="cl_b cl_r" id="cl_disc" type="button">فصل السحابة عن هذا الجهاز</button>
+  </div>
+  <div id="cl_mem">
+   <h4>الأعضاء المسموح لهم</h4>
+   <p class="cl_mu">أضف بريد كل عضو، ثم أرسل له رابط الدعوة. ينشئ حسابه بنفس البريد.</p>
+   <div class="cl_row"><input id="cl_mem_e" type="email" dir="ltr" placeholder="email@gmail.com"><input id="cl_mem_n" placeholder="الاسم"></div>
+   <button class="cl_b cl_g" id="cl_mem_add" type="button" style="margin-top:6px">إضافة عضو</button>
+   <table class="cl_tb"><tbody id="cl_mem_l"></tbody></table>
+  </div>
+ </div>
+ <div id="cl_plocal"><button class="cl_b" id="cl_conn" type="button">ربط البرنامج بالسحابة</button></div>
+ <button class="cl_b cl_l" type="button" onclick="document.getElementById('cl_panel').hidden=true">إغلاق</button>
+</div></div>
+
+<div class="cl_m" id="cl_txt" hidden><div class="cl_card">
+ <h2 id="cl_tt"></h2>
+ <p class="cl_mu" id="cl_tn"></p>
+ <textarea id="cl_tb" rows="9" readonly></textarea>
+ <div class="cl_row"><button class="cl_b" id="cl_tcopy" type="button">نسخ</button><button class="cl_b cl_l" type="button" onclick="document.getElementById('cl_txt').hidden=true">إغلاق</button></div>
+</div></div>
+<div id="cl_toast"></div>
+
+<script>
+(function(){
+'use strict';
+const FBV='10.14.1',FBKEY='wcloud_fb',MODEKEY='wcloud_mode',COL='alfath';
+const LOCK=(window.__clWK==='w1')?'w1local':'w1';
+const getLoc=()=>{try{const x=JSON.parse(localStorage.getItem(LOCK));return x&&Array.isArray(x.subs)?x:null}catch(e){return null}};
+const g=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const okMail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+let REM={};let restoredFlag=false;try{if(localStorage.getItem('cl_restored')){restoredFlag=true;localStorage.removeItem('cl_restored')}}catch(e){}
+let FB=null,db=null,auth=null,USER=null,LAST={},EXISTS=new Set(),unsub=null,memUnsub=null,MEM=[],ready=false,denied=false;
+
+function toast(m){const t=g('cl_toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3000)}
+function scr(id){['cl_setup','cl_login','cl_msg'].forEach(x=>g(x).hidden=x!==id)}
+function msg(t,acts){g('cl_mtxt').textContent=t;const b=g('cl_macts');b.innerHTML='';(acts||[]).forEach(([l,f,c])=>{const x=document.createElement('button');x.type='button';x.className='cl_b '+(c||'');x.textContent=l;x.onclick=f;b.appendChild(x)});scr('cl_msg')}
+function txt(t,n,v){g('cl_tt').textContent=t;g('cl_tn').textContent=n||'';g('cl_tb').value=v;g('cl_txt').hidden=false}
+g('cl_tcopy').onclick=()=>{const t=g('cl_tb');const d=()=>toast('تم النسخ ✔');if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t.value).then(d,()=>{t.select();document.execCommand('copy');d()});else{t.select();document.execCommand('copy');d()}};
+
+// ---------- الإعدادات ----------
+function b64e(s){return btoa(unescape(encodeURIComponent(s)))}
+function b64d(s){return decodeURIComponent(escape(atob(s)))}
+function parseCfg(t){t=String(t||'').trim();try{const j=JSON.parse(t);if(j&&j.apiKey&&j.projectId)return j}catch(e){}const o={};t.replace(/["']?(\w+)["']?\s*:\s*["']([^"']*)["']/g,(m,k,v)=>{o[k]=v});return o.apiKey&&o.projectId?o:null}
+function readHash(){const h=location.hash;if(!h.startsWith('#c='))return;try{const x=JSON.parse(b64d(h.slice(3)));if(x&&x.cfg&&x.cfg.apiKey){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY)}}catch(e){}history.replaceState(null,'',location.href.split('#')[0])}
+function getFb(){try{const x=JSON.parse(localStorage.getItem(FBKEY));if(x&&x.cfg&&x.cfg.apiKey)return x}catch(e){}return null}
+const isFbAdmin=()=>!!(USER&&FB&&String(USER.email).toLowerCase()===FB.admin);
+const WEBURL='https://aitdaoudabdelaziz-ai.github.io/water-project/cloud/';
+const invite=()=>(/^https?:/.test(location.protocol)&&!/appassets\.androidplatform\.net/.test(location.host)?location.href.split('#')[0]:WEBURL)+'#c='+b64e(JSON.stringify(FB));
+function rulesText(a){return`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == '${a}';
+    }
+    function isMember() {
+      return request.auth != null && (isAdmin() ||
+        exists(/databases/$(database)/documents/members/$(request.auth.token.email)));
+    }
+    match /members/{email} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+    match /{col}/{id} {
+      allow read, write: if isMember() && col in ['alfath', 'subs', 'inv', 'settings'];
+    }
+  }
+}`}
+
+// ---------- تحويل البيانات إلى سجلات ----------
+function canon(v){if(v===null||typeof v!=='object')return JSON.stringify(v===undefined?null:v);if(Array.isArray(v))return'['+v.map(canon).join(',')+']';return'{'+Object.keys(v).filter(k=>v[k]!==undefined&&typeof v[k]!=='function').sort().map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}'}
+const BIG=['subs','reads','invs','fin','users'];
+function recs(d){
+ const r={},main={};
+ Object.keys(d).forEach(k=>{if(!BIG.includes(k))main[k]=d[k]});
+ r['main']=canon(main);
+ (d.subs||[]).forEach(s=>r['S|'+s.id]=canon(s));
+ Object.keys(d.reads||{}).forEach(k=>r['R|'+k]=canon(d.reads[k]));
+ (d.invs||[]).forEach(i=>r['I|'+i.s+'|'+i.y+'|'+i.r]=canon(i));
+ (d.fin||[]).forEach(f=>r['F|'+f.id]=canon(f));
+ (d.users||[]).forEach(u=>r['U|'+u.id]=canon(u));
+ return r;
+}
+function place(rk){
+ if(rk==='main')return['main',null];
+ const p=rk.split('|'),t=p[0],k=p.slice(1).join('|');
+ if(t==='S')return['s'+(Math.abs(+p[1])%8),k];
+ if(t==='R')return['r_'+p[2]+'_'+p[3],k];
+ if(t==='I')return['i_'+p[2]+'_'+p[3],k];
+ if(t==='F')return['f'+(Math.abs(+p[1])%4),k];
+ return['users',k];
+}
+function fromDocs(docs){
+ const d={subs:[],reads:{},invs:[],fin:[],users:[]};let main=null;
+ docs.forEach(x=>{
+  const id=x.id,v=x.data()||{};
+  if(id==='main'){try{main=JSON.parse(v.j)}catch(e){}return}
+  const m=v.m||{};
+  for(const k in m){let o;try{o=JSON.parse(m[k])}catch(e){continue}
+   if(id[0]==='s')d.subs.push(o);else if(id[0]==='r')d.reads[k]=o;else if(id[0]==='i')d.invs.push(o);else if(id[0]==='f')d.fin.push(o);else if(id==='users')d.users.push(o)}
+ });
+ const by=(a,b)=>(+a.id||0)-(+b.id||0);
+ d.subs.sort(by);d.invs.sort(by);d.fin.sort(by);d.users.sort(by);
+ return{d,main};
+}
+function applyRemote(r){
+ const D=window.__clD();
+ Object.keys(D).forEach(k=>delete D[k]);
+ Object.assign(D,r.main||{},{subs:r.d.subs,reads:r.d.reads,invs:r.d.invs,fin:r.d.fin,users:r.d.users});
+ fixD(D);
+}
+function fixD(D){
+ D.subs=D.subs||[];D.reads=D.reads||{};D.invs=D.invs||[];D.fin=D.fin||[];D.users=D.users||[];
+ D.cfg=D.cfg||{price:3,fee:0,due:15,phone:'',email:''};
+ const mx=a=>a.reduce((m,x)=>Math.max(m,+x.id||0),0);
+ D.sid=Math.max(+D.sid||0,mx(D.subs));D.seq=Math.max(+D.seq||0,mx(D.invs));D.fid=Math.max(+D.fid||0,mx(D.fin));D.uid=Math.max(+D.uid||0,mx(D.users));
+}
+
+// ---------- الرفع (يُستدعى من save) ----------
+function werr(e){toast(e&&e.code==='permission-denied'?'ليست لديك صلاحية الحفظ في السحابة. اطلب من المسؤول إضافة بريدك.':'تعذر الحفظ في السحابة: '+(e&&e.message||e))}
+function push(){
+ if(!ready||!db)return;
+ const cur=recs(window.__clD()),ch={};let n=0;
+ for(const k in cur)if(cur[k]!==LAST[k]){ch[k]=cur[k];n++}
+ for(const k in LAST)if(!(k in cur)){ch[k]=null;n++}
+ if(!n)return;
+ LAST=cur;
+ const per={};
+ for(const rk in ch){const[doc,key]=place(rk);(per[doc]=per[doc]||[]).push([key,ch[rk]])}
+ const del=firebase.firestore.FieldValue.delete();
+ const docs=Object.keys(per);
+ for(let s=0;s<docs.length;s+=450){
+  const b=db.batch();
+  docs.slice(s,s+450).forEach(doc=>{
+   const ref=db.collection(COL).doc(doc);
+   if(doc==='main'){const v=per[doc][0][1];if(v!=null)b.set(ref,{j:v,at:Date.now(),by:USER.email});return}
+   const m={};per[doc].forEach(([k,v])=>m[k]=v==null?del:v);
+   b.set(ref,{m,at:Date.now(),by:USER.email},{merge:true});
+  });
+  b.commit().catch(werr);
+ }
+}
+window.__cs=function(){try{push()}catch(e){console.error(e)}};
+
+// ---------- الاستقبال ----------
+let pendRender=false;
+function busyTyping(){const a=document.activeElement;return a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&!a.closest('.cl_card')}
+function refreshUI(){
+ if(busyTyping()){if(!pendRender){pendRender=true;const t=setInterval(()=>{if(!busyTyping()){clearInterval(t);pendRender=false;refreshUI()}},800)}return}
+ try{window.__clUI()}catch(e){console.error(e)}
+}
+function onSnap(s){
+ EXISTS=new Set(s.docs.map(d=>d.id));
+ chip();
+ if(!ready){
+  if(!s.docs.length&&s.metadata.fromCache)return; // ننتظر الخادم
+  ready=true;
+  if(!s.docs.length){REM={};firstRun();return}
+ }
+ const r=fromDocs(s.docs);
+ const tmp={};Object.assign(tmp,r.main||{},r.d);
+ const R=recs(tmp);REM=R;
+ let diff=false;for(const k in R)if(R[k]!==LAST[k]){diff=true;break}
+ if(!diff)for(const k in LAST)if(!(k in R)){diff=true;break}
+ if(restoredFlag){restoredFlag=false;replaceAll(window.__clD());showApp();toast('تم رفع النسخة المسترجعة إلى السحابة ✔');return}
+ if(!diff){showApp();return}
+ if(window.__clWK==='w1'&&!localStorage.getItem('cl_seen')){try{const cur=window.__clD();if(cur.subs&&cur.subs.length){localStorage.setItem('w1local',JSON.stringify(cur));if(window.desk&&window.desk.backupNow)window.desk.backupNow().catch(()=>{})}}catch(e){}}
+ try{localStorage.setItem('cl_seen','1')}catch(e){}
+ applyRemote(r);LAST=recs(window.__clD());
+ window.__clCache();showApp();refreshUI();
+}
+function firstRun(){
+ restoredFlag=false;
+ const loc=window.__clWK==='w1'?JSON.parse(JSON.stringify(window.__clD())):getLoc();
+ const hasLoc=loc&&Array.isArray(loc.subs)&&loc.subs.length;
+ if(!isFbAdmin()){showApp();refreshUI();return}
+ if(hasLoc){
+  msg(`السحابة فارغة. وجدنا على هذا الجهاز بيانات جمعية الفتح: ${loc.subs.length} مشترك و${(loc.invs||[]).length} فاتورة. هل تريد رفعها إلى السحابة لتظهر عند كل الأعضاء؟`,[
+   ['نعم، ارفعها',()=>{replaceAll(loc);showApp()},'cl_g'],
+   ['لا، ابدأ ببرنامج فارغ',()=>{LAST={};push();showApp();refreshUI()},'cl_l']]);
+  return;
+ }
+ LAST={};push();showApp();refreshUI();
+}
+function replaceAll(x){
+ const D=window.__clD(),c=JSON.parse(JSON.stringify(x));
+ Object.keys(D).forEach(k=>delete D[k]);Object.assign(D,c);fixD(D);
+ window.__clCache();LAST=Object.assign({},REM);push();refreshUI();toast('جارٍ رفع البيانات إلى السحابة...');
+}
+window.__clRestore=function(x){if(!ready)return alert('انتظر حتى يتم الاتصال بالسحابة');replaceAll(x);toast('تم استرجاع النسخة ورفعها إلى السحابة ✔')};
+
+// ---------- الحالة ----------
+let lastMeta={p:false,c:true};
+function chip(){
+ const c=g('cl_chip');if(!c)return;
+ const set=(t,k)=>{c.innerHTML='<i>☁</i> <span class="cl_ct">'+t+'</span>';c.className=k;c.title=t};
+ if(!window.__cl){set('بدون سحابة','');return}
+ if(!navigator.onLine)set('غير متصل','cl_wa');
+ else if(lastMeta.p)set('جارٍ الرفع','cl_wa');
+ else if(ready&&!lastMeta.c)set('متزامن','cl_ok');
+ else set('جارٍ الاتصال','cl_wa');
+}
+addEventListener('online',chip);addEventListener('offline',chip);
+function showApp(){['cl_setup','cl_login','cl_msg'].forEach(x=>g(x).hidden=true)}
+
+// ---------- لوحة السحابة ----------
+function panel(){
+ const cl=!!window.__cl;
+ g('cl_pcloud').hidden=!cl;g('cl_plocal').hidden=cl;
+ g('cl_pst').innerHTML=cl?`متصل بمشروع <b class="cl_ltr">${esc(FB.cfg.projectId)}</b> باسم <b class="cl_ltr">${esc(USER&&USER.email)}</b>${isFbAdmin()?' (المسؤول)':''}`:'البرنامج يعمل على هذا الجهاز فقط.';
+ const ad=cl&&isFbAdmin();
+ g('cl_mem').hidden=!ad;g('cl_rules').hidden=!ad;g('cl_link').hidden=!ad;
+ const loc=getLoc();
+ g('cl_upl').hidden=!(ad&&loc&&loc.subs&&loc.subs.length);
+ if(ad)memList();
+ g('cl_panel').hidden=false;
+}
+function memList(){
+ const rows=[{email:FB.admin,name:'المسؤول',a:1}].concat(MEM.filter(m=>m.email!==FB.admin));
+ g('cl_mem_l').innerHTML=rows.map(m=>`<tr><td class="cl_ltr">${esc(m.email)}</td><td>${esc(m.name||'')}</td><td>${m.a?'':`<button class="cl_b cl_r cl_s" data-e="${esc(m.email)}">إزالة</button>`}</td></tr>`).join('');
+ g('cl_mem_l').querySelectorAll('button[data-e]').forEach(b=>b.onclick=()=>{const e=b.dataset.e;if(confirm('إزالة العضو '+e+'؟'))db.collection('members').doc(e).delete().then(()=>toast('تمت الإزالة')).catch(werr)});
+}
+g('cl_mem_add').onclick=()=>{const e=g('cl_mem_e').value.trim().toLowerCase();if(!okMail(e))return alert('اكتب بريداً صحيحاً');db.collection('members').doc(e).set({email:e,name:g('cl_mem_n').value.trim(),added:Date.now(),by:USER.email}).then(()=>toast('تمت إضافة العضو ✔')).catch(werr);g('cl_mem_e').value='';g('cl_mem_n').value=''};
+g('cl_link').onclick=()=>txt('رابط دعوة الأعضاء','أرسل هذا الرابط للأعضاء عبر واتساب. على الحاسوب أو المتصفح يفتحونه مباشرة؛ وفي تطبيق الهاتف أو برنامج الحاسوب ينسخونه ويلصقونه في شاشة «ربط البرنامج بالسحابة». ثم ينشئون حساباً بالبريد الذي أضفته لهم.',invite());
+g('cl_rules').onclick=()=>txt('قواعد الحماية','انسخ هذا النص والصقه في Firebase ← Firestore ← Règles، ثم اضغط Publier.',rulesText(FB.admin));
+g('cl_upl').onclick=()=>{const loc=getLoc();if(!loc)return;if(confirm(`رفع بيانات هذا الجهاز (${loc.subs.length} مشترك) إلى السحابة؟ ستحل محل البيانات الموجودة في السحابة.`)){replaceAll(loc);g('cl_panel').hidden=true}};
+g('cl_out').onclick=()=>{if(confirm('تسجيل الخروج من السحابة على هذا الجهاز؟'))auth.signOut()};
+g('cl_disc').onclick=()=>{if(!confirm('فصل هذا الجهاز عن السحابة؟ البيانات تبقى في السحابة.'))return;const d=()=>{localStorage.removeItem(FBKEY);localStorage.removeItem(MODEKEY);location.reload()};auth?auth.signOut().then(d,d):d()};
+g('cl_conn').onclick=()=>{g('cl_panel').hidden=true;g('cl_slocal').textContent='رجوع';scr('cl_setup')};
+
+// ---------- شاشة الإعداد ----------
+g('cl_ssave').onclick=()=>{const raw=g('cl_cfg').value.trim();
+ const hi=raw.indexOf('#c=');if(hi>=0){try{const x=JSON.parse(b64d(raw.slice(hi+3).trim()));if(x&&x.cfg&&x.cfg.apiKey){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY);location.reload();return}}catch(e){}return g('cl_serr').textContent='رابط الدعوة غير صحيح. انسخه كاملاً من رسالة واتساب.'}
+ const c=parseCfg(raw),a=g('cl_adm').value.trim().toLowerCase();
+ if(!c)return g('cl_serr').textContent='لم أتعرف على الإعدادات. انسخ كامل الجزء firebaseConfig.';
+ if(!okMail(a))return g('cl_serr').textContent='اكتب بريد المسؤول بشكل صحيح.';
+ localStorage.setItem(FBKEY,JSON.stringify({cfg:c,admin:a}));localStorage.removeItem(MODEKEY);location.reload()};
+g('cl_slocal').onclick=()=>{localStorage.setItem(MODEKEY,'local');if(window.__cl)location.reload();else{showApp();chip()}};
+
+// ---------- الدخول ----------
+const em=()=>g('cl_em').value.trim().toLowerCase(),pw=()=>g('cl_pw').value;
+function aerr(e){const c=e&&e.code||'';const m={'auth/invalid-credential':'البريد أو كلمة السر غير صحيحة. إذا كانت أول مرة، اضغط «إنشاء حساب جديد».','auth/invalid-login-credentials':'البريد أو كلمة السر غير صحيحة. إذا كانت أول مرة، اضغط «إنشاء حساب جديد».','auth/wrong-password':'كلمة السر غير صحيحة','auth/user-not-found':'لا يوجد حساب بهذا البريد. اضغط «إنشاء حساب جديد»','auth/email-already-in-use':'هذا البريد لديه حساب مسبقاً، استعمل زر «دخول»','auth/weak-password':'كلمة السر قصيرة: 6 أحرف على الأقل','auth/invalid-email':'البريد الإلكتروني غير صحيح','auth/missing-password':'اكتب كلمة السر','auth/network-request-failed':'لا يوجد اتصال بالإنترنت','auth/too-many-requests':'محاولات كثيرة، انتظر قليلاً','auth/operation-not-allowed':'فعّل الدخول بالبريد وكلمة السر في Firebase ← Authentication','auth/unauthorized-domain':'أضف رابط البرنامج في Firebase ← Authentication ← Paramètres ← Domaines autorisés'};g('cl_lerr').textContent=m[c]||('خطأ: '+(e&&e.message||e))}
+function busy(b){['cl_in','cl_up','cl_rst'].forEach(x=>g(x).disabled=b)}
+g('cl_in').onclick=()=>{if(!okMail(em()))return aerr({code:'auth/invalid-email'});busy(true);auth.signInWithEmailAndPassword(em(),pw()).catch(aerr).finally(()=>busy(false))};
+g('cl_up').onclick=()=>{if(!okMail(em()))return aerr({code:'auth/invalid-email'});if(pw().length<6)return aerr({code:'auth/weak-password'});busy(true);auth.createUserWithEmailAndPassword(em(),pw()).catch(aerr).finally(()=>busy(false))};
+g('cl_rst').onclick=()=>{if(!okMail(em()))return g('cl_lerr').textContent='اكتب بريدك أولاً';auth.sendPasswordResetEmail(em()).then(()=>g('cl_lerr').textContent='أرسلنا رابط تغيير كلمة السر إلى بريدك').catch(aerr)};
+g('cl_pw').onkeydown=e=>{if(e.key==='Enter')g('cl_in').click()};
+
+// ---------- الاتصال ----------
+function js(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+function lerr(e){
+ if(e&&e.code==='permission-denied'){
+  if(denied)return;denied=true;stop();
+  const retry=['إعادة المحاولة',()=>{denied=false;listen()}],out=['تسجيل الخروج',()=>auth.signOut(),'cl_l'];
+  if(isFbAdmin())msg('أنت المسؤول، لكن قواعد الحماية في Firebase لا تسمح بعد بهذا البرنامج. اضغط «عرض القواعد»، انسخها والصقها في Firestore ← Règles ثم اضغط Publier، ثم ارجع واضغط «إعادة المحاولة».',[['عرض القواعد',()=>txt('قواعد الحماية','انسخ هذا النص والصقه في Firebase ← Firestore ← Règles، ثم اضغط Publier.',rulesText(FB.admin)),'cl_g'],retry,out]);
+  else msg(`بريدك ${USER?USER.email:''} غير مفعّل بعد. اطلب من مسؤول الجمعية إضافته في قائمة الأعضاء، ثم اضغط «إعادة المحاولة».`,[retry,out]);
+ }else toast('خطأ في الاتصال بالسحابة: '+(e&&e.message||e));
+}
+function stop(){if(unsub){unsub();unsub=null}if(memUnsub){memUnsub();memUnsub=null}}
+function listen(){
+ stop();ready=false;denied=false;LAST=recs(window.__clD());
+ msg('جارٍ تحميل بيانات الجمعية من السحابة...',[]);
+ setTimeout(()=>{if(!ready&&!denied&&!g('cl_msg').hidden)msg('التحميل يأخذ وقتاً، ربما الاتصال ضعيف.',[['متابعة بالبيانات المحفوظة على هذا الجهاز',()=>{ready=true;showApp();refreshUI()},'cl_l']])},12000);
+ unsub=db.collection(COL).onSnapshot({includeMetadataChanges:true},s=>{lastMeta={p:s.metadata.hasPendingWrites,c:s.metadata.fromCache};onSnap(s);chip()},lerr);
+ if(isFbAdmin())memUnsub=db.collection('members').onSnapshot(s=>{MEM=s.docs.map(d=>d.data());if(!g('cl_panel').hidden)memList()},()=>{});
+}
+async function boot(){
+ msg('جارٍ الاتصال بالسحابة...',[]);
+ try{for(const m of['app','auth','firestore'])await js(`https://www.gstatic.com/firebasejs/${FBV}/firebase-${m}-compat.js`)}
+ catch(e){return msg('تعذر تحميل مكتبة السحابة. تحقق من الإنترنت.',[['إعادة المحاولة',()=>location.reload()]])}
+ try{if(!firebase.apps.length){firebase.initializeApp(FB.cfg);db=firebase.firestore();db.enablePersistence({synchronizeTabs:true}).catch(()=>{})}else db=firebase.firestore();auth=firebase.auth()}
+ catch(e){return msg('إعدادات Firebase غير صحيحة: '+e.message,[['إدخال الإعدادات من جديد',()=>{localStorage.removeItem(FBKEY);location.reload()},'cl_r']])}
+ auth.onAuthStateChanged(u=>{
+  USER=u;
+  if(!u){stop();ready=false;g('cl_lerr').textContent='';scr('cl_login');return}
+  listen();
+ });
+}
+
+// زر السحابة في الأعلى
+(function(){const h=document.querySelector('header');if(!h)return;const b=document.createElement('button');b.id='cl_chip';b.type='button';b.onclick=panel;const lo=document.getElementById('lo');h.insertBefore(b,lo||null);chip()})();
+
+readHash();FB=getFb();
+if(window.__cl&&FB)boot();
+else if(!FB&&localStorage.getItem(MODEKEY)!=='local')scr('cl_setup');
+chip();
+})();
+</script>
+
+<script>
 /* ===== منصّات التشغيل: PWA / Android (Capacitor) ===== */
 (function(){
  var C=window.Capacitor,nat=!!(C&&C.isNativePlatform&&C.isNativePlatform());

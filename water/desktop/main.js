@@ -82,7 +82,7 @@ ipcMain.handle("desk:restore", async () => {
   const c = await dialog.showMessageBox(win, { type: "warning", buttons: ["استرجاع", "إلغاء"], defaultId: 1, cancelId: 1, title: "استرجاع", message: "استبدال كل البيانات الحالية بهذه النسخة؟", detail: (info ? "تاريخ النسخة: " + info + "\n" : "") + "ستُحفظ الحالة الحالية أولاً في نسخة «قبل الاسترجاع»." });
   if (c.response !== 0) return { canceled: 1 };
   try { await snapshot("pre"); } catch (e) { return { error: "تعذّر حفظ الحالة الحالية قبل الاسترجاع: " + e.message }; }
-  await win.webContents.executeJavaScript(`(async()=>{let x=${json};try{localStorage.setItem("w1pre",JSON.stringify(D))}catch(e){};if(x.__files&&x.__files.length){try{await flRestore(x.__files)}catch(e){}};delete x.__files;window.__nf=1;localStorage.setItem("w1",JSON.stringify(x));location.reload();return 1})()`, true);
+  await win.webContents.executeJavaScript(`(async()=>{let x=${json};try{localStorage.setItem("w1pre",JSON.stringify(D))}catch(e){};if(x.__files&&x.__files.length){try{await flRestore(x.__files)}catch(e){}};delete x.__files;window.__nf=1;try{if(window.__cl)localStorage.setItem("cl_restored","1")}catch(e){};localStorage.setItem(window.__clWK||"w1",JSON.stringify(x));location.reload();return 1})()`, true);
   return { ok: 1 };
 });
 ipcMain.handle("desk:pickDir2", async () => {
