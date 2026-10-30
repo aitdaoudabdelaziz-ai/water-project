@@ -8,6 +8,7 @@ ap.add_argument('--key', default='w1c'); ap.add_argument('--xlsx-local', action=
 a = ap.parse_args()
 out = pathlib.Path(a.src).read_text(encoding='utf-8')
 block = pathlib.Path(a.block).read_text(encoding='utf-8')
+dash = (pathlib.Path(a.block).parent / 'dash_block.html').read_text(encoding='utf-8')
 def rep(old, new, count=1):
     global out
     n = out.count(old)
@@ -32,5 +33,5 @@ UI = ('\nwindow.__clUI=function(){$("#cnt").textContent=D.subs.length+" مشتر
       'let l=$("#ccl");if(l&&document.activeElement!==l)l.value=D.cfg.clauses||CL;try{stRefresh()}catch(e){}try{if(!$("#trbox")||!$("#trbox").contains(document.activeElement))trInit()}catch(e){}'
       'gate();if(!D.users.length||usr())render()};\n')
 rep('gate();if(!D.users.length||usr())go(first());\n</script></body></html>',
-    'gate();if(!D.users.length||usr())go(first());' + UI + '</script>\n' + block + '\n</body></html>')
+    'gate();if(!D.users.length||usr())go(first());' + UI + '</script>\n' + dash + '\n' + block + '\n</body></html>')
 pathlib.Path(a.out).write_text(out, encoding='utf-8'); print('ok', a.out, len(out))
