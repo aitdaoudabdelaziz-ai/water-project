@@ -4,7 +4,7 @@
 
 | النسخة | من أين | الملف |
 |---|---|---|
-| نسخة سحابية (تعمل في المتصفح وتُثبَّت على الهاتف) | GitHub Pages | رابط `https://اسمك.github.io/water-project/` |
+| نسخة سحابية (تعمل في المتصفح وتُثبَّت على الهاتف) | GitHub Pages | رابط `https://alfath-eau.org/` (و `/cloud/` و `/demo/`) |
 | ويندوز | GitHub Actions → `AlFath-Water-Windows` | `AlFath-Water-Setup-1.0.0.exe` (تثبيت) و `AlFath-Water-Portable-1.0.0.exe` (بدون تثبيت) |
 | أندرويد | GitHub Actions → `AlFath-Water-Android` | `AlFath-Water-1.0.0.apk` |
 

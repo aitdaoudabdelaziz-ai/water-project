@@ -113,7 +113,7 @@ function parseCfg(t){t=String(t||'').trim();try{const j=JSON.parse(t);if(j&&j.ap
 function readHash(){const h=location.hash;if(!h.startsWith('#c='))return;try{const x=JSON.parse(b64d(h.slice(3)));if(x&&x.cfg&&x.cfg.apiKey){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY)}}catch(e){}history.replaceState(null,'',location.href.split('#')[0])}
 function getFb(){try{const x=JSON.parse(localStorage.getItem(FBKEY));if(x&&x.cfg&&x.cfg.apiKey)return x}catch(e){}return null}
 const isFbAdmin=()=>!!(USER&&FB&&String(USER.email).toLowerCase()===FB.admin);
-const WEBURL='https://aitdaoudabdelaziz-ai.github.io/water-project/cloud/';
+const WEBURL='https://alfath-eau.org/cloud/';
 const invite=()=>(/^https?:/.test(location.protocol)&&!/appassets\.androidplatform\.net/.test(location.host)?location.href.split('#')[0]:WEBURL)+'#c='+b64e(JSON.stringify(FB));
 function rulesText(a){return`rules_version = '2';
 service cloud.firestore {
