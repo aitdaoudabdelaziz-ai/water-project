@@ -19,3 +19,4 @@ Run: `python3 -m http.server 8765` at repo root, then `node --test --test-concur
 Manual only (not automatable here): real Firebase sync between devices, Excel import/export (SheetJS from CDN), printing and thermal printer, Electron EXE and Android APK on real devices.
 | F10 Demo | H1 fake data 390/1440, real data untouched · H2 reset | f10-demo |
 | F11 WhatsApp | H1 reminder · H2 receipt · H3 quick screen · N1 no phone · E1 number formats | f11-whatsapp |
+| F12 Built-in cloud | H1 fresh device → login (web + app) · H2 local stays local | f12-default-cloud |

@@ -15,7 +15,7 @@ def rep(old, new, count=1):
     n = out.count(old)
     if n != count: sys.exit(f'PATCH FAIL ({n}x): {old[:90]}')
     out = out.replace(old, new)
-EARLY = ('window.__cl=(()=>{try{return location.hash.indexOf("#c=")===0||(!!localStorage.getItem("wcloud_fb")&&localStorage.getItem("wcloud_mode")!=="local")}catch(e){return false}})();'
+EARLY = ('window.__cl=(()=>{try{return location.hash.indexOf("#c=")===0||localStorage.getItem("wcloud_mode")!=="local"}catch(e){return false}})();'
          f'const WK=window.__cl?"{a.key}":"w1";window.__clWK=WK;'
          'function NID(k){let v=(+D[k]||0)+1;if(window.__cl)v=Math.max(v,Date.now());D[k]=v;return v}\n')
 rep('let D;try{D=JSON.parse(localStorage.getItem("w1"))}catch(e){}', EARLY + 'let D;try{D=JSON.parse(localStorage.getItem(WK))}catch(e){}')

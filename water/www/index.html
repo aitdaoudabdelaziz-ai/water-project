@@ -893,7 +893,7 @@ const RN=["الجولة 1 (يناير - مارس)","الجولة 2 (أبريل -
 const FD=["01/01","01/04","01/07","01/10"],LD=["31/03","30/06","30/09","31/12"];
 const CL=["يلتزم المشترك بأداء مبلغ الاستهلاك حسب القراءة الدورية للعداد وبالثمن المعمول به لدى الجمعية.","يلتزم بأداء الفاتورة داخل الأجل المحدد فيها، وللجمعية الحق في توقيف التزويد عند التأخر عن الأداء.","يلتزم بالمحافظة على العداد والشبكة وعدم العبث بهما، وبإشعار الجمعية فوراً بأي عطب أو تسرب.","يمنع عليه تزويد الغير من اشتراكه أو استعمال الماء في غير الغرض المخصص له.","يلتزم باحترام القانون الداخلي للجمعية وقرارات مكتبها المسير.","يقرّ بصحة المعلومات المصرّح بها أعلاه، ويلتزم بإشعار الجمعية بأي تغيير يطرأ عليها."].join("\n");
 const AS="جمعية الفتح للتنمية والتعاون",CT="أقايغان - إقليم طاطا",LC="جمعية تنموية - مرخصة لتوزيع الماء الصالح للشرب";
-window.__cl=(()=>{try{return location.hash.indexOf("#c=")===0||(!!localStorage.getItem("wcloud_fb")&&localStorage.getItem("wcloud_mode")!=="local")}catch(e){return false}})();const WK=window.__cl?"w1":"w1";window.__clWK=WK;function NID(k){let v=(+D[k]||0)+1;if(window.__cl)v=Math.max(v,Date.now());D[k]=v;return v}
+window.__cl=(()=>{try{return location.hash.indexOf("#c=")===0||localStorage.getItem("wcloud_mode")!=="local"}catch(e){return false}})();const WK=window.__cl?"w1":"w1";window.__clWK=WK;function NID(k){let v=(+D[k]||0)+1;if(window.__cl)v=Math.max(v,Date.now());D[k]=v;return v}
 let D;try{D=JSON.parse(localStorage.getItem(WK))}catch(e){}
 D=D||{subs:[],reads:{},invs:[],sid:0,seq:0,fin:[],fid:0,cfg:{price:3,fee:0,due:15,phone:"0528",email:"association.elfath@gmail.com"}};
 D.fin=D.fin||[];D.fid=D.fid||0;D.users=D.users||[];D.uid=D.uid||0;
@@ -1771,6 +1771,8 @@ html,body{max-width:100%}#cl_chip.cl_wa{background:#EF6C00}#cl_chip.cl_no{backgr
 (function(){
 'use strict';
 const FBV='10.14.1',FBKEY='wcloud_fb',MODEKEY='wcloud_mode',COL='alfath';
+// سحابة الجمعية المدمجة: كل جهاز جديد يفتح مباشرة على شاشة الدخول (إعدادات Firebase للويب عامة بطبيعتها؛ الحماية بالدخول وقواعد Firestore)
+const DEFFB={"cfg":{"apiKey":"AIzaSyB8WSV_5IJim98ltYsxlGp_nWPcnILa_yE","authDomain":"water-assoc.firebaseapp.com","projectId":"water-assoc","storageBucket":"water-assoc.firebasestorage.app","messagingSenderId":"1053204560068","appId":"1:1053204560068:web:d2a877234cbba162773191","measurementId":"G-F71JXGQ5YK"},"admin":"aitdaoudabdelaziz@gmail.com"};
 const LOCK=(window.__clWK==='w1')?'w1local':'w1';
 const getLoc=()=>{try{const x=JSON.parse(localStorage.getItem(LOCK));return x&&Array.isArray(x.subs)?x:null}catch(e){return null}};
 const g=id=>document.getElementById(id);
@@ -1790,7 +1792,7 @@ function b64e(s){return btoa(unescape(encodeURIComponent(s)))}
 function b64d(s){return decodeURIComponent(escape(atob(s)))}
 function parseCfg(t){t=String(t||'').trim();try{const j=JSON.parse(t);if(j&&j.apiKey&&j.projectId)return j}catch(e){}const o={};t.replace(/["']?(\w+)["']?\s*:\s*["']([^"']*)["']/g,(m,k,v)=>{o[k]=v});return o.apiKey&&o.projectId?o:null}
 function readHash(){const h=location.hash;if(!h.startsWith('#c='))return;try{const x=JSON.parse(b64d(h.slice(3)));if(x&&x.cfg&&x.cfg.apiKey){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY)}}catch(e){}history.replaceState(null,'',location.href.split('#')[0])}
-function getFb(){try{const x=JSON.parse(localStorage.getItem(FBKEY));if(x&&x.cfg&&x.cfg.apiKey)return x}catch(e){}return null}
+function getFb(){try{const x=JSON.parse(localStorage.getItem(FBKEY));if(x&&x.cfg&&x.cfg.apiKey)return x}catch(e){}return DEFFB}
 const isFbAdmin=()=>!!(USER&&FB&&String(USER.email).toLowerCase()===FB.admin);
 const WEBURL='https://alfath-eau.org/cloud/';
 const invite=()=>(/^https?:/.test(location.protocol)&&!/appassets\.androidplatform\.net/.test(location.host)?location.href.split('#')[0]:WEBURL)+'#c='+b64e(JSON.stringify(FB));
@@ -1972,8 +1974,8 @@ g('cl_link').onclick=()=>txt('رابط دعوة الأعضاء','أرسل هذا
 g('cl_rules').onclick=()=>txt('قواعد الحماية','انسخ هذا النص والصقه في Firebase ← Firestore ← Règles، ثم اضغط Publier.',rulesText(FB.admin));
 g('cl_upl').onclick=()=>{const loc=getLoc();if(!loc)return;if(confirm(`رفع بيانات هذا الجهاز (${loc.subs.length} مشترك) إلى السحابة؟ ستحل محل البيانات الموجودة في السحابة.`)){replaceAll(loc);g('cl_panel').hidden=true}};
 g('cl_out').onclick=()=>{if(confirm('تسجيل الخروج من السحابة على هذا الجهاز؟'))auth.signOut()};
-g('cl_disc').onclick=()=>{if(!confirm('فصل هذا الجهاز عن السحابة؟ البيانات تبقى في السحابة.'))return;const d=()=>{localStorage.removeItem(FBKEY);localStorage.removeItem(MODEKEY);location.reload()};auth?auth.signOut().then(d,d):d()};
-g('cl_conn').onclick=()=>{g('cl_panel').hidden=true;g('cl_slocal').textContent='رجوع';scr('cl_setup')};
+g('cl_disc').onclick=()=>{if(!confirm('فصل هذا الجهاز عن السحابة؟ البيانات تبقى في السحابة.'))return;const d=()=>{localStorage.removeItem(FBKEY);localStorage.setItem(MODEKEY,'local');location.reload()};auth?auth.signOut().then(d,d):d()};
+g('cl_conn').onclick=()=>{g('cl_panel').hidden=true;if(!confirm('ربط هذا الجهاز بسحابة الجمعية؟'))return;localStorage.removeItem(MODEKEY);location.reload()};
 
 // ---------- شاشة الإعداد ----------
 g('cl_ssave').onclick=()=>{const raw=g('cl_cfg').value.trim();
