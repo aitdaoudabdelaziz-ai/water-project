@@ -5,3 +5,4 @@ python3 $B/patch_w2.py water/src/water_app.html $B/cloud_block.html /tmp/cw.html
 python3 $B/patch_w1_platform.py /tmp/cw.html index.html && cp index.html cloud/index.html
 python3 $B/patch_w2.py water/src/water_app.html $B/cloud_block.html /tmp/ca.html --key w1
 python3 $B/patch_w1_platform.py /tmp/ca.html water/www/index.html
+python3 $B/patch_demo.py water/src/water_app.html $B/dash_block.html demo/index.html
