@@ -909,6 +909,7 @@ const dbn=f=>{clearTimeout(f._t);f._t=setTimeout(f,220)};
 addEventListener("pagehide",()=>flush(1));addEventListener("beforeunload",()=>flush(1));
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState=="hidden")flush(1)});
 setInterval(()=>{if(_db)flush(1)},12e4);
+addEventListener("storage",e=>{if(window.__cl||e.key!=="w1"||!e.newValue||_db)return;try{D=JSON.parse(e.newValue);_sm=null;render()}catch(_){}});
 let Y=new Date().getFullYear(),R=Math.floor(new Date().getMonth()/3),tab=0,eid=null;
 const td=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -996,7 +997,8 @@ function newSub(){eid=null;["n","m","ci","p","a"].forEach(k=>$("#"+k).value="");
 function ed(id){let s=D.subs.find(x=>x.id==id);eid=id;$("#n").value=s.name;$("#m").value=s.meter;$("#ci").value=s.cin||"";$("#p").value=s.phone;$("#a").value=s.addr;$("#mst").textContent="تعديل مشترك";FLCUR=(s.fl||[]).slice();FLNEW=[];FLDEL=[];flRender();openM("msub")}
 let SEL=new Set();
 const vis=()=>{let q=$("#sq").value.trim(),f=$("#csf").value;return D.subs.filter(s=>(!q||s.name.includes(q)||s.meter.includes(q)||(s.cin||"").includes(q))&&(f===""||(s.ct?1:0)==f))};
-function rmSubs(S){D.subs.filter(x=>S.has(x.id)).forEach(x=>(x.fl||[]).forEach(f=>flDel(f.id)));D.subs=D.subs.filter(x=>!S.has(x.id));D.invs=D.invs.filter(i=>!S.has(i.s));for(let k in D.reads)if(S.has(+k.split("|")[0]))delete D.reads[k];S.forEach(i=>SEL.delete(i));save();render()}
+function rmSubs(S){D.subs.filter(x=>S.has(x.id)).forEach(x=>(x.fl||[]).forEach(f=>flDel(f.id)));
+ D.invs.filter(i=>i.paid&&S.has(i.s)).forEach(i=>{let a=tot(i);if(a>0)D.fin.push({id:(typeof NID=="function"?NID("fid"):(D.fid=(+D.fid||0)+1)),t:"in",w:i.pw||"c",d:i.pd||i.date,c:"مياه الشرب",a,n:i.num+" - "+((SB(i.s)||{}).name||"")+" (مشترك محذوف)"})});D.subs=D.subs.filter(x=>!S.has(x.id));D.invs=D.invs.filter(i=>!S.has(i.s));for(let k in D.reads)if(S.has(+k.split("|")[0]))delete D.reads[k];S.forEach(i=>SEL.delete(i));save();render()}
 function del(id){if(confirm("حذف المشترك وقراءاته وفواتيره؟"))rmSubs(new Set([id]))}
 function tg(id,c){c?SEL.add(id):SEL.delete(id);selU()}
 function selU(){let n=SEL.size;$("#bulk").hidden=!n;$("#bn").textContent=n+" محدد"}
@@ -1021,12 +1023,13 @@ const amt=v=>{if(!v)return"لم تُسجَّل بعد";let c=cs(v.o,v.n),a=cwa(v
  return `${c} م³ = ${n2(a)} درهم`+x};
 function rsum(){let ok=0,t=0;D.subs.forEach(s=>{let v=D.reads[key(s.id,Y,R)];if(v){ok++;t+=cwa(v.n-v.o)}});$("#rs").innerHTML=kx([["مسجَّلة",ok,"ok"],["بانتظار القراءة",D.subs.length-ok,D.subs.length-ok?"warn":""],["مجموع المبالغ",n2(t)+" درهم"]])}
 function sv(id){let o=parseFloat($("#o"+id).value),n=parseFloat($("#n"+id).value),k=key(id,Y,R);
+ if(D.invs.some(x=>x.s==id&&x.y==Y&&x.r==R&&x.paid)){let v0=D.reads[k];$("#o"+id).value=v0?v0.o:"";$("#n"+id).value=v0?v0.n:"";return alert("فاتورة هذه الجولة مدفوعة. لتعديل القراءة ألغِ الدفع أولاً من «الفواتير».")}
  if(isNaN(n))delete D.reads[k];else{if(isNaN(o))o=0;if(n<o){$("#n"+id).value="";return alert("القراءة الجديدة أصغر من القديمة")}D.reads[k]={o,n}}
  save();let v=D.reads[k];$("#c"+id).className=v?"ok":"no";$("#a"+id).innerHTML=amt(v);rsum()}
 
 // الفواتير
 function regInv(id,y,r){let v=D.reads[key(id,y,r)];if(!v)return null;let i=D.invs.find(x=>x.s==id&&x.y==y&&x.r==r);
- if(i){if(!i.lk){i.o=v.o;i.n=v.n}}else{i={id:++D.seq,s:id,y,r,o:v.o,n:v.n,price:D.cfg.price,fee:D.cfg.fee,date:td(),paid:0};if(trOn())i.tr=trCp(trOn());i.num=y+"/"+String(i.id).padStart(5,"0");D.invs.push(i)}return i}
+ if(i){if(!i.lk&&!i.paid){i.o=v.o;i.n=v.n}}else{i={id:++D.seq,s:id,y,r,o:v.o,n:v.n,price:D.cfg.price,fee:D.cfg.fee,date:td(),paid:0};if(trOn())i.tr=trCp(trOn());i.num=y+"/"+String(i.id).padStart(5,"0");D.invs.push(i)}return i}
 function regP(){let n=0;D.subs.forEach(s=>{if(regInv(s.id,Y,R))n++});if(!n)return alert("لا توجد قراءات مسجَّلة في هذه الجولة");save();$("#iy").value=Y;$("#ir").value=R;go(2);alert("تم تسجيل/تحديث "+n+" فاتورة")}
 function cur(){let q=$("#iq").value.trim(),y=+$("#iy").value,r=$("#ir").value,p=$("#ip").value;
  return D.invs.filter(i=>{let s=SB(i.s);return s&&i.y==y&&(r===""||i.r==r)&&(p===""||i.paid==p)&&(!q||s.name.includes(q)||s.meter.includes(q)||i.num.includes(q))}).sort((a,b)=>a.r-b.r||a.id-b.id)}
@@ -1317,6 +1320,7 @@ function qkKey(k){if(!QF)qkFocus($("#qk_n"));let v=QF.value;
  QF.value=v;qkCalc()}
 function qkSave(){if(QS==null)return;let o=parseFloat($("#qk_o").value),n=parseFloat($("#qk_n").value);
  if(isNaN(o)||isNaN(n)||$("#qk_n").value==="")return $("#qk_w").textContent="⚠ أدخل القراءة الجديدة";if(n<o)return $("#qk_w").textContent="⚠ القراءة الجديدة أصغر من السابقة";
+ if(D.invs.some(x=>x.s==QS&&x.y==Y&&x.r==R&&x.paid))return $("#qk_w").textContent="⚠ "+"فاتورة هذه الجولة مدفوعة. لتعديل القراءة ألغِ الدفع أولاً من «الفواتير».";
  D.reads[key(QS,Y,R)]={o,n};let i=regInv(QS,Y,R);save();qkAfter(i);qkCalc()}
 function qkAfter(i){if(!i)return;$("#qk_save").hidden=true;let a=$("#qk_after");a.hidden=false;
  a.innerHTML=`<div class="qk_ok">✔ فاتورة رقم <b>${i.num}</b> — ${n2(tot(i))} درهم ${i.paid?`<span class="qk_paid">مدفوعة · ${i.pw=="b"?"بنكي":"نقداً"}</span>`:""}</div>
