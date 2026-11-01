@@ -1597,8 +1597,8 @@ window.__clUI=function(){$("#cnt").textContent=D.subs.length+" مشترك";[["cp
 .fx_bell{position:relative;flex:none;width:46px;height:46px;border-radius:14px;border:1px solid var(--fx_ln);background:var(--fx_bg);color:var(--fx_tx);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .fx_bell svg{width:22px;height:22px}
 .fx_bell b{position:absolute;top:-6px;inset-inline-start:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--fx_bad);color:#fff;font-size:11px;line-height:20px;text-align:center}
-.fx_g{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.fx_k{background:var(--fx_bg);border:1px solid var(--fx_ln);border-radius:20px;padding:16px 18px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;text-align:start;font:inherit;color:var(--fx_tx)}
+.fx_g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:12px}
+.fx_k{min-width:0;height:auto;background:var(--fx_bg);border:1px solid var(--fx_ln);border-radius:20px;padding:16px 18px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;text-align:start;font:inherit;color:var(--fx_tx)}
 .fx_k span{font-size:14px;color:var(--fx_mu)}
 .fx_k b{font-size:26px;font-weight:800;margin-top:10px;white-space:nowrap}
 .fx_k b em{font-style:normal;font-size:14px;font-weight:600;margin-inline-start:4px;opacity:.8}
@@ -1621,9 +1621,70 @@ window.__clUI=function(){$("#cnt").textContent=D.subs.length+" مشترك";[["cp
 .fx_s b{display:block;font-size:17px;margin-top:4px;color:var(--fx_tx)}
 .fx_s small{display:block;font-size:12px;color:var(--fx_mu);margin-top:2px}
 @media (min-width:900px){.fx_wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:12px;align-items:stretch}.fx_wrap .fx_g{margin-bottom:0}.fx_ch{display:flex;flex-direction:column}.fx_bars{flex:1;height:auto;min-height:170px}}
+.fx_card .fx_k,html .fx_card button.fx_k{height:auto}
 @media (max-width:380px){.fx_k b{font-size:21px}.fx_in{padding:14px}.fx_bars{gap:4px}}
 @media screen{html[data-th=dark] .fx_card{--fx_bg:rgba(10,46,34,.75);--fx_in:rgba(5,26,19,.6);--fx_ln:rgba(80,240,190,.22);--fx_lt:color-mix(in srgb,var(--fx_ac) 30%,transparent);box-shadow:0 10px 28px rgba(0,8,20,.45)}html[data-th=dark] .fx_k.fx_p{color:#04140E}html[data-th=dark] .fx_k.fx_p span{color:#04140Ecc}}
 @media print{.fx_card{display:none}}
+
+.fx_pl{flex:none;display:inline-block;align-self:flex-start;margin-top:8px;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--fx_ac) 12%,transparent);color:var(--fx_ac);font-style:normal;font-size:12px;font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
+.fx_k.fx_p .fx_pl{background:rgba(255,255,255,.18);color:#fff}
+.fx_plr{background:color-mix(in srgb,var(--fx_bad) 12%,transparent);color:var(--fx_bad)}
+/* حركة الدخول */
+@keyframes fx_up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fx_grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.fx_go .fx_k,.fx_go .fx_ch,.fx_go .fx_s,.fx_go.fw .fw_col{animation:fx_up .55s cubic-bezier(.2,.8,.2,1) both}
+.fx_go .fx_k:nth-child(2){animation-delay:60ms}.fx_go .fx_k:nth-child(3){animation-delay:120ms}.fx_go .fx_k:nth-child(4){animation-delay:180ms}
+.fx_go .fx_ch{animation-delay:220ms}.fx_go .fx_s{animation-delay:300ms}.fx_go.fw .fw_col{animation-delay:calc(320ms + var(--d,0ms))}
+.fx_go .fx_bar i{transform-origin:bottom;animation:fx_grow .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(260ms + var(--d,0ms))}
+.fx_bell b{animation:fx_pop .5s .6s both}@keyframes fx_pop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+/* سير الجولة */
+.fw{--fw_bg:#fff;--fw_in:#F5F8F3;--fw_ln:var(--line,#E3EAF3);--fw_tx:var(--tx,#16233A);--fw_mu:var(--mut,#6B7A90);--fw_ac:var(--ac,#1E6B48);background:var(--fw_bg);border:1px solid var(--fw_ln);border-radius:28px;padding:16px 14px;margin:0 0 16px;box-shadow:0 18px 40px rgba(20,60,110,.08)}
+.fw_top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 6px 12px}
+.fw_top h3{margin:0;display:flex;align-items:center;gap:8px;font-size:19px;font-weight:800;color:var(--fw_tx)}
+.fw_top h3 svg{width:22px;height:22px;fill:none;stroke:var(--fw_ac);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fw_top span{font-size:13px;color:var(--fw_mu)}
+.fw_cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.fw_col{background:var(--fw_in);border:1px solid var(--fw_ln);border-radius:22px;padding:12px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.fw_h{display:flex;align-items:center;gap:8px;padding:2px 4px}
+.fw_h b{flex:1;font-size:15px;color:var(--fw_tx)}
+.fw_n{min-width:30px;padding:2px 10px;border-radius:999px;border:1px solid var(--fw_ln);background:var(--fw_bg);font-weight:800;font-size:13px;text-align:center;color:var(--fw_tx)}
+.fw_dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;margin-inline-end:6px;vertical-align:middle}
+.fw_h .fw_dot{width:12px;height:12px;margin:0;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 18%,transparent)}
+.fw_g{background:#8A9A93;color:#8A9A93}.fw_o{background:#E8963A;color:#E8963A}.fw_ok{background:#2FAE6E;color:#2FAE6E}
+.fw_c{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center;background:var(--fw_bg);border:1px solid var(--fw_ln);border-radius:18px;padding:12px;transition:transform .15s,box-shadow .15s}
+.fw_c:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(20,60,110,.08)}
+.fw_cu{border-inline-start:4px solid #E8963A}.fw_late{border-inline-start-color:var(--r,#C0392B)}.fw_cp{border-inline-start:4px solid #2FAE6E}
+.fw_av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;grid-row:span 2}
+.fw_i{min-width:0}.fw_i b{display:block;font-size:15px;color:var(--fw_tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fw_i small{display:block;font-size:12.5px;color:var(--fw_mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fw_a{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:6px}
+.fw_st{font-size:13px;font-weight:700;color:var(--fw_mu)}.fw_bad{color:var(--r,#C0392B)}.fw_good{color:#1F8A55}
+.fw_bs{display:flex;gap:6px}
+.fw_btn{height:auto;min-height:36px;padding:6px 14px;border:0;border-radius:999px;background:color-mix(in srgb,var(--fw_ac) 14%,transparent);color:var(--fw_ac);font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;transition:transform .12s}
+.fw_btn:active{transform:scale(.95)}.fw_wa{background:#DDF6E7;color:#0B7A3E}.fw_pay{background:var(--fw_ac);color:#fff}
+.fw_more{border:0;background:none;color:var(--fw_ac);font:inherit;font-weight:800;font-size:13.5px;padding:4px;cursor:pointer;align-self:center}
+.fw_e{padding:16px 8px;text-align:center;color:var(--fw_mu);font-size:13.5px}
+@media (max-width:899px){.fw_cols{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -14px;padding:0 14px 6px;scrollbar-width:none}.fw_cols::-webkit-scrollbar{display:none}.fw_col{flex:0 0 86%;scroll-snap-align:start}}
+@media screen{html[data-th=dark] .fw{--fw_bg:rgba(10,46,34,.75);--fw_in:rgba(5,26,19,.6);--fw_ln:rgba(80,240,190,.22);box-shadow:0 10px 28px rgba(0,8,20,.45)}html[data-th=dark] .fw_pay{color:#04140E}html[data-th=dark] .fw_wa{background:rgba(37,211,102,.16);color:#5BE39A}}
+@media print{.fw{display:none}}
+/* شريط التنقل العائم على الهاتف + شارة الفواتير */
+.fw_nb{position:absolute;top:0;inset-inline-start:calc(50% + 4px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#22B455;color:#fff;font-style:normal;font-size:10.5px;font-weight:800;line-height:18px;text-align:center;box-shadow:0 0 0 2px #0E2A21}
+.fw_nb[hidden]{display:none}
+@media screen and (max-width:899px){
+ body nav{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));padding:6px;gap:2px;border:0;border-radius:28px;background:#0E2A21;box-shadow:0 14px 34px rgba(4,24,16,.38)}
+ body nav button{position:relative;height:auto;min-height:56px;border-radius:22px;padding:8px 2px 7px;color:#C9DDD2;transition:background .2s,color .2s}
+ body nav button svg{flex:none;display:block;width:24px!important;height:24px!important;padding:0!important;background:none!important;fill:none!important;stroke:currentColor!important;stroke-width:1.9;opacity:1!important}
+ body nav button span{font-size:11px;margin-top:2px}
+ body nav button.on{background:#CDEFDD;color:#0E2A21}
+ body nav button.on svg{color:#0E2A21}
+ html[data-th=dark] body nav{background:rgba(4,22,15,.92);box-shadow:0 14px 34px rgba(0,0,0,.5),inset 0 0 0 1px rgba(80,240,190,.18)}
+ html[data-th=dark] body nav button.on,html[data-th=dark] body nav button.on svg{background:var(--ac)!important;color:#04140E!important}
+ html[data-th=dark] body nav button.on svg{background:none!important}
+ body{padding-bottom:104px}
+ #qfab{bottom:calc(94px + env(safe-area-inset-bottom))}
+}
+@media (min-width:900px){.fw_nb{position:static;margin-inline-start:auto;box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.fx_go *,.fx_go{animation:none!important}.fw_c,.fw_btn{transition:none}}
 </style>
 <script>
 (function(){
@@ -1632,6 +1693,46 @@ const _orig=lDash;
 const fmt=v=>{let n=Math.round(+v||0);return String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')};
 const BELL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
 window.fxGoUnpaid=function(){try{$("#ip").value="0"}catch(e){}go(2)};
+const RM=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}};
+// تحريك الأرقام والبطاقات مرة واحدة عند فتح لوحة القيادة (لا تتكرر مع كل مزامنة)
+function fxAnimate(root){
+ if(window.__fxShown||RM()){window.__fxShown=true;return}
+ window.__fxShown=true;
+ const card=root.querySelector('.fx_card'),fw=root.querySelector('.fw');
+ [card,fw].forEach(x=>x&&x.classList.add('fx_go'));
+ root.querySelectorAll('[data-fxn]').forEach(el=>{const to=+el.dataset.fxn||0,suf=el.dataset.fxp||'',t0=performance.now(),T=900;
+  const step=t=>{let k=Math.min(1,(t-t0)/T);k=1-Math.pow(1-k,3);el.textContent=fmt(to*k)+suf;if(k<1)requestAnimationFrame(step)};el.textContent='0'+suf;requestAnimationFrame(step)});
+}
+// سير الجولة: بانتظار القراءة ← غير مؤداة ← مؤداة
+const AV=['#DCEFE4','#E7E1F5','#F6E6CF','#DDE9F6','#F5DCDC','#E3F0D2'],AVT=['#1E6B48','#5B45A0','#8A5A12','#2A5C8F','#9B3434','#4E6B1E'];
+const ini=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('');
+const av=s=>`<span class="fw_av" style="background:${AV[s.id%6]};color:${AVT[s.id%6]}">${esc(ini(s.name))}</span>`;
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const days=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+window.fwRead=function(id){qkOpen();qkPick(id);setTimeout(()=>{try{$("#qk_n").focus()}catch(e){}},80)};
+window.fwPay=function(id){payAsk([id])};
+window.fwAll=function(k){if(k==0){go(1);try{$("#rf").value="0";lReads()}catch(e){}}else{try{$("#iy").value=Y;$("#ir").value=R;$("#ip").value=k==1?"0":"1"}catch(e){}go(2)}};
+function fwBoard(){
+ const ed=can('ed'),wa=typeof waInv==='function',LIM=5,td=today(),rn=RN[R].split(' (')[0];
+ const wait=D.subs.filter(s=>!D.reads[key(s.id,Y,R)]);
+ const cur=D.invs.filter(i=>i.y==Y&&i.r==R&&SB(i.s));
+ const un=cur.filter(i=>!i.paid).sort((a,b)=>String(a.date).localeCompare(String(b.date))||a.id-b.id);
+ const pd=cur.filter(i=>i.paid).sort((a,b)=>String(b.pd||'').localeCompare(String(a.pd||''))||b.id-a.id);
+ const head=(c,t,n)=>`<div class="fw_h"><i class="fw_dot ${c}"></i><b>${t}</b><span class="fw_n">${n}</span></div>`;
+ const more=(n,k)=>n>LIM?`<button type="button" class="fw_more" onclick="fwAll(${k})">عرض الكل (${n}) ←</button>`:'';
+ const empty=t=>`<div class="fw_e">${t}</div>`;
+ const cW=wait.slice(0,LIM).map(s=>{const pv=prevNew(s.id,Y,R);return `<div class="fw_c">${av(s)}<div class="fw_i"><b>${esc(s.name)}</b><small><i class="fw_dot fw_g"></i>العداد ${esc(s.meter)}${pv!=null?` · آخر قراءة <bdi dir="ltr">${pv}</bdi>`:''}</small></div><div class="fw_a"><span class="fw_st">بانتظار القراءة</span>${ed?`<button type="button" class="fw_btn" onclick="fwRead(${s.id})">✎ تسجيل</button>`:''}</div></div>`}).join('');
+ const cU=un.slice(0,LIM).map(i=>{const s=SB(i.s),dd=due(i),lt=days(dd,td);return `<div class="fw_c fw_cu${lt>0?' fw_late':''}">${av(s)}<div class="fw_i"><b>${esc(s.name)}</b><small><i class="fw_dot fw_o"></i>${i.num} · <bdi dir="ltr">${n2(tot(i))}</bdi> د.م</small></div><div class="fw_a"><span class="fw_st ${lt>0?'fw_bad':''}">${lt>0?`⏱ متأخرة ${lt} يوم`:`تستحق ${dd}`}</span><span class="fw_bs">${wa?`<button type="button" class="fw_btn fw_wa" onclick="waInv(${i.id})" aria-label="واتساب">واتساب</button>`:''}${ed?`<button type="button" class="fw_btn fw_pay" onclick="fwPay(${i.id})">✓ دفع</button>`:''}</span></div></div>`}).join('');
+ const cP=pd.slice(0,LIM).map(i=>{const s=SB(i.s);return `<div class="fw_c fw_cp">${av(s)}<div class="fw_i"><b>${esc(s.name)}</b><small><i class="fw_dot fw_ok"></i><bdi dir="ltr">${n2(tot(i))}</bdi> د.م · ${i.pw=='b'?'بنكي':'نقداً'}</small></div><div class="fw_a"><span class="fw_st fw_good">✓ ${i.pd||''}</span>${wa?`<button type="button" class="fw_btn fw_wa" onclick="waInv(${i.id})">واتساب</button>`:''}</div></div>`}).join('');
+ return `<section class="fw"><div class="fw_top"><h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>سير الجولة</h3><span>${rn} — ${Y}</span></div>
+ <div class="fw_cols">
+  <div class="fw_col" style="--d:0ms">${head('fw_g','بانتظار القراءة',wait.length)}${cW||empty('✔ كل القراءات مسجّلة')}${more(wait.length,0)}</div>
+  <div class="fw_col" style="--d:90ms">${head('fw_o','غير مؤداة',un.length)}${cU||empty('لا توجد فواتير غير مؤداة')}${more(un.length,1)}</div>
+  <div class="fw_col" style="--d:180ms">${head('fw_ok','مؤداة',pd.length)}${cP||empty('لا توجد أداءات بعد')}${more(pd.length,2)}</div>
+ </div></section>`}
+// شارة الفواتير غير المؤداة في شريط التنقل
+function fwBadge(){try{const n=new Set(D.invs.filter(i=>!i.paid&&SB(i.s)).map(i=>i.s)).size,b=document.querySelector('nav button[data-t="2"]');if(!b)return;let e=b.querySelector('.fw_nb');if(!e){e=document.createElement('i');e.className='fw_nb';b.appendChild(e)}e.textContent=n>99?'99+':n;e.hidden=!n}catch(e){}}
+window.fwBadge=fwBadge;
 lDash=function(){
  _orig.apply(this,arguments);
  try{
@@ -1647,7 +1748,8 @@ lDash=function(){
   let ok=0,cn=0;D.subs.forEach(s=>{let v=D.reads[key(s.id,Y,R)];if(v){ok++;cn+=Math.max(0,v.n-v.o)}});
   let C=[+D.cfg.oc||0,+D.cfg.ob||0];try{evs().forEach(x=>{let f=eff(x);C[0]+=f[0];C[1]+=f[1]})}catch(e){}
   const mx=Math.max(1,...mon);
-  const bars=mon.map((v,m)=>`<div class="fx_bar${m===mIdx?' fx_c':''}" title="${MO[m]}: ${fmt(v)} د.م"><i style="height:${Math.max(4,v/mx*100)}%"></i><small>${MO[m].slice(0,3)}</small></div>`).join('');
+  const mk=cy+'-'+String(cm+1).padStart(2,'0'),nPay=D.invs.filter(i=>i.paid&&String(i.pd||'').slice(0,7)===mk).length,nPd=inv.filter(i=>i.paid).length;
+  const bars=mon.map((v,m)=>`<div class="fx_bar${m===mIdx?' fx_c':''}" title="${MO[m]}: ${fmt(v)} د.م"><i style="height:${Math.max(4,v/mx*100)}%;--d:${m*45}ms"></i><small>${MO[m].slice(0,3)}</small></div>`).join('');
   const nm=(D.cfg.short||'جمعية الفتح');
   const dt=now.toLocaleDateString(typeof isFR==='function'&&isFR()?'fr-FR':'ar-MA',{day:'numeric',month:'long',year:'numeric'});
   const B=v=>`<bdi dir="ltr">${fmt(v)}</bdi>`;
@@ -1656,10 +1758,10 @@ lDash=function(){
     <button class="fx_bell" type="button" onclick="fxGoUnpaid()" title="المتأخرون عن الأداء" aria-label="المتأخرون عن الأداء">${BELL}${late?`<b>${late}</b>`:''}</button></div>
    <div class="fx_wrap">
     <div class="fx_g">
-     <button type="button" class="fx_k fx_p" onclick="go(2)"><span>المداخيل — ${MO[mIdx]}</span><b><bdi dir="ltr">${fmt(mon[mIdx])}</bdi><em>د.م</em></b></button>
-     <button type="button" class="fx_k" onclick="go(2)"><span>الاستخلاص ${Yn}</span><b><bdi dir="ltr">${pc}%</bdi></b></button>
-     <button type="button" class="fx_k" onclick="go(0)"><span>المشتركون</span><b><bdi dir="ltr">${fmt(N)}</bdi></b></button>
-     <button type="button" class="fx_k fx_d" onclick="fxGoUnpaid()"><span>الديون</span><b><bdi dir="ltr">${fmt(ut)}</bdi><em>د.م</em></b></button>
+     <button type="button" class="fx_k fx_p" onclick="go(2)"><span>المداخيل — ${MO[mIdx]}</span><b><bdi dir="ltr" data-fxn="${Math.round(mon[mIdx])}">${fmt(mon[mIdx])}</bdi><em>د.م</em></b><i class="fx_pl">${nPay} أداء</i></button>
+     <button type="button" class="fx_k" onclick="go(2)"><span>الاستخلاص ${Yn}</span><b><bdi dir="ltr" data-fxn="${pc}" data-fxp="%">${pc}%</bdi></b><i class="fx_pl"><bdi dir="ltr">${nPd}/${inv.length}</bdi></i></button>
+     <button type="button" class="fx_k" onclick="go(0)"><span>المشتركون</span><b><bdi dir="ltr" data-fxn="${N}">${fmt(N)}</bdi></b><i class="fx_pl">${ok} قراءة</i></button>
+     <button type="button" class="fx_k fx_d" onclick="fxGoUnpaid()"><span>الديون</span><b><bdi dir="ltr" data-fxn="${Math.round(ut)}">${fmt(ut)}</bdi><em>د.م</em></b><i class="fx_pl fx_plr">${late} مشترك</i></button>
     </div>
     <div class="fx_ch"><div class="fx_t"><b>المداخيل الشهرية</b><span>${Yn}</span></div><div class="fx_bars">${bars}</div></div>
    </div>
@@ -1671,9 +1773,15 @@ lDash=function(){
   dk.querySelectorAll('.stats,.gd-kp').forEach(x=>x.remove());
   const ds=dk.querySelector('.dsub');
   if(ds)ds.remove();
-  dk.insertAdjacentHTML('afterbegin',card);
+  dk.insertAdjacentHTML('afterbegin',card+fwBoard());
+  fxAnimate(dk);
+  fwBadge();
  }catch(e){console.error('fx dash',e)}
 };
+const _go=go;go=function(i){if(i!=5)window.__fxShown=false;return _go.apply(this,arguments)};
+const _pg=payGo;payGo=function(){const r=_pg.apply(this,arguments);try{if(tab==5)lDash();fwBadge()}catch(e){}return r};
+const _rd=render;render=function(){const r=_rd.apply(this,arguments);fwBadge();return r};
+try{if(tab==5)lDash();fwBadge()}catch(e){}
 })();
 </script>
 

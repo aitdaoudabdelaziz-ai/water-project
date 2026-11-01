@@ -26,9 +26,9 @@ test('F05-N2 a user with "subscribers only" cannot open invoices or settings', a
   await page.selectOption('#ur', 'u'); await page.fill('#uu', 'clerk'); await page.fill('#up', 'abcd1234');
   await page.evaluate(() => $('#upp').querySelectorAll('input').forEach(i => i.checked = i.dataset.k === 'v0'));
   await page.getByRole('button', { name: 'إضافة مستخدم' }).click();
-  await page.getByRole('button', { name: 'خروج' }).click();
+  await page.getByRole('button', { name: 'خروج' }).click(); await page.locator('#lk').waitFor({ state: 'visible' }); await page.waitForTimeout(150);
   await page.fill('#lu', 'clerk'); await page.fill('#lp', 'abcd1234'); await page.getByRole('button', { name: 'دخول' }).click();
-  await page.locator('#lk').waitFor({ state: 'hidden' });
+  await page.locator('#lk').waitFor({ state: 'hidden', timeout: 8000 }).catch(async () => { throw new Error('login failed, alerts: ' + log.alerts.join(' | ') + ' users: ' + await page.evaluate(() => JSON.stringify(D.users.map(u => [u.u, u.r, u.p])))) });
   assert.equal(await page.locator('nav button[data-t="2"]').isHidden(), true);
   assert.equal(await page.locator('nav button[data-t="4"]').isHidden(), true);
   await page.evaluate(() => go(2)); assert.match(log.alerts.join(), /ليست لديك صلاحية/);

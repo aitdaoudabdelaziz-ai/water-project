@@ -10,6 +10,7 @@ for (const [w, h] of [[390, 844], [1440, 900]]) for (const th of ['light', 'dark
     await page.evaluate(() => { payAsk([D.invs[0].id]); payGo('c'); });
     await page.evaluate(t => { document.documentElement.dataset.th = t; go(5); }, th);
     await page.locator('.fx_card').waitFor();
+    await page.waitForTimeout(1200); // count-up animation
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
     assert.ok(sw <= w, 'scrollWidth ' + sw);
     const t = await page.locator('.fx_card').innerText();

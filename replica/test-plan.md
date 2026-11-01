@@ -20,3 +20,4 @@ Manual only (not automatable here): real Firebase sync between devices, Excel im
 | F10 Demo | H1 fake data 390/1440, real data untouched · H2 reset | f10-demo |
 | F11 WhatsApp | H1 reminder · H2 receipt · H3 quick screen · N1 no phone · E1 number formats | f11-whatsapp |
 | F12 Built-in cloud | H1 fresh device → login (web + app) · H2 local stays local | f12-default-cloud |
+| F13 Round flow board | H1 columns · H2 pay from board · H3 record from board · E1 count-up/no replay · E2 view-only user | f13-flow-board |
