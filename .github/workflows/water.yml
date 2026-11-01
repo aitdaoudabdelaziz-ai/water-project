@@ -59,6 +59,11 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: write
+    concurrency: apk-signing
+    env:
+      KEYPASS: ${{ secrets.APK_KEY_PASS }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -82,14 +87,47 @@ jobs:
           cp native/*.java $J/
           cp -r res/* android/app/src/main/res/
           npx cap sync android
+          V=$(node -p "require('./package.json').version")
+          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"$V\"/" android/app/build.gradle
+          grep -E "versionCode|versionName" android/app/build.gradle
+          echo "APKV=$V" >> $GITHUB_ENV
+      # Fixed signing key: kept in the repo ENCRYPTED with the APK_KEY_PASS secret.
+      # Created automatically on the first run that has the secret. Without the secret: debug build as before.
+      - name: Signing key
+        if: env.KEYPASS != ''
+        run: |
+          E=water/android-app/signing/release.jks.enc
+          K=$RUNNER_TEMP/release.jks
+          if [ -f "$E" ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$E" -out "$K" -pass env:KEYPASS
+          else
+            keytool -genkeypair -keystore "$K" -storetype PKCS12 -alias alfath -keyalg RSA -keysize 4096 -validity 36500 \
+              -storepass:env KEYPASS -keypass:env KEYPASS -dname "CN=AlFath Water, O=Association AlFath, C=MA"
+            mkdir -p "$(dirname "$E")"
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "$K" -out "$E" -pass env:KEYPASS
+            git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$E"; git commit -m "Add encrypted APK signing key"; git pull --rebase; git push
+          fi
+          keytool -list -keystore "$K" -storepass:env KEYPASS | grep -i fingerprint
+          echo "KS=$K" >> $GITHUB_ENV
       - name: Build APK
         working-directory: water/android-app/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../../AlFath-Water-1.0.0.apk
+          OUT=../../AlFath-Water-$APKV.apk
+          if [ -n "$KS" ]; then
+            ./gradlew assembleRelease --no-daemon
+            BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+            $BT/zipalign -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk /tmp/aligned.apk
+            $BT/apksigner sign --ks "$KS" --ks-key-alias alfath --ks-pass env:KEYPASS --key-pass env:KEYPASS --out $OUT /tmp/aligned.apk
+            $BT/apksigner verify --print-certs $OUT | head -3
+          else
+            echo "::warning::APK_KEY_PASS secret not set - debug signature (changes every build)"
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk $OUT
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: AlFath-Water-Android
-          path: water/AlFath-Water-1.0.0.apk
+          path: water/AlFath-Water-*.apk
           if-no-files-found: error
