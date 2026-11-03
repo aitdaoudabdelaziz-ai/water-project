@@ -102,6 +102,14 @@ textarea.in{min-height:76px;resize:vertical}
 .paper .pf{margin-top:26px;padding-top:8px;border-top:1.5px solid var(--pc);text-align:center;white-space:pre-line;font-size:10px;color:#666;line-height:1.5}
 .tablewrap{overflow-x:auto}
 .mv-in{color:var(--green)}.mv-out{color:var(--red)}
+.kpi .d{font-size:11.5px;color:var(--muted);margin-top:4px;font-weight:600}.kpi .d.up{color:var(--green)}.kpi .d.down{color:var(--red)}.kpi .d span{font-weight:500;color:var(--muted)}
+.dgrid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px}@media(min-width:760px){.dgrid{grid-template-columns:1fr 1fr}.dwide{grid-column:1/-1}}
+.ct{font-weight:800;font-size:14px;margin-bottom:10px}.ct span{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:2px}
+.mchart{width:100%;height:auto;display:block}.mchart .gl{stroke:#ece9e1;stroke-width:1}.mchart .bl{stroke:#c9c4b8;stroke-width:1}.mchart .ax{font-size:10.5px;fill:var(--muted);font-family:inherit}.mchart .bar{fill:#7fb3ae}.mchart .bar.cur{fill:var(--acc)}.mchart .hit:hover .bar{fill:var(--acc)}
+.hb{display:flex;flex-direction:column;gap:9px}.hbr{display:grid;grid-template-columns:minmax(80px,38%) 1fr auto;gap:8px;align-items:center;font-size:13px;cursor:default}.hl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ht{height:12px;background:#f1eee7;border-radius:4px;overflow:hidden}.hf{height:100%;background:var(--acc);border-radius:0 4px 4px 0}.hv{font-variant-numeric:tabular-nums;font-weight:700;min-width:44px;text-align:right}.hbr:hover .hf{background:#0b4744}
+.empty.sm{padding:18px 12px;font-size:13px}
+.tip{position:fixed;z-index:70;background:var(--ink);color:#fff;font-size:12.5px;padding:7px 10px;border-radius:8px;pointer-events:none;max-width:260px;box-shadow:0 6px 18px rgba(0,0,0,.2);display:none}
+.dt{margin-top:8px;font-size:12.5px}.dt summary{cursor:pointer;color:var(--acc);font-weight:700}.dt table{width:100%;border-collapse:collapse;margin-top:6px;font-variant-numeric:tabular-nums}.dt th,.dt td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right}.dt th:first-child,.dt td:first-child{text-align:left}
 #print{display:none}
 @media print{@page{size:A4;margin:12mm}#print .pw{width:100%;border-collapse:collapse}#print .pw>tbody>tr>td,#print .pw>tfoot>tr>td{padding:0;border:0;background:none}body{background:#fff}body>*:not(#print){display:none!important}#print{display:block}#print .paper{border:0;box-shadow:none;padding:0;font-size:11.5pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}#print .pf{position:fixed;bottom:0;left:0;right:0;margin:0;background:#fff}#print .paper tr{break-inside:avoid}#print .ptot,#print .words{break-inside:avoid}}
 </style>
@@ -213,7 +221,7 @@ const entete=()=>{const c=cfg();return(c.entete||'').trim()||enteteDefault(c)};
 const pied=()=>{const c=cfg();return(c.pied||'').trim()||piedDefault(c)};
 
 /* ---------- Navigation & rendu ---------- */
-const UI={qP:'',fP:'tous',qF:'',fF:'toutes',qC:'',mP:''};
+const UI={per:'mois',qP:'',fP:'tous',qF:'',fF:'toutes',qC:'',mP:''};
 let view=(location.hash||'#accueil').slice(1);
 function go(v){view=v;if(location.hash!=='#'+v)location.hash=v;render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',()=>{const v=location.hash.slice(1)||'accueil';if(v!==view){view=v;render()}});
@@ -231,27 +239,83 @@ function render(){
 const fab=(fn,label)=>`<button class="fab" onclick="${fn}" aria-label="${label}">+</button>`;
 const arr=o=>Object.entries(o).map(([id,v])=>({id,...v}));
 
+const MOIS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const MOISL=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function perRange(k){const d=new Date(),y=d.getFullYear(),m=d.getMonth();const rg=(Y,M,n)=>[ds(new Date(Y,M,1)),ds(new Date(Y,M+n,0))];
+  if(k==='mprec')return{cur:rg(y,m-1,1),prev:rg(y,m-2,1),label:MOISL[(m+11)%12].toLowerCase(),prevLabel:'mois précédent'};
+  if(k==='trim'){const q=Math.floor(m/3)*3;return{cur:rg(y,q,3),prev:rg(y,q-3,3),label:'ce trimestre',prevLabel:'trimestre précédent'}}
+  if(k==='annee')return{cur:rg(y,0,12),prev:rg(y-1,0,12),label:String(y),prevLabel:String(y-1)};
+  if(k==='tout')return{cur:null,prev:null,label:'depuis le début'};
+  return{cur:rg(y,m,1),prev:rg(y,m-1,1),label:'ce mois',prevLabel:'mois dernier'}}
+const kfmt=n=>{n=Math.abs(n);return n>=1e6?fmt(n/1e6,1).replace(',0','')+' M':n>=1e3?fmt(n/1e3,n>=1e4?0:1).replace(',0','')+' k':fmt(n,0)};
+function monthChart(facts){
+  const d=new Date(),ms=[];for(let i=11;i>=0;i--){const x=new Date(d.getFullYear(),d.getMonth()-i,1);ms.push({k:ds(x).slice(0,7),y:x.getFullYear(),m:x.getMonth(),v:0,e:0,n:0})}
+  const idx={};ms.forEach((x,i)=>idx[x.k]=i);
+  facts.forEach(f=>{const i=idx[(f.date||'').slice(0,7)];if(i==null)return;const t=calc(f).ttc;ms[i].v+=t;ms[i].e+=Math.min(num(f.paye),t);ms[i].n++});
+  const max=Math.max(...ms.map(x=>x.v));if(!max)return'<div class="empty sm">Pas encore de factures sur les 12 derniers mois.</div>';
+  const step=[1,2,2.5,5,10].map(s=>s*Math.pow(10,Math.floor(Math.log10(max/3)))).find(s=>max/s<=4)||max/3;const top=Math.ceil(max/step)*step;
+  const sm=innerWidth<600,W=sm?360:640,H=sm?190:210,pl=sm?34:44,pb=24,pt=10,cw=(W-pl-6)/12,bw=Math.min(30,cw*.6),sy=v=>pt+(H-pt-pb)*(1-v/top);
+  let g='';for(let v=0;v<=top+1e-9;v+=step){const yy=sy(v);g+=`<line x1="${pl}" x2="${W-4}" y1="${yy}" y2="${yy}" class="gl"/><text x="${pl-6}" y="${yy+3.5}" text-anchor="end" class="ax">${kfmt(v)}</text>`}
+  const bars=ms.map((x,i)=>{const cx=pl+cw*i+cw/2,y0=sy(0),y1=sy(x.v),h=y0-y1,r=Math.min(4,h);const cur=i===11;
+    const path=h>0?`<path d="M${cx-bw/2},${y0}V${y1+r}Q${cx-bw/2},${y1} ${cx-bw/2+r},${y1}H${cx+bw/2-r}Q${cx+bw/2},${y1} ${cx+bw/2},${y1+r}V${y0}Z" class="bar${cur?' cur':''}"/>`:'';
+    const tip=`${MOISL[x.m]} ${x.y} — CA ${money(x.v)} · ${x.n} facture(s) · encaissé ${money(x.e)}`;
+    return `<g class="hit" data-tip="${esc(tip)}"><rect x="${pl+cw*i}" y="${pt}" width="${cw}" height="${H-pt}" fill="transparent"/>${path}${!sm||i%2===1?`<text x="${cx}" y="${H-7}" text-anchor="middle" class="ax">${MOIS[x.m]}</text>`:''}</g>`}).join('');
+  const tbl=`<details class="dt"><summary>Voir les chiffres</summary><table><tr><th>Mois</th><th>Factures</th><th>CA TTC</th><th>Encaissé</th></tr>${ms.slice().reverse().map(x=>`<tr><td>${MOISL[x.m]} ${x.y}</td><td>${x.n}</td><td>${fmt(x.v)}</td><td>${fmt(x.e)}</td></tr>`).join('')}</table></details>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="mchart" role="img" aria-label="Chiffre d’affaires mensuel">${g}<line x1="${pl}" x2="${W-4}" y1="${sy(0)}" y2="${sy(0)}" class="bl"/>${bars}</svg>${tbl}`}
+function hbars(items,empty,keepZero){items=items.filter(x=>keepZero||x.value>0);if(!items.length)return`<div class="empty sm">${empty}</div>`;const max=Math.max(...items.map(x=>x.value))||1;
+  return `<div class="hb">${items.map(x=>`<div class="hbr hit" data-tip="${esc(x.tip||'')}"><div class="hl">${esc(x.label)}</div><div class="ht"><div class="hf" style="width:${Math.max(x.value>0?2:0,x.value/max*100)}%"></div></div><div class="hv">${kfmt(x.value)}</div></div>`).join('')}</div>`}
+let tipEl=null;
+function showTip(el,x,y){if(!tipEl){tipEl=document.createElement('div');tipEl.className='tip';document.body.appendChild(tipEl)}tipEl.textContent=el.dataset.tip;tipEl.style.display='block';const w=tipEl.offsetWidth,h=tipEl.offsetHeight;tipEl.style.left=Math.max(6,Math.min(innerWidth-w-6,x-w/2))+'px';tipEl.style.top=Math.max(6,y-h-12)+'px'}
+document.addEventListener('pointermove',e=>{const el=e.target.closest&&e.target.closest('.hit[data-tip]');if(el&&el.dataset.tip)showTip(el,e.clientX,e.clientY);else if(tipEl&&e.pointerType==='mouse')tipEl.style.display='none'});
+document.addEventListener('pointerdown',e=>{const el=e.target.closest&&e.target.closest('.hit[data-tip]');if(el&&el.dataset.tip)showTip(el,e.clientX,e.clientY);else if(tipEl)tipEl.style.display='none'});
+addEventListener('scroll',()=>{if(tipEl)tipEl.style.display='none'},{passive:true});
 const V={
 accueil(){
-  const ym=today().slice(0,7);let ca=0,imp=0,nImp=0;
-  arr(S.factures).filter(f=>f.type==='facture').forEach(f=>{const t=calc(f).ttc;if((f.date||'').startsWith(ym))ca+=t;const st=statut(f);if(st.k!=='payee'){imp+=t-num(f.paye);nImp++}});
-  const prods=arr(S.produits);let val=0;prods.forEach(p=>val+=num(p.stock)*num(p.pa));
+  const R=perRange(UI.per),inR=(f,r)=>!r||((f.date||'')>=r[0]&&(f.date||'')<=r[1]);
+  const facts=arr(S.factures).filter(f=>f.type==='facture');
+  const cur=facts.filter(f=>inR(f,R.cur)),prev=R.prev?facts.filter(f=>inR(f,R.prev)):null;
+  const agg=list=>{let ttc=0,ht=0,cout=0,enc=0;list.forEach(f=>{const t=calc(f);ttc+=t.ttc;ht+=t.ht;enc+=Math.min(num(f.paye),t.ttc);(f.lignes||[]).forEach(l=>{const p=S.produits[l.pid];cout+=num(l.qte)*num(l.pa!=null?l.pa:p?p.pa:0)})});return{ttc,ht,cout,marge:ht-cout,enc,n:list.length}};
+  const A=agg(cur),B=prev?agg(prev):null;
+  let imp=0,nImp=0;const ages=[0,0,0,0,0],T=today();
+  facts.forEach(f=>{const r=calc(f).ttc-num(f.paye);if(r>0.005){imp+=r;nImp++;const d=Math.floor((new Date(T)-new Date(f.echeance||f.date||T))/864e5);ages[d<0?0:d<=30?1:d<=60?2:d<=90?3:4]+=r}});
+  const prods=arr(S.produits);let val=0;const cats={};prods.forEach(p=>{const v=Math.max(0,num(p.stock))*num(p.pa);val+=v;const k=p.cat||'Sans catégorie';cats[k]=(cats[k]||0)+v});
   const alerts=prods.filter(p=>num(p.stock)<=num(p.seuil)).sort((a,b)=>num(a.stock)-num(b.stock));
-  const last=arr(S.factures).sort((a,b)=>(b.cree||0)-(a.cree||0)).slice(0,5);
+  const rupt=alerts.filter(p=>num(p.stock)<=0).length;
+  const bl=arr(S.factures).filter(f=>f.type==='bl'&&!f.facture&&!f.viaFact);
+  const tp={},tc={};cur.forEach(f=>{(f.lignes||[]).forEach(l=>{const k=l.pid||('libre:'+l.des);const v=num(l.qte)*num(l.pu)*(1-num(l.remise)/100);if(!tp[k])tp[k]={label:l.des||'—',value:0,q:0};tp[k].value+=v;tp[k].q+=num(l.qte)});const ck=f.clientId||f.client&&f.client.nom;if(!tc[ck])tc[ck]={label:f.client&&f.client.nom||'—',value:0,n:0};tc[ck].value+=calc(f).ttc;tc[ck].n++});
+  const top=(o,n)=>Object.values(o).sort((a,b)=>b.value-a.value).slice(0,n);
+  const last=arr(S.factures).sort((a,b)=>(b.cree||0)-(a.cree||0)).slice(0,6);
   const first=!prods.length&&!arr(S.factures).length;
+  const chip=(k,t)=>`<button class="chip ${UI.per===k?'on':''}" onclick="UI.per='${k}';render()">${t}</button>`;
+  const delta=(a,b)=>{if(!B)return'';if(!b)return a?'<div class="d">nouveau</div>':'';const pc=(a-b)/Math.abs(b)*100;return`<div class="d ${pc>=0?'up':'down'}">${pc>=0?'▲':'▼'} ${fmt(Math.abs(pc),0)} % <span>vs ${R.prevLabel}</span></div>`};
+  const kpi=(l,v,extra='',cls='')=>`<div class="kpi ${cls}"><div class="l">${l}</div><div class="v">${v}</div>${extra}</div>`;
+  const taux=A.ht?A.marge/A.ht*100:0;
   return `<h2>Tableau de bord</h2>
-  ${first?`<div class="card" style="margin-bottom:14px"><b>Bienvenue !</b><div class="hint" style="font-size:13.5px;margin:6px 0 10px">Commencez par renseigner votre entreprise et votre logo : ils apparaîtront dans l’en-tête et le pied de page de vos factures.</div><div class="row"><button class="btn sm" onclick="go('reglages')">Mon entreprise &amp; logo</button><button class="btn sm sec" onclick="produitForm()">Ajouter un produit</button></div></div>`:''}
+  ${first?`<div class="card" style="margin-bottom:14px"><b>Bienvenue !</b><div class="hint" style="font-size:13.5px;margin:6px 0 10px">Commencez par renseigner votre entreprise et votre logo : ils apparaîtront dans l’en-tête et le pied de page de vos documents.</div><div class="row"><button class="btn sm" onclick="go('reglages')">Mon entreprise &amp; logo</button><button class="btn sm sec" onclick="produitForm()">Ajouter un produit</button></div></div>`:''}
+  <div class="chips">${chip('mois','Ce mois')}${chip('mprec','Mois dernier')}${chip('trim','Ce trimestre')}${chip('annee','Cette année')}${chip('tout','Tout')}</div>
   <div class="kpis">
-    <div class="kpi"><div class="l">CA du mois (TTC)</div><div class="v">${money(ca)}</div></div>
-    <div class="kpi ${imp>0?'red':''}"><div class="l">Impayés (${nImp})</div><div class="v">${money(imp)}</div></div>
-    <div class="kpi"><div class="l">Valeur du stock (achat)</div><div class="v">${money(val)}</div></div>
-    <div class="kpi ${alerts.length?'warn':''}"><div class="l">Alertes stock</div><div class="v">${alerts.length}</div></div>
+    ${kpi('Chiffre d’affaires TTC',money(A.ttc),delta(A.ttc,B&&B.ttc))}
+    ${kpi('Marge brute HT',money(A.marge),`<div class="d">${A.ht?fmt(taux,1)+' % du CA HT':'—'}</div>`)}
+    ${kpi('Encaissé',money(A.enc),`<div class="d">${A.ttc?fmt(A.enc/A.ttc*100,0)+' % du CA':'—'}</div>`)}
+    ${kpi('Factures',fq(A.n),`<div class="d">Panier moyen ${A.n?money(A.ttc/A.n):'—'}</div>`)}
+    ${kpi(`Impayés (${nImp})`,money(imp),`<div class="d">${money(ages[2]+ages[3]+ages[4])} à plus de 30 j</div>`,imp>0?'red':'')}
+    ${kpi('Valeur du stock',money(val),`<div class="d">${prods.length} produit(s)</div>`)}
+    ${kpi('Alertes stock',fq(alerts.length),`<div class="d">${rupt} en rupture</div>`,alerts.length?'warn':'')}
+    ${kpi('BL à facturer',fq(bl.length),`<div class="d">${money(bl.reduce((s,f)=>s+calc(f).ttc,0))}</div>`,bl.length?'warn':'')}
   </div>
-  <div class="row" style="margin-top:14px"><button class="btn" onclick="factureForm(null,'facture')">+ Nouvelle facture</button><button class="btn sec" onclick="factureForm(null,'devis')">+ Devis</button><button class="btn sec" onclick="factureForm(null,'bl')">+ Bon de livraison</button><button class="btn sec" onclick="mouvementForm()">± Mouvement de stock</button></div>
+  <div class="row" style="margin-top:14px"><button class="btn" onclick="factureForm(null,'facture')">+ Facture</button><button class="btn sec" onclick="factureForm(null,'devis')">+ Devis</button><button class="btn sec" onclick="factureForm(null,'bl')">+ Bon de livraison</button><button class="btn sec" onclick="mouvementForm()">± Stock</button></div>
+  <div class="dgrid">
+    <div class="card dwide"><div class="ct">Chiffre d’affaires TTC — 12 derniers mois</div>${monthChart(facts)}</div>
+    <div class="card"><div class="ct">Meilleurs produits <span>${R.label} · CA HT</span></div>${hbars(top(tp,6).map(x=>({label:x.label,value:x.value,tip:x.label+' — '+money(x.value)+' · qté '+fq(x.q)})),'Aucune vente sur la période.')}</div>
+    <div class="card"><div class="ct">Meilleurs clients <span>${R.label} · CA TTC</span></div>${hbars(top(tc,6).map(x=>({label:x.label,value:x.value,tip:x.label+' — '+money(x.value)+' · '+x.n+' facture(s)'})),'Aucune facture sur la période.')}</div>
+    <div class="card"><div class="ct">Impayés par ancienneté <span>depuis l’échéance</span></div>${imp>0?hbars(['Non échu','0 – 30 jours','31 – 60 jours','61 – 90 jours','Plus de 90 jours'].map((l,i)=>({label:l,value:ages[i],tip:l+' — '+money(ages[i])})),'',true):'<div class="empty sm">Aucun impayé 🎉</div>'}</div>
+    <div class="card"><div class="ct">Valeur du stock par catégorie <span>prix d’achat</span></div>${hbars(Object.entries(cats).map(([k,v])=>({label:k,value:v,tip:k+' — '+money(v)})).sort((a,b)=>b.value-a.value).slice(0,6),'Aucun stock valorisé (renseignez les prix d’achat).')}</div>
+  </div>
   <h3>Stock bas</h3>
-  ${alerts.length?`<div class="list">${alerts.slice(0,8).map(p=>`<div class="item" onclick="produitForm('${p.id}')"><div class="main"><div class="t">${esc(p.nom)}</div><div class="s">Seuil : ${fq(p.seuil)} ${esc(p.unite||'')}</div></div><span class="badge ${num(p.stock)<=0?'red':'warn'}">${fq(p.stock)} ${esc(p.unite||'')}</span></div>`).join('')}</div>`:'<div class="empty">Aucun produit sous le seuil d’alerte.</div>'}
-  <h3>Dernières factures</h3>
-  ${last.length?`<div class="list">${last.map(fItem).join('')}</div>`:'<div class="empty">Aucune facture pour le moment.</div>'}`;
+  ${alerts.length?`<div class="list">${alerts.slice(0,8).map(p=>`<div class="item" onclick="produitForm('${p.id}')"><div class="main"><div class="t">${esc(p.nom)}</div><div class="s">Seuil : ${fq(p.seuil)} ${esc(p.unite||'')}</div></div><span class="badge ${num(p.stock)<=0?'red':'warn'}">${num(p.stock)<=0?'Rupture · ':''}${fq(p.stock)} ${esc(p.unite||'')}</span></div>`).join('')}</div>`:'<div class="empty">Aucun produit sous le seuil d’alerte.</div>'}
+  <h3>Derniers documents</h3>
+  ${last.length?`<div class="list">${last.map(fItem).join('')}</div>`:'<div class="empty">Aucun document pour le moment.</div>'}`;
 },
 produits(){
   const q=UI.qP.toLowerCase();
@@ -426,7 +490,7 @@ function renderLines(){
   updTot();
 }
 function setL(i,k,v){D.f.lignes[i][k]=k==='des'?v:num(v);if(k!=='des'){const l=D.f.lignes[i],h=$('#lh'+i);if(h&&!h.classList.contains('red'))h.textContent='Total ligne HT : '+money(num(l.qte)*num(l.pu)*(1-num(l.remise)/100))}if(k==='qte'&&D.f.lignes[i].pid){clearTimeout(setL.t);setL.t=setTimeout(()=>{const a=document.activeElement,idx=[...document.querySelectorAll('#lines input')].indexOf(a),pos=a&&a.selectionStart;renderLines();const n=document.querySelectorAll('#lines input')[idx];if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}},600)}updTot()}
-function pickProd(i,pid){const l=D.f.lignes[i];l.pid=pid;const p=S.produits[pid];if(p){l.des=p.nom;l.ref=p.ref||'';l.unite=p.unite||'';l.pu=num(p.pv);l.tva=num(p.tva)}else{l.ref=''}renderLines()}
+function pickProd(i,pid){const l=D.f.lignes[i];l.pid=pid;const p=S.produits[pid];if(p){l.des=p.nom;l.ref=p.ref||'';l.unite=p.unite||'';l.pa=num(p.pa);l.pu=num(p.pv);l.tva=num(p.tva)}else{l.ref=''}renderLines()}
 function addLine(){D.f.lignes.push({pid:'',ref:'',des:'',qte:1,pu:0,tva:cfg().tvaDef,remise:0});renderLines()}
 function rmLine(i){D.f.lignes.splice(i,1);renderLines()}
 function updTot(){if(!D||!$('#tot'))return;const t=calc(D.f);$('#tot').innerHTML=`${t.rem?`<div><span>Total brut HT</span><span>${money(t.brut)}</span></div><div><span>Remise</span><span>−${money(t.rem)}</span></div>`:''}<div><span>Total HT</span><span>${money(t.ht)}</span></div>${Object.keys(t.tvas).filter(k=>+k).map(k=>`<div><span>TVA ${k} %</span><span>${money(t.tvas[k])}</span></div>`).join('')}<div class="big"><span>Total TTC</span><span>${money(t.ttc)}</span></div>`}
