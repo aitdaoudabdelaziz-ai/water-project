@@ -1,0 +1,50 @@
+name: Stock - APK (Gestion de stock et facturation)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [stock-app]
+    paths:
+      - 'stock/**'
+      - '.github/workflows/stock-apk.yml'
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Prepare web app (PDF library bundled for offline use)
+        run: |
+          A=stock/android/app/src/main/assets
+          mkdir -p $A
+          cp stock/index.html $A/index.html
+          curl -fsSL https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js -o $A/jspdf.umd.min.js
+          curl -fsSL https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js -o $A/jspdf.plugin.autotable.min.js
+          sed -i 's#https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/##; s#https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/##' $A/index.html
+          grep -n '<script src=' $A/index.html
+          ls -la $A
+      - name: Build signed APK
+        working-directory: stock/android
+        run: gradle assembleRelease --no-daemon -Pvc=${{ github.run_number }}
+      - name: Rename
+        run: cp stock/android/app/build/outputs/apk/release/app-release.apk GestionStock-${{ github.run_number }}.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GestionStock-Android
+          path: GestionStock-*.apk
+          if-no-files-found: error
+      - name: Publish release (direct download link)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "stock-v${{ github.run_number }}" GestionStock-${{ github.run_number }}.apk \
+            --target "${{ github.sha }}" --title "Gestion Stock Android v${{ github.run_number }}" \
+            --notes "Application Gestion de stock et facturation (APK Android)."
