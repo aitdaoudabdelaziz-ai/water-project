@@ -158,7 +158,7 @@ const cfg=()=>({...DEF,...CFG});
 const LS='gestion_stock_facturation_v1';
 const DESKTOP=location.protocol==='http:'&&location.hostname==='127.0.0.1';
 const ANDROID=!!window.AndroidStore;
-const UNBOXED=DESKTOP||ANDROID||location.protocol==='file:';
+const UNBOXED=DESKTOP||ANDROID||location.protocol==='file:'||!(window.claude&&typeof window.claude.use==='function');
 let andT=null;
 function saveAndroid(){clearTimeout(andT);andT=setTimeout(flushAndroid,250)}
 function flushAndroid(){clearTimeout(andT);andT=null;let ok=false;try{ok=AndroidStore.save(JSON.stringify({...S,config:CFG,logo:LOGO}))}catch(e){}if(!ok)toast('Erreur d’enregistrement sur le téléphone')}
