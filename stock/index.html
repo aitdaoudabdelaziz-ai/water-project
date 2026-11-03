@@ -145,7 +145,7 @@ let toastT;function toast(m){clearTimeout(toastT);let t=$('.toast');if(!t){t=doc
 const COLS=['produits','clients','factures','mouvements'];
 const S={produits:{},clients:{},factures:{},mouvements:{}};
 let CFG={},LOGO='',DB=null,DL=null,MODE='init',LOADING=true,NET_NOTE='';
-const DEF={nom:'',activite:'',adresse:'',ville:'',tel:'',email:'',site:'',ice:'',rc:'',if_:'',patente:'',cnss:'',banque:'',rib:'',entete:'',pied:'',couleur:'#0f5e5a',prefFact:'FAC',prefDevis:'DEV',devise:'DH',monnaie:'dirham',tvaDef:20,conditions:''};
+const DEF={nom:'',activite:'',adresse:'',ville:'',tel:'',email:'',site:'',ice:'',rc:'',if_:'',patente:'',cnss:'',banque:'',rib:'',entete:'',pied:'',couleur:'#0f5e5a',prefFact:'FAC',prefDevis:'DEV',prefBL:'BL',devise:'DH',monnaie:'dirham',tvaDef:20,conditions:''};
 const cfg=()=>({...DEF,...CFG});
 const LS='gestion_stock_facturation_v1';
 const DESKTOP=location.protocol==='http:'&&location.hostname==='127.0.0.1';
@@ -190,8 +190,14 @@ async function init(){
 
 /* ---------- Calculs ---------- */
 function calc(f){let brut=0,rem=0,ht=0;const tv={};(f.lignes||[]).forEach(l=>{const b=num(l.qte)*num(l.pu);const r=b*num(l.remise)/100;const n=b-r;brut+=b;rem+=r;ht+=n;const t=num(l.tva);tv[t]=(tv[t]||0)+n*t/100});let tva=0;for(const k in tv)tva+=tv[k];return{brut:r2(brut),rem:r2(rem),ht:r2(ht),tva:r2(tva),tvas:tv,ttc:r2(ht+tva)}}
-function statut(f){if(f.type==='devis')return f.converti?{t:'Converti',c:'green'}:{t:'Devis',c:'grey'};const t=calc(f).ttc,p=num(f.paye);if(p>=t-0.005)return{t:'Payée',c:'green',k:'payee'};if(p>0)return{t:'Partielle',c:'warn',k:'partielle'};return{t:'Impayée',c:'red',k:'impayee'}}
-function nextNum(type){const c=cfg();const pre=(type==='devis'?c.prefDevis:c.prefFact)||(type==='devis'?'DEV':'FAC');const y=new Date().getFullYear();const base=pre+'-'+y+'-';let m=0;Object.values(S.factures).forEach(f=>{if(f.num&&f.num.startsWith(base)){const n=parseInt(f.num.slice(base.length));if(n>m)m=n}});return base+String(m+1).padStart(4,'0')}
+const TN={facture:'Facture',devis:'Devis',bl:'Bon de livraison'};
+const TT={facture:'FACTURE',devis:'DEVIS',bl:'BON DE LIVRAISON'};
+const moves=f=>!!f&&(f.type==='bl'?!f.viaFact:f.type==='facture'?!f.viaBL:false);
+const pricesShown=f=>f.type!=='bl'||!!f.prix;
+const leDoc=f=>f.type==='devis'?'le devis':f.type==='bl'?'le bon de livraison':'la facture';
+const unitOf=l=>l.unite||(S.produits[l.pid]||{}).unite||'';
+function statut(f){if(f.type==='devis')return f.converti?{t:'Converti',c:'green'}:{t:'Devis',c:'grey'};if(f.type==='bl')return f.facture?{t:'Facturé',c:'green'}:{t:'À facturer',c:'warn'};const t=calc(f).ttc,p=num(f.paye);if(p>=t-0.005)return{t:'Payée',c:'green',k:'payee'};if(p>0)return{t:'Partielle',c:'warn',k:'partielle'};return{t:'Impayée',c:'red',k:'impayee'}}
+function nextNum(type){const c=cfg();const pre=(type==='devis'?c.prefDevis:type==='bl'?c.prefBL:c.prefFact)||(type==='devis'?'DEV':type==='bl'?'BL':'FAC');const y=new Date().getFullYear();const base=pre+'-'+y+'-';let m=0;Object.values(S.factures).forEach(f=>{if(f.num&&f.num.startsWith(base)){const n=parseInt(f.num.slice(base.length));if(n>m)m=n}});return base+String(m+1).padStart(4,'0')}
 function applyDiff(oldL,newL,motif,fid){const m={};(oldL||[]).forEach(l=>{if(l.pid)m[l.pid]=(m[l.pid]||0)+num(l.qte)});(newL||[]).forEach(l=>{if(l.pid)m[l.pid]=(m[l.pid]||0)-num(l.qte)});for(const pid in m){const d=r2(m[pid]);const p=S.produits[pid];if(!d||!p)continue;put('produits',pid,{...p,stock:r2(num(p.stock)+d)});put('mouvements',uid(),{date:today(),ts:Date.now(),pid,nom:p.nom,type:d>0?'entree':'sortie',qte:Math.abs(d),motif,fid:fid||''})}}
 function enLettres(n){
   const u=['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf','dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
@@ -228,7 +234,7 @@ const arr=o=>Object.entries(o).map(([id,v])=>({id,...v}));
 const V={
 accueil(){
   const ym=today().slice(0,7);let ca=0,imp=0,nImp=0;
-  arr(S.factures).filter(f=>f.type!=='devis').forEach(f=>{const t=calc(f).ttc;if((f.date||'').startsWith(ym))ca+=t;const st=statut(f);if(st.k!=='payee'){imp+=t-num(f.paye);nImp++}});
+  arr(S.factures).filter(f=>f.type==='facture').forEach(f=>{const t=calc(f).ttc;if((f.date||'').startsWith(ym))ca+=t;const st=statut(f);if(st.k!=='payee'){imp+=t-num(f.paye);nImp++}});
   const prods=arr(S.produits);let val=0;prods.forEach(p=>val+=num(p.stock)*num(p.pa));
   const alerts=prods.filter(p=>num(p.stock)<=num(p.seuil)).sort((a,b)=>num(a.stock)-num(b.stock));
   const last=arr(S.factures).sort((a,b)=>(b.cree||0)-(a.cree||0)).slice(0,5);
@@ -241,7 +247,7 @@ accueil(){
     <div class="kpi"><div class="l">Valeur du stock (achat)</div><div class="v">${money(val)}</div></div>
     <div class="kpi ${alerts.length?'warn':''}"><div class="l">Alertes stock</div><div class="v">${alerts.length}</div></div>
   </div>
-  <div class="row" style="margin-top:14px"><button class="btn" onclick="factureForm(null,'facture')">+ Nouvelle facture</button><button class="btn sec" onclick="factureForm(null,'devis')">+ Devis</button><button class="btn sec" onclick="mouvementForm()">± Mouvement de stock</button></div>
+  <div class="row" style="margin-top:14px"><button class="btn" onclick="factureForm(null,'facture')">+ Nouvelle facture</button><button class="btn sec" onclick="factureForm(null,'devis')">+ Devis</button><button class="btn sec" onclick="factureForm(null,'bl')">+ Bon de livraison</button><button class="btn sec" onclick="mouvementForm()">± Mouvement de stock</button></div>
   <h3>Stock bas</h3>
   ${alerts.length?`<div class="list">${alerts.slice(0,8).map(p=>`<div class="item" onclick="produitForm('${p.id}')"><div class="main"><div class="t">${esc(p.nom)}</div><div class="s">Seuil : ${fq(p.seuil)} ${esc(p.unite||'')}</div></div><span class="badge ${num(p.stock)<=0?'red':'warn'}">${fq(p.stock)} ${esc(p.unite||'')}</span></div>`).join('')}</div>`:'<div class="empty">Aucun produit sous le seuil d’alerte.</div>'}
   <h3>Dernières factures</h3>
@@ -275,22 +281,22 @@ factures(){
   const q=UI.qF.toLowerCase();
   let l=arr(S.factures).filter(f=>!q||[f.num,f.client&&f.client.nom].join(' ').toLowerCase().includes(q));
   const F=UI.fF;
-  if(F==='devis')l=l.filter(f=>f.type==='devis');else{l=l.filter(f=>f.type!=='devis');if(F!=='toutes')l=l.filter(f=>statut(f).k===F)}
+  if(F==='devis'||F==='bl')l=l.filter(f=>f.type===F);else{l=l.filter(f=>f.type==='facture');if(F!=='toutes')l=l.filter(f=>statut(f).k===F)}
   l.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.cree||0)-(a.cree||0));
   const tot=l.reduce((s,f)=>s+calc(f).ttc,0);
   const chip=(k,t)=>`<button class="chip ${F===k?'on':''}" onclick="UI.fF='${k}';render()">${t}</button>`;
   return `<h2>Factures &amp; devis</h2>
   <div class="tools"><input id="qF" class="search" placeholder="Rechercher n° ou client…" value="${esc(UI.qF)}" oninput="UI.qF=this.value;render()"></div>
-  <div class="chips">${chip('toutes','Factures')}${chip('impayee','Impayées')}${chip('partielle','Partielles')}${chip('payee','Payées')}${chip('devis','Devis')}</div>
+  <div class="chips">${chip('toutes','Factures')}${chip('impayee','Impayées')}${chip('partielle','Partielles')}${chip('payee','Payées')}${chip('devis','Devis')}${chip('bl','Bons de livraison')}</div>
   ${l.length?`<div class="hint" style="margin:-4px 0 8px">${l.length} document(s) · Total ${money(tot)}</div><div class="list">${l.map(fItem).join('')}</div>`:'<div class="empty">Aucun document.</div>'}
-  ${fab(`factureForm(null,'${F==='devis'?'devis':'facture'}')`,'Nouvelle facture')}`;
+  ${fab(`factureForm(null,'${F==='devis'||F==='bl'?F:'facture'}')`,'Nouvelle facture')}`;
 },
 clients(){
   const q=UI.qC.toLowerCase();
   const l=arr(S.clients).filter(c=>!q||[c.nom,c.ice,c.tel,c.ville].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(a.nom).localeCompare(b.nom,'fr'));
   return `<h2>Clients <span class="badge grey">${Object.keys(S.clients).length}</span></h2>
   <div class="tools"><input id="qC" class="search" placeholder="Rechercher un client…" value="${esc(UI.qC)}" oninput="UI.qC=this.value;render()"></div>
-  ${l.length?`<div class="list">${l.map(c=>{const fs=arr(S.factures).filter(f=>f.clientId===c.id&&f.type!=='devis');const du=fs.reduce((s,f)=>s+Math.max(0,calc(f).ttc-num(f.paye)),0);return`<div class="item" onclick="clientForm('${c.id}')"><div class="main"><div class="t">${esc(c.nom)}</div><div class="s">${esc([c.tel,c.ville,c.ice&&'ICE '+c.ice].filter(Boolean).join(' · ')||'—')}</div></div><div class="r">${fs.length} fact.<div class="s">${du>0.005?`<span class="badge red">Dû ${money(du)}</span>`:'<span class="badge green">À jour</span>'}</div></div></div>`}).join('')}</div>`:`<div class="empty">${Object.keys(S.clients).length?'Aucun résultat.':'Aucun client. Appuyez sur + pour en ajouter.'}</div>`}
+  ${l.length?`<div class="list">${l.map(c=>{const fs=arr(S.factures).filter(f=>f.clientId===c.id&&f.type==='facture');const du=fs.reduce((s,f)=>s+Math.max(0,calc(f).ttc-num(f.paye)),0);return`<div class="item" onclick="clientForm('${c.id}')"><div class="main"><div class="t">${esc(c.nom)}</div><div class="s">${esc([c.tel,c.ville,c.ice&&'ICE '+c.ice].filter(Boolean).join(' · ')||'—')}</div></div><div class="r">${fs.length} fact.<div class="s">${du>0.005?`<span class="badge red">Dû ${money(du)}</span>`:'<span class="badge green">À jour</span>'}</div></div></div>`}).join('')}</div>`:`<div class="empty">${Object.keys(S.clients).length?'Aucun résultat.':'Aucun client. Appuyez sur + pour en ajouter.'}</div>`}
   ${fab('clientForm()','Ajouter un client')}`;
 },
 reglages(){
@@ -392,25 +398,26 @@ function factureForm(id,type,clientId){
   if(!id&&!f.lignes.length)f.lignes.push({pid:'',ref:'',des:'',qte:1,pu:0,tva:cfg().tvaDef,remise:0});
   D={id,f};
   const cls=arr(S.clients).sort((a,b)=>String(a.nom).localeCompare(b.nom,'fr'));
-  const isD=f.type==='devis';
-  openModal((id?'Modifier ':'Nouveau ')+(isD?'devis':'facture')+(id?' '+esc(f.num):''),`
+  const isD=f.type==='devis',isB=f.type==='bl';
+  openModal((id?'Modifier ':(f.type==='facture'?'Nouvelle ':'Nouveau '))+TN[f.type].toLowerCase()+(id?' '+esc(f.num):''),`
   <label class="f">Client *</label>
   <select class="in" id="f_client" onchange="$('#newcli').style.display=this.value==='__new'?'block':'none'"><option value="">— Choisir —</option>${cls.map(c=>`<option value="${c.id}" ${c.id===f.clientId?'selected':''}>${esc(c.nom)}</option>`).join('')}<option value="__new" ${!cls.length?'selected':''}>+ Nouveau client…</option></select>
   <div id="newcli" class="lcard" style="margin-top:8px;display:${!cls.length?'block':'none'}">${field('nc_nom','Nom du client *','')}<div class="g2">${field('nc_ice','ICE','')}${field('nc_tel','Téléphone','')}</div>${field('nc_adr','Adresse','')}</div>
-  <div class="g2">${field('f_date','Date',f.date,'date')}${field('f_ech',isD?'Valable jusqu’au':'Échéance',f.echeance,'date')}</div>
-  ${isD?'':`<label class="f">Mode de paiement</label><select class="in" id="f_mode">${['','Espèces','Chèque','Virement','Effet','Carte bancaire'].map(m=>`<option ${m===f.mode?'selected':''} value="${m}">${m||'—'}</option>`).join('')}</select>`}
+  <div class="g2">${field('f_date','Date',f.date,'date')}${isB?field('f_cmd','N° commande client',f.commande):field('f_ech',isD?'Valable jusqu’au':'Échéance',f.echeance,'date')}</div>
+  ${isB?`${field('f_livr','Lieu de livraison (si différent)',f.livraison,'text','placeholder="Chantier, dépôt…"')}<label style="display:flex;gap:10px;align-items:center;margin-top:14px;font-weight:600"><input type="checkbox" id="f_prix" ${f.prix?'checked':''} style="width:20px;height:20px"> Afficher les prix sur le bon de livraison</label>`:''}
+  ${isD||isB?'':`<label class="f">Mode de paiement</label><select class="in" id="f_mode">${['','Espèces','Chèque','Virement','Effet','Carte bancaire'].map(m=>`<option ${m===f.mode?'selected':''} value="${m}">${m||'—'}</option>`).join('')}</select>`}
   <h3>Lignes</h3><div id="lines"></div>
   <button class="btn sec block" onclick="addLine()">+ Ajouter une ligne</button>
   <div class="tot" id="tot"></div>
   <label class="f">Note / conditions</label><textarea class="in" id="f_note" placeholder="${esc(cfg().conditions||'Ex. : Paiement à 30 jours')}">${esc(f.note||'')}</textarea>
-  <button class="btn block" style="margin-top:16px" onclick="saveFacture()">Enregistrer ${isD?'le devis':'la facture'}</button>
-  ${isD?'':'<div class="hint" style="text-align:center">Le stock des produits est mis à jour automatiquement.</div>'}`);
+  <button class="btn block" style="margin-top:16px" onclick="saveFacture()">Enregistrer ${leDoc(f)}</button>
+  <div class="hint" style="text-align:center">${moves(f)?'Le stock des produits est mis à jour automatiquement.':f.viaBL?'Stock déjà déduit par le bon de livraison '+esc(f.origine||''):f.viaFact?'Stock déjà déduit par la facture '+esc(f.origine||''):''}</div>`);
   renderLines();
 }
 function renderLines(){
   if(!D||!$('#lines'))return;
   const prods=arr(S.produits).sort((a,b)=>String(a.nom).localeCompare(b.nom,'fr'));
-  $('#lines').innerHTML=D.f.lignes.map((l,i)=>{const p=S.produits[l.pid];const lack=p&&D.f.type!=='devis'&&num(l.qte)>num(p.stock)+((D.id&&S.factures[D.id]&&S.factures[D.id].type==='facture')?(S.factures[D.id].lignes||[]).filter(x=>x.pid===l.pid).reduce((s,x)=>s+num(x.qte),0):0);
+  $('#lines').innerHTML=D.f.lignes.map((l,i)=>{const p=S.produits[l.pid];const lack=p&&moves(D.f)&&num(l.qte)>num(p.stock)+((D.id&&moves(S.factures[D.id]))?(S.factures[D.id].lignes||[]).filter(x=>x.pid===l.pid).reduce((s,x)=>s+num(x.qte),0):0);
   return `<div class="lcard">
    <select class="in" onchange="pickProd(${i},this.value)"><option value="">Article libre (sans stock)</option>${prods.map(p=>`<option value="${p.id}" ${p.id===l.pid?'selected':''}>${esc(p.nom)} — ${fq(p.stock)} en stock</option>`).join('')}</select>
    <input class="in" style="margin-top:6px" placeholder="Désignation" value="${esc(l.des)}" oninput="setL(${i},'des',this.value)">
@@ -419,7 +426,7 @@ function renderLines(){
   updTot();
 }
 function setL(i,k,v){D.f.lignes[i][k]=k==='des'?v:num(v);if(k!=='des'){const l=D.f.lignes[i],h=$('#lh'+i);if(h&&!h.classList.contains('red'))h.textContent='Total ligne HT : '+money(num(l.qte)*num(l.pu)*(1-num(l.remise)/100))}if(k==='qte'&&D.f.lignes[i].pid){clearTimeout(setL.t);setL.t=setTimeout(()=>{const a=document.activeElement,idx=[...document.querySelectorAll('#lines input')].indexOf(a),pos=a&&a.selectionStart;renderLines();const n=document.querySelectorAll('#lines input')[idx];if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}},600)}updTot()}
-function pickProd(i,pid){const l=D.f.lignes[i];l.pid=pid;const p=S.produits[pid];if(p){l.des=p.nom;l.ref=p.ref||'';l.pu=num(p.pv);l.tva=num(p.tva)}else{l.ref=''}renderLines()}
+function pickProd(i,pid){const l=D.f.lignes[i];l.pid=pid;const p=S.produits[pid];if(p){l.des=p.nom;l.ref=p.ref||'';l.unite=p.unite||'';l.pu=num(p.pv);l.tva=num(p.tva)}else{l.ref=''}renderLines()}
 function addLine(){D.f.lignes.push({pid:'',ref:'',des:'',qte:1,pu:0,tva:cfg().tvaDef,remise:0});renderLines()}
 function rmLine(i){D.f.lignes.splice(i,1);renderLines()}
 function updTot(){if(!D||!$('#tot'))return;const t=calc(D.f);$('#tot').innerHTML=`${t.rem?`<div><span>Total brut HT</span><span>${money(t.brut)}</span></div><div><span>Remise</span><span>−${money(t.rem)}</span></div>`:''}<div><span>Total HT</span><span>${money(t.ht)}</span></div>${Object.keys(t.tvas).filter(k=>+k).map(k=>`<div><span>TVA ${k} %</span><span>${money(t.tvas[k])}</span></div>`).join('')}<div class="big"><span>Total TTC</span><span>${money(t.ttc)}</span></div>`}
@@ -433,51 +440,63 @@ function saveFacture(){
   if(f.lignes.some(l=>num(l.qte)<=0))return toast('Les quantités doivent être positives');
   const c=S.clients[cid];
   f.clientId=cid;f.client={nom:c.nom,ice:c.ice||'',adresse:[c.adresse,c.ville].filter(Boolean).join(', '),tel:c.tel||''};
-  f.date=val('f_date')||today();f.echeance=val('f_ech');f.mode=val('f_mode');f.note=val('f_note').trim();
+  f.date=val('f_date')||today();f.echeance=val('f_ech');f.mode=val('f_mode');f.note=val('f_note').trim();if(f.type==='bl'){f.commande=val('f_cmd').trim();f.livraison=val('f_livr').trim();f.prix=!!($('#f_prix')&&$('#f_prix').checked)}
   const id=D.id||uid();const old=D.id?S.factures[D.id]:null;
   if(!f.num)f.num=nextNum(f.type);
   if(!f.cree)f.cree=Date.now();f.maj=Date.now();
-  if(f.type==='facture')applyDiff(old&&old.type==='facture'?old.lignes:[],f.lignes,'Facture '+f.num,id);
-  put('factures',id,f);closeModal();render();toast((f.type==='devis'?'Devis ':'Facture ')+f.num+' enregistré'+(f.type==='devis'?'':'e'));showFacture(id);
+  if(moves(f)||moves(old))applyDiff(moves(old)?old.lignes:[],moves(f)?f.lignes:[],TN[f.type]+' '+f.num,id);
+  put('factures',id,f);closeModal();render();toast(TN[f.type]+' '+f.num+' enregistré'+(f.type==='facture'?'e':''));showFacture(id);
 }
 function paperHTML(f){
-  const c=cfg(),t=calc(f),isD=f.type==='devis';
+  const c=cfg(),t=calc(f),isD=f.type==='devis',isB=f.type==='bl',P=pricesShown(f);
   return `<div class="paper" style="--pc:${esc(c.couleur||'#0f5e5a')}">
   <div class="ph">${LOGO?`<img src="${LOGO}" alt="Logo">`:''}<div><div class="n">${esc(c.nom||'Votre entreprise')}</div><div class="e">${esc(entete())}</div></div></div>
-  <div class="meta"><div><div class="ttl">${isD?'DEVIS':'FACTURE'}</div><div>N° <b>${esc(f.num)}</b></div><div>Date : ${fd(f.date)}</div>${f.echeance?`<div>${isD?'Valable jusqu’au':'Échéance'} : ${fd(f.echeance)}</div>`:''}${f.mode?`<div>Paiement : ${esc(f.mode)}</div>`:''}</div>
+  <div class="meta"><div><div class="ttl">${TT[f.type]}</div><div>N° <b>${esc(f.num)}</b></div><div>Date : ${fd(f.date)}</div>${f.echeance?`<div>${isD?'Valable jusqu’au':'Échéance'} : ${fd(f.echeance)}</div>`:''}${f.mode?`<div>Paiement : ${esc(f.mode)}</div>`:''}${f.commande?`<div>Commande : ${esc(f.commande)}</div>`:''}${f.livraison?`<div>Livraison : ${esc(f.livraison)}</div>`:''}${f.origine?`<div>Réf. : ${esc(f.origine)}</div>`:''}</div>
   <div class="cli"><div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.05em">Client</div><b>${esc(f.client&&f.client.nom)}</b>${f.client&&f.client.adresse?'<br>'+esc(f.client.adresse):''}${f.client&&f.client.ice?'<br>ICE : '+esc(f.client.ice):''}${f.client&&f.client.tel?'<br>Tél : '+esc(f.client.tel):''}</div></div>
-  <div class="tablewrap"><table><thead><tr><th>Désignation</th><th class="num">Qté</th><th class="num">P.U. HT</th><th class="num">TVA</th><th class="num">Total HT</th></tr></thead><tbody>
+  ${P?'':`<div class="tablewrap"><table><thead><tr><th>Réf.</th><th>Désignation</th><th>Unité</th><th class="num">Quantité</th></tr></thead><tbody>${(f.lignes||[]).map(l=>`<tr><td>${esc(l.ref||'')}</td><td>${esc(l.des)}</td><td>${esc(unitOf(l))}</td><td class="num"><b>${fq(l.qte)}</b></td></tr>`).join('')}</tbody></table></div><div class="words">Nombre de lignes : ${(f.lignes||[]).length} · Quantité totale : <b>${fq((f.lignes||[]).reduce((s,l)=>s+num(l.qte),0))}</b></div>`}
+  ${P?`<div class="tablewrap"><table><thead><tr><th>Désignation</th><th class="num">Qté</th><th class="num">P.U. HT</th><th class="num">TVA</th><th class="num">Total HT</th></tr></thead><tbody>
   ${(f.lignes||[]).map(l=>`<tr><td>${esc(l.des)}${l.ref?`<div style="color:#999;font-size:10px">${esc(l.ref)}</div>`:''}${num(l.remise)?`<div style="color:#999;font-size:10px">Remise ${fq(l.remise)} %</div>`:''}</td><td class="num">${fq(l.qte)}</td><td class="num">${fmt(l.pu)}</td><td class="num">${fq(l.tva)} %</td><td class="num">${fmt(num(l.qte)*num(l.pu)*(1-num(l.remise)/100))}</td></tr>`).join('')}</tbody></table></div>
   <div class="ptot">${t.rem?`<div><span>Total brut HT</span><span>${fmt(t.brut)}</span></div><div><span>Remise</span><span>−${fmt(t.rem)}</span></div>`:''}<div><span>Total HT</span><span>${fmt(t.ht)}</span></div>${Object.keys(t.tvas).filter(k=>+k).map(k=>`<div><span>TVA ${k} %</span><span>${fmt(t.tvas[k])}</span></div>`).join('')}<div class="b"><span>Total TTC</span><span>${money(t.ttc)}</span></div></div>
-  <div class="words">${isD?'Arrêté le présent devis':'Arrêtée la présente facture'} à la somme de :<br><b>${esc(enLettres(t.ttc))}</b></div>
+  ${isB?'':`<div class="words">${isD?'Arrêté le présent devis':'Arrêtée la présente facture'} à la somme de :<br><b>${esc(enLettres(t.ttc))}</b></div>`}`:''}
+  ${isB?`<div style="display:flex;gap:12px;margin-top:18px"><div style="flex:1;border:1px dashed #bbb;border-radius:6px;height:80px;padding:6px;font-size:10px;color:#888;text-align:center">Signature du livreur</div><div style="flex:1;border:1px dashed #bbb;border-radius:6px;height:80px;padding:6px;font-size:10px;color:#888;text-align:center">Cachet et signature du client<br>(marchandise reçue conforme)</div></div>`:''}
   ${f.note||c.conditions?`<div class="words" style="color:#555">${esc(f.note||c.conditions)}</div>`:''}
   <div class="pf">${esc(pied())}</div></div>`;
 }
 function showFacture(id){
-  const f=S.factures[id];if(!f)return;const st=statut(f),t=calc(f),isD=f.type==='devis';
-  openModal(`${isD?'Devis':'Facture'} ${esc(f.num)} <span class="badge ${st.c}">${st.t}</span>`,`
+  const f=S.factures[id];if(!f)return;const st=statut(f),t=calc(f),isD=f.type==='devis',isB=f.type==='bl';
+  openModal(`${TN[f.type]} ${esc(f.num)} <span class="badge ${st.c}">${st.t}</span>`,`
   <div class="row" style="margin-bottom:12px">
     <button class="btn" onclick="pdfFacture('${id}')">⬇ PDF</button>${UNBOXED?`<button class="btn sec" onclick="printFacture('${id}')">🖨 Imprimer</button>`:''}
     <button class="btn sec" onclick="factureForm('${id}')">Modifier</button>
-    ${isD?(f.converti?'':`<button class="btn sec" onclick="convertir('${id}')">→ Convertir en facture</button>`):`<button class="btn sec" onclick="paiementForm('${id}')">Paiement</button>`}
+    ${isD?(f.converti?'':`<button class="btn sec" onclick="convertir('${id}','facture')">→ Facture</button><button class="btn sec" onclick="convertir('${id}','bl')">→ Bon de livraison</button>`):isB?(f.facture?'':`<button class="btn sec" onclick="convertir('${id}','facture')">→ Facturer</button>`):`<button class="btn sec" onclick="paiementForm('${id}')">Paiement</button>${f.bl||f.viaBL?'':`<button class="btn sec" onclick="convertir('${id}','bl')">→ Bon de livraison</button>`}`}
     <button class="btn sec" onclick="dupliquer('${id}')">Dupliquer</button>
     <button class="btn danger" onclick="delFacture('${id}')">Supprimer</button>
   </div>
-  ${!isD?`<div class="hint" style="margin-bottom:10px">Payé : ${money(f.paye)} · Reste : <b>${money(Math.max(0,t.ttc-num(f.paye)))}</b></div>`:''}
-  ${isD&&f.converti?`<div class="hint" style="margin-bottom:10px">Converti en facture ${esc(f.converti)}</div>`:''}
+  ${isB&&f.facture?`<div class="hint" style="margin-bottom:10px">Facturé : ${esc(f.facture)}</div>`:''}${f.type==='facture'&&f.bl?`<div class="hint" style="margin-bottom:10px">Bon de livraison : ${esc(f.bl)}</div>`:''}
+  ${f.type==='facture'?`<div class="hint" style="margin-bottom:10px">Payé : ${money(f.paye)} · Reste : <b>${money(Math.max(0,t.ttc-num(f.paye)))}</b></div>`:''}
+  ${isD&&f.converti?`<div class="hint" style="margin-bottom:10px">Converti en ${esc(f.converti)}</div>`:''}
   ${paperHTML(f)}`);
 }
 function paiementForm(id){const f=S.factures[id],t=calc(f).ttc;openModal('Paiement — '+esc(f.num),`<div class="hint">Total TTC : <b>${money(t)}</b></div>${field('pay_m','Montant total encaissé',num(f.paye)||'','number')}<div class="row" style="margin-top:10px"><button class="btn sec sm" onclick="$('#pay_m').value='${t}'">Tout payé</button><button class="btn sec sm" onclick="$('#pay_m').value=0">Remettre à zéro</button></div><button class="btn block" style="margin-top:16px" onclick="savePay('${id}')">Enregistrer</button>`)}
 function savePay(id){const f=S.factures[id];put('factures',id,{...f,paye:r2(num(val('pay_m'))),maj:Date.now()});render();showFacture(id);toast('Paiement enregistré')}
-function convertir(id){const d=S.factures[id];const nid=uid();const f={...JSON.parse(JSON.stringify(d)),type:'facture',num:'',date:today(),echeance:'',paye:0,origine:d.num,cree:Date.now(),maj:Date.now()};delete f.converti;f.num=nextNum('facture');applyDiff([],f.lignes,'Facture '+f.num,nid);put('factures',nid,f);put('factures',id,{...d,converti:f.num});render();showFacture(nid);toast('Facture '+f.num+' créée')}
-function dupliquer(id){const s=JSON.parse(JSON.stringify(S.factures[id]));closeModal();D=null;factureForm(null,s.type,s.clientId);D.f.lignes=s.lignes;D.f.note=s.note;$('#f_note').value=s.note||'';renderLines()}
-async function delFacture(id){const f=S.factures[id];if(!await ask(`Supprimer ${f.type==='devis'?'le devis':'la facture'} ${esc(f.num)} ?${f.type==='facture'?' Les quantités seront remises en stock.':''}`,'Supprimer'))return;if(f.type==='facture')applyDiff(f.lignes,[],'Annulation '+f.num,id);del('factures',id);closeModal();render();toast('Document supprimé')}
+function convertir(id,to){to=to||'facture';const d=S.factures[id];const nid=uid();const f={...JSON.parse(JSON.stringify(d)),type:to,num:'',date:today(),echeance:'',paye:0,origine:d.num,cree:Date.now(),maj:Date.now()};['converti','facture','bl','viaBL','viaFact','prix','commande','livraison'].forEach(k=>delete f[k]);if(d.commande)f.commande=d.commande;
+  if(to==='facture'&&d.type==='bl'&&moves(d))f.viaBL=true;if(to==='bl'&&d.type==='facture'&&moves(d))f.viaFact=true;
+  f.num=nextNum(to);if(moves(f))applyDiff([],f.lignes,TN[to]+' '+f.num,nid);put('factures',nid,f);
+  const u={...d};if(d.type==='devis')u.converti=f.num;if(d.type==='bl'&&to==='facture')u.facture=f.num;if(to==='bl')u.bl=f.num;put('factures',id,u);
+  render();showFacture(nid);toast(TN[to]+' '+f.num+' créé'+(to==='facture'?'e':''))}
+function dupliquer(id){const s=JSON.parse(JSON.stringify(S.factures[id]));closeModal();D=null;factureForm(null,s.type,s.clientId);D.f.lignes=s.lignes;D.f.note=s.note;if(s.type==='bl'){D.f.prix=s.prix;D.f.livraison=s.livraison;if($('#f_prix'))$('#f_prix').checked=!!s.prix;if($('#f_livr'))$('#f_livr').value=s.livraison||''}$('#f_note').value=s.note||'';renderLines()}
+async function delFacture(id){const f=S.factures[id];
+  const dep=Object.entries(S.factures).find(([k,x])=>x.origine===f.num&&((f.type==='bl'&&x.type==='facture'&&x.viaBL)||(f.type==='facture'&&x.type==='bl'&&x.viaFact)));
+  if(dep)return toast('Supprimez d’abord '+leDoc(dep[1])+' '+dep[1].num+' (le stock y est lié)');
+  if(!await ask(`Supprimer ${leDoc(f)} ${esc(f.num)} ?${moves(f)?' Les quantités seront remises en stock.':''}`,'Supprimer'))return;if(moves(f))applyDiff(f.lignes,[],'Annulation '+f.num,id);
+  if(f.origine){const o=Object.entries(S.factures).find(([k,x])=>x.num===f.origine);if(o){const u={...o[1]};let ch=false;if(u.converti===f.num){delete u.converti;ch=true}if(u.facture===f.num){delete u.facture;ch=true}if(u.bl===f.num){delete u.bl;ch=true}if(ch)put('factures',o[0],u)}}
+  del('factures',id);closeModal();render();toast('Document supprimé')}
 
 /* ---------- PDF ---------- */
 function hexRgb(h){h=(h||'#0f5e5a').replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');const n=parseInt(h,16);return isNaN(n)?[15,94,90]:[n>>16&255,n>>8&255,n&255]}
 function buildPDF(f){
   const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
-  const c=cfg(),col=hexRgb(c.couleur),W=210,H=297,M=14,t=calc(f),isD=f.type==='devis';
+  const c=cfg(),col=hexRgb(c.couleur),W=210,H=297,M=14,t=calc(f),isD=f.type==='devis',isB=f.type==='bl',P=pricesShown(f);
   const pl=pied().split('\n').filter(Boolean),FH=pl.length*3.6+12;
   const header=()=>{let x=M,y=11,lh=0;
     if(LOGO){try{const pr=doc.getImageProperties(LOGO);let w=36,h=w*pr.height/pr.width;if(h>24){h=24;w=h*pr.width/pr.height}doc.addImage(LOGO,pr.fileType||'PNG',M,y,w,h);x=M+w+6;lh=h}catch(e){}}
@@ -487,35 +506,41 @@ function buildPDF(f){
     const hy=Math.max(y+lh+3,y+11.5+el.length*4);doc.setDrawColor(...col);doc.setLineWidth(.9);doc.line(M,hy,W-M,hy);return hy};
   const footer=()=>{const fy=H-FH;doc.setDrawColor(...col);doc.setLineWidth(.4);doc.line(M,fy,W-M,fy);doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(95);pl.forEach((l,i)=>doc.text(l,W/2,fy+4.5+i*3.6,{align:'center'}));doc.setFontSize(7.5);doc.text('Page '+doc.internal.getCurrentPageInfo().pageNumber+' / {tp}',W-M,H-4,{align:'right'})};
   const hy=header();let y=hy+9;
-  doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(...col);doc.text(isD?'DEVIS':'FACTURE',M,y+2);
+  doc.setFont('helvetica','bold');doc.setFontSize(isB?16:20);doc.setTextColor(...col);doc.text(TT[f.type],M,y+2);
   doc.setFontSize(9.5);doc.setTextColor(30);doc.setFont('helvetica','normal');
-  const meta=[['N° :',f.num],['Date :',fd(f.date)]];if(f.echeance)meta.push([isD?'Valable jusqu\'au :':'Échéance :',fd(f.echeance)]);if(f.mode)meta.push(['Paiement :',f.mode]);if(f.origine)meta.push(['Réf. devis :',f.origine]);
+  const meta=[['N° :',f.num],['Date :',fd(f.date)]];if(f.echeance)meta.push([isD?'Valable jusqu\'au :':'Échéance :',fd(f.echeance)]);if(f.mode)meta.push(['Paiement :',f.mode]);if(f.commande)meta.push(['Commande :',f.commande]);if(f.livraison)meta.push(['Livraison :',doc.splitTextToSize(f.livraison,70)[0]]);if(f.origine)meta.push(['Réf. :',f.origine]);
   meta.forEach((m,i)=>{doc.setFont('helvetica','normal');doc.text(m[0],M,y+9+i*5);doc.setFont('helvetica','bold');doc.text(String(m[1]),M+(isD&&m[0].startsWith('Valable')?30:22),y+9+i*5)});
   const cx=112,cw=W-M-cx;const cl=[];const cli=f.client||{};if(cli.adresse)cl.push(...doc.splitTextToSize(cli.adresse,cw-8));if(cli.ice)cl.push('ICE : '+cli.ice);if(cli.tel)cl.push('Tél : '+cli.tel);
   const ch=14+cl.length*4.4;doc.setDrawColor(200);doc.setLineWidth(.3);doc.roundedRect(cx,y-4,cw,ch,2,2);
   doc.setFontSize(7.5);doc.setTextColor(130);doc.text('CLIENT',cx+4,y+1);doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(25);doc.text(doc.splitTextToSize(cli.nom||'',cw-8)[0]||'',cx+4,y+6.5);
   doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60);cl.forEach((l,i)=>doc.text(l,cx+4,y+11.5+i*4.4));
   y=Math.max(y+9+meta.length*5,y-4+ch)+6;
-  const hasRem=(f.lignes||[]).some(l=>num(l.remise));
-  const head=['Réf.','Désignation','Qté','P.U. HT','TVA'];if(hasRem)head.push('Rem.');head.push('Total HT');
-  const body=(f.lignes||[]).map(l=>{const r=[l.ref||'',l.des||'',fq(l.qte),fmt(l.pu),fq(l.tva)+' %'];if(hasRem)r.push(num(l.remise)?fq(l.remise)+' %':'');r.push(fmt(num(l.qte)*num(l.pu)*(1-num(l.remise)/100)));return r});
-  const cs={0:{cellWidth:22},1:{cellWidth:'auto'},2:{halign:'right',cellWidth:15},3:{halign:'right',cellWidth:24},4:{halign:'right',cellWidth:14}};if(hasRem){cs[5]={halign:'right',cellWidth:14};cs[6]={halign:'right',cellWidth:26}}else cs[5]={halign:'right',cellWidth:26};
+  const hasRem=(f.lignes||[]).some(l=>num(l.remise));let head,body,cs;
+  if(P){head=['Réf.','Désignation','Qté','P.U. HT','TVA'];if(hasRem)head.push('Rem.');head.push('Total HT');
+  body=(f.lignes||[]).map(l=>{const r=[l.ref||'',l.des||'',fq(l.qte),fmt(l.pu),fq(l.tva)+' %'];if(hasRem)r.push(num(l.remise)?fq(l.remise)+' %':'');r.push(fmt(num(l.qte)*num(l.pu)*(1-num(l.remise)/100)));return r});
+  cs={0:{cellWidth:22},1:{cellWidth:'auto'},2:{halign:'right',cellWidth:15},3:{halign:'right',cellWidth:24},4:{halign:'right',cellWidth:14}};if(hasRem){cs[5]={halign:'right',cellWidth:14};cs[6]={halign:'right',cellWidth:26}}else cs[5]={halign:'right',cellWidth:26};}
+  else{head=['Réf.','Désignation','Unité','Quantité'];body=(f.lignes||[]).map(l=>[l.ref||'',l.des||'',unitOf(l),fq(l.qte)]);cs={0:{cellWidth:28},1:{cellWidth:'auto'},2:{cellWidth:22},3:{halign:'right',cellWidth:26,fontStyle:'bold'}}}
   doc.autoTable({startY:y,head:[head],body,theme:'grid',margin:{left:M,right:M,top:hy+6,bottom:FH+4},
     styles:{font:'helvetica',fontSize:8.8,cellPadding:2.2,lineColor:[225,225,225],lineWidth:.2,textColor:[30,30,30]},
     headStyles:{fillColor:col,textColor:255,fontStyle:'bold',halign:'left'},alternateRowStyles:{fillColor:[248,248,246]},columnStyles:cs,
-    didParseCell:d=>{if(d.section==='head'&&d.column.index>=2)d.cell.styles.halign='right'},
+    didParseCell:d=>{if(d.section==='head'&&d.column.index>=(P?2:3))d.cell.styles.halign='right'},
     didDrawPage:d=>{if(d.pageNumber>1)header();footer()}});
   y=doc.lastAutoTable.finalY+6;
+  const sig2=yy=>{doc.setDrawColor(190);doc.setLineWidth(.3);doc.setLineDashPattern([1,1],0);const bw=(W-2*M-8)/2;doc.rect(M,yy,bw,26);doc.rect(M+bw+8,yy,bw,26);doc.setLineDashPattern([],0);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(130);doc.text('Signature du livreur',M+bw/2,yy+4.5,{align:'center'});doc.text('Cachet et signature du client',M+bw+8+bw/2,yy+4.5,{align:'center'});doc.text('(marchandise reçue conforme)',M+bw+8+bw/2,yy+8.5,{align:'center'})};
+  if(!P){const note=(f.note||'').trim();const nl=note?doc.splitTextToSize(note,W-2*M):[];if(y+48+nl.length*4>H-FH-4){doc.addPage();const h2=header();footer();y=h2+10}
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(50);doc.text('Nombre de lignes : '+(f.lignes||[]).length+'     Quantité totale : '+fq((f.lignes||[]).reduce((s,l)=>s+num(l.qte),0)),M,y);
+    let ny=y+6;if(nl.length){doc.setFontSize(8.5);doc.setTextColor(90);nl.forEach((w,i)=>doc.text(w,M,ny+i*4));ny+=nl.length*4+2}
+    sig2(ny+4);if(typeof doc.putTotalPages==='function')doc.putTotalPages('{tp}');return doc}
   const rows=[];if(t.rem){rows.push(['Total brut HT',fmt(t.brut)]);rows.push(['Remise','-'+fmt(t.rem)])}rows.push(['Total HT',fmt(t.ht)]);Object.keys(t.tvas).filter(k=>+k).forEach(k=>rows.push(['TVA '+k+' %',fmt(t.tvas[k])]));
-  const words=doc.splitTextToSize(enLettres(t.ttc),92);const note=(f.note||c.conditions||'').trim();const nl=note?doc.splitTextToSize(note,92):[];
+  const words=isB?[]:doc.splitTextToSize(enLettres(t.ttc),92);const note=(f.note||c.conditions||'').trim();const nl=note?doc.splitTextToSize(note,92):[];
   const need=Math.max(rows.length*6+12,14+words.length*4.5+(nl.length?nl.length*4+4:0))+30;
   if(y+need>H-FH-4){doc.addPage();const h2=header();footer();y=h2+10}
   const tx=W-M-72;rows.forEach((r,i)=>{doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(50);doc.text(r[0],tx+2,y+i*6);doc.text(r[1],W-M-2,y+i*6,{align:'right'})});
   const by=y+rows.length*6-3.5;doc.setFillColor(...col);doc.roundedRect(tx,by,72,9,1.5,1.5,'F');doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(255);doc.text('Total TTC',tx+2,by+6);doc.text(fmt(t.ttc)+' '+c.devise,W-M-2,by+6,{align:'right'});
-  doc.setTextColor(60);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.text((isD?'Arrêté le présent devis':'Arrêtée la présente facture')+' à la somme de :',M,y);
+  doc.setTextColor(60);doc.setFont('helvetica','normal');doc.setFontSize(9);if(!isB)doc.text((isD?'Arrêté le présent devis':'Arrêtée la présente facture')+' à la somme de :',M,y);
   doc.setFont('helvetica','bold');doc.setTextColor(25);words.forEach((w,i)=>doc.text(w,M,y+5+i*4.5));
   let ny=y+7+words.length*4.5;if(nl.length){doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(90);nl.forEach((w,i)=>doc.text(w,M,ny+i*4));ny+=nl.length*4}
-  const sy=Math.max(by+16,ny+6);doc.setDrawColor(190);doc.setLineWidth(.3);doc.setLineDashPattern([1,1],0);doc.rect(W-M-62,sy,62,22);doc.setLineDashPattern([],0);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(130);doc.text('Cachet et signature',W-M-31,sy+4.5,{align:'center'});
+  const sy=Math.max(by+16,ny+6);if(isB){sig2(sy);if(typeof doc.putTotalPages==='function')doc.putTotalPages('{tp}');return doc}doc.setDrawColor(190);doc.setLineWidth(.3);doc.setLineDashPattern([1,1],0);doc.rect(W-M-62,sy,62,22);doc.setLineDashPattern([],0);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(130);doc.text('Cachet et signature',W-M-31,sy+4.5,{align:'center'});
   if(typeof doc.putTotalPages==='function')doc.putTotalPages('{tp}');
   return doc;
 }
@@ -538,11 +563,11 @@ function entrepriseForm(){const c=cfg();openModal('Mon entreprise',`
   ${field('s_adr','Adresse',c.adresse)}<div class="g2">${field('s_ville','Ville',c.ville)}${field('s_tel','Téléphone',c.tel,'tel')}</div>
   <div class="g2">${field('s_email','Email',c.email,'email')}${field('s_site','Site web',c.site)}</div>
   <h3>Identifiants légaux</h3><div class="g2">${field('s_ice','ICE',c.ice)}${field('s_rc','RC',c.rc)}${field('s_if','IF',c.if_)}${field('s_pat','Patente',c.patente)}${field('s_cnss','CNSS',c.cnss)}${field('s_banque','Banque',c.banque)}</div>${field('s_rib','RIB',c.rib)}
-  <h3>Facturation</h3><div class="g2">${field('s_pf','Préfixe factures',c.prefFact)}${field('s_pd','Préfixe devis',c.prefDevis)}${field('s_dev','Devise (symbole)',c.devise)}${field('s_mon','Monnaie en lettres',c.monnaie)}</div>
+  <h3>Facturation</h3><div class="g2">${field('s_pf','Préfixe factures',c.prefFact)}${field('s_pd','Préfixe devis',c.prefDevis)}${field('s_pbl','Préfixe bons de livraison',c.prefBL)}${field('s_dev','Devise (symbole)',c.devise)}${field('s_mon','Monnaie en lettres',c.monnaie)}</div>
   <label class="f">TVA par défaut</label>${tvaSel('s_tva',c.tvaDef)}
   <label class="f">Conditions par défaut (bas de facture)</label><textarea class="in" id="s_cond">${esc(c.conditions)}</textarea>
   <button class="btn block" style="margin-top:16px" onclick="saveEntreprise()">Enregistrer</button>`)}
-function saveEntreprise(){putCfg({...CFG,nom:val('s_nom').trim(),activite:val('s_act').trim(),adresse:val('s_adr').trim(),ville:val('s_ville').trim(),tel:val('s_tel').trim(),email:val('s_email').trim(),site:val('s_site').trim(),ice:val('s_ice').trim(),rc:val('s_rc').trim(),if_:val('s_if').trim(),patente:val('s_pat').trim(),cnss:val('s_cnss').trim(),banque:val('s_banque').trim(),rib:val('s_rib').trim(),prefFact:val('s_pf').trim()||'FAC',prefDevis:val('s_pd').trim()||'DEV',devise:val('s_dev').trim()||'DH',monnaie:val('s_mon').trim()||'dirham',tvaDef:num(val('s_tva')),conditions:val('s_cond').trim()});closeModal();render();toast('Informations enregistrées')}
+function saveEntreprise(){putCfg({...CFG,nom:val('s_nom').trim(),activite:val('s_act').trim(),adresse:val('s_adr').trim(),ville:val('s_ville').trim(),tel:val('s_tel').trim(),email:val('s_email').trim(),site:val('s_site').trim(),ice:val('s_ice').trim(),rc:val('s_rc').trim(),if_:val('s_if').trim(),patente:val('s_pat').trim(),cnss:val('s_cnss').trim(),banque:val('s_banque').trim(),rib:val('s_rib').trim(),prefFact:val('s_pf').trim()||'FAC',prefDevis:val('s_pd').trim()||'DEV',prefBL:val('s_pbl').trim()||'BL',devise:val('s_dev').trim()||'DH',monnaie:val('s_mon').trim()||'dirham',tvaDef:num(val('s_tva')),conditions:val('s_cond').trim()});closeModal();render();toast('Informations enregistrées')}
 function enteteForm(){const c=cfg();openModal('En-tête & pied de page',`
   <div class="hint">Laissez vide pour générer automatiquement à partir des informations de l’entreprise.</div>
   <label class="f">En-tête (à côté du logo)</label><textarea class="in" id="s_ent" rows="4" placeholder="${esc(enteteDefault(c))}">${esc(c.entete)}</textarea>
@@ -556,7 +581,7 @@ function uploadLogo(inp){const file=inp.files[0];inp.value='';if(!file)return;co
 /* ---------- Export / sauvegarde ---------- */
 const csvCell=v=>{const s=String(v??'');return /[;"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
 function exportCSV(){const rows=[['Référence','Désignation','Catégorie','Unité','Prix achat HT','Prix vente HT','TVA %','Stock','Seuil','Valeur stock']];arr(S.produits).forEach(p=>rows.push([p.ref,p.nom,p.cat,p.unite,fmt(p.pa),fmt(p.pv),p.tva,fq(p.stock),fq(p.seuil),fmt(num(p.stock)*num(p.pa))]));saveFile('produits-'+today()+'.csv','﻿'+rows.map(r=>r.map(csvCell).join(';')).join('\r\n'))}
-function exportFacturesCSV(){const rows=[['Type','Numéro','Date','Client','ICE client','Total HT','TVA','Total TTC','Payé','Reste','Statut']];arr(S.factures).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(f=>{const t=calc(f);rows.push([f.type,f.num,fd(f.date),f.client&&f.client.nom,f.client&&f.client.ice,fmt(t.ht),fmt(t.tva),fmt(t.ttc),fmt(f.paye),fmt(Math.max(0,t.ttc-num(f.paye))),statut(f).t])});saveFile('factures-'+today()+'.csv','﻿'+rows.map(r=>r.map(csvCell).join(';')).join('\r\n'))}
+function exportFacturesCSV(){const rows=[['Type','Numéro','Date','Client','ICE client','Total HT','TVA','Total TTC','Payé','Reste','Statut']];arr(S.factures).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(f=>{const t=calc(f);rows.push([TN[f.type]||f.type,f.num,fd(f.date),f.client&&f.client.nom,f.client&&f.client.ice,fmt(t.ht),fmt(t.tva),fmt(t.ttc),fmt(f.paye),fmt(Math.max(0,t.ttc-num(f.paye))),statut(f).t])});saveFile('factures-'+today()+'.csv','﻿'+rows.map(r=>r.map(csvCell).join(';')).join('\r\n'))}
 function backup(){saveFile('sauvegarde-gestion-'+today()+'.json',JSON.stringify({version:1,date:new Date().toISOString(),...S,config:CFG,logo:LOGO}))}
 function restore(inp){const file=inp.files[0];inp.value='';if(!file)return;const r=new FileReader();r.onload=async()=>{let d;try{d=JSON.parse(r.result)}catch(e){return toast('Fichier invalide')}if(!d||!COLS.some(k=>d[k]))return toast('Ce fichier n’est pas une sauvegarde valide');if(!await ask('Importer cette sauvegarde ? Les éléments du fichier remplaceront ceux portant le même identifiant.','Importer'))return;let n=0;COLS.forEach(k=>{Object.entries(d[k]||{}).forEach(([id,v])=>{if(v&&typeof v==='object'){put(k,id,v);n++}})});if(d.config&&typeof d.config==='object')putCfg(d.config);if(typeof d.logo==='string'&&d.logo.startsWith('data:image'))putLogo(d.logo);render();toast(n+' éléments importés')};r.readAsText(file)}
 
