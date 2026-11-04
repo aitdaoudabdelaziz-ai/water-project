@@ -171,30 +171,133 @@ async function flushDesktop(){if(dskBusy){dskAgain=true;return}dskBusy=true;try{
 function loadLocal(){try{const d=JSON.parse(localStorage.getItem(LS)||'{}');COLS.forEach(k=>S[k]=d[k]||{});CFG=d.config||{};LOGO=d.logo||''}catch(e){}}
 function saveLocal(){if(ANDROID)return saveAndroid();if(DESKTOP)return saveDesktop();try{localStorage.setItem(LS,JSON.stringify({...S,config:CFG,logo:LOGO}))}catch(e){toast('Stockage local indisponible')}}
 const wq={};
-function persist(path,fn){const p=(wq[path]||Promise.resolve()).then(fn).catch(e=>{const c=e&&e.code;toast(c==='invalid_argument'?'Enregistrement refusé (accès en lecture seule ?)':c==='quota_exceeded'?'Capacité de stockage atteinte':'Erreur d’enregistrement, réessayez');console.error(e)});wq[path]=p;return p}
-function put(col,id,obj){S[col][id]=obj;if(DB)persist(col+'/'+id,()=>DB.collection(col).doc(id).set(obj));else saveLocal()}
-function del(col,id){delete S[col][id];if(DB)persist(col+'/'+id,()=>DB.collection(col).doc(id).delete());else saveLocal()}
-function putCfg(o){CFG=o;if(DB)persist('settings/config',()=>DB.doc('settings/config').set(o));else saveLocal()}
-function putLogo(d){LOGO=d;if(DB)persist('settings/logo',()=>d?DB.doc('settings/logo').set({data:d}):DB.doc('settings/logo').delete());else saveLocal()}
+function persist(path,fn){const p=(wq[path]||Promise.resolve()).then(fn).catch(e=>{const c=e&&e.code;toast(c==='invalid_argument'||c==='permission-denied'?'Enregistrement refusé (accès non autorisé)':c==='quota_exceeded'?'Capacité de stockage atteinte':'Erreur d’enregistrement, réessayez');console.error(e)});wq[path]=p;return p}
+function put(col,id,obj){if(RO)return toast('Hors ligne : modification impossible');S[col]={...S[col],[id]:obj};const o=JSON.parse(JSON.stringify(obj));if(DB)persist(col+'/'+id,()=>DB.collection(col).doc(id).set(o));else saveLocal()}
+function del(col,id){if(RO)return toast('Hors ligne : modification impossible');S[col]={...S[col]};delete S[col][id];if(DB)persist(col+'/'+id,()=>DB.collection(col).doc(id).delete());else saveLocal()}
+function putCfg(o){if(RO)return toast('Hors ligne : modification impossible');o=JSON.parse(JSON.stringify(o));CFG=o;if(DB)persist('settings/config',()=>DB.doc('settings/config').set(o));else saveLocal()}
+function putLogo(d){if(RO)return toast('Hors ligne : modification impossible');LOGO=d;if(DB)persist('settings/logo',()=>d?DB.doc('settings/logo').set({data:d}):DB.doc('settings/logo').delete());else saveLocal()}
 
+const INCLAUDE=!!(window.claude&&typeof window.claude.use==='function');
+let UNSUBS=[],RO=false;
+async function loadLocalByMode(){if(ANDROID){try{applyData(JSON.parse(AndroidStore.load()||'{}'))}catch(e){NET_NOTE='Impossible de lire les données enregistrées.'}}else if(DESKTOP){try{await loadDesktop()}catch(e){NET_NOTE='Impossible de lire les données. Relancez GestionStock.exe.'}}else loadLocal()}
 async function init(){
   render();
-  if(ANDROID){MODE='android';try{applyData(JSON.parse(AndroidStore.load()||'{}'))}catch(e){NET_NOTE='Impossible de lire les données enregistrées.'}LOADING=false;render();
-    document.addEventListener('visibilitychange',()=>{if(document.hidden&&andT)flushAndroid()});addEventListener('pagehide',()=>{if(andT)flushAndroid()});return}
-  if(DESKTOP){MODE='desktop';try{await loadDesktop()}catch(e){NET_NOTE='Impossible de lire les données. Relancez GestionStock.exe.'}LOADING=false;render();
-    setInterval(()=>fetch('/api/ping',{cache:'no-store'}).catch(()=>{}),20000);fetch('/api/ping').catch(()=>{});
-    addEventListener('pagehide',()=>{try{navigator.sendBeacon('/api/bye','1')}catch(e){}});return}
+  if(ANDROID){MODE='android';document.addEventListener('visibilitychange',()=>{if(document.hidden&&andT)flushAndroid()});addEventListener('pagehide',()=>{if(andT)flushAndroid()})}
+  else if(DESKTOP){MODE='desktop';setInterval(()=>fetch('/api/ping',{cache:'no-store'}).catch(()=>{}),20000);fetch('/api/ping').catch(()=>{});addEventListener('pagehide',()=>{try{navigator.sendBeacon('/api/bye','1')}catch(e){}})}
+  if(ANDROID||DESKTOP||!INCLAUDE){if(!ANDROID&&!DESKTOP)MODE='local';await loadLocalByMode();LOADING=false;render();if('serviceWorker'in navigator&&location.protocol==='https:'&&!ANDROID){try{navigator.serviceWorker.register('sw.js')}catch(e){}}cloudBoot();return}
   let db=null;
-  try{if(window.claude&&typeof claude.use==='function'){const r=await Promise.all([claude.use('db'),claude.use('downloads')]);db=r[0];DL=r[1]}}catch(e){}
+  try{const r=await Promise.all([claude.use('db'),claude.use('downloads')]);db=r[0];DL=r[1]}catch(e){}
   if(!db){MODE='local';LOADING=false;loadLocal();render();return}
-  DB=db;MODE='db';
-  const pending=new Set([...COLS,'settings']);
-  const timer=setTimeout(()=>{NET_NOTE='Données inaccessibles pour l’instant — vérifiez votre connexion.';LOADING=false;render()},10000);
-  const ok=(k,meta)=>{if(!meta.fromCache){pending.delete(k);if(!pending.size){clearTimeout(timer);NET_NOTE=''}}LOADING=false;render()};
-  const fail=e=>{clearTimeout(timer);LOADING=false;NET_NOTE='Connexion aux données interrompue. Rechargez la page.';render()};
-  COLS.forEach(col=>DB.collection(col).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=d.data()});S[col]=o;ok(col,snap.metadata)},fail));
-  DB.collection('settings').onSnapshot(snap=>{let c={},l='';snap.docs.forEach(d=>{if(d.id==='config')c=d.data();if(d.id==='logo')l=(d.data()||{}).data||''});CFG=c;LOGO=l;ok('settings',snap.metadata)},fail);
+  MODE='db';startDb(db);
 }
+function startDb(db,onFirst){
+  DB=db;LOADING=true;render();
+  const pending=new Set([...COLS,'settings']);let first=true;
+  const timer=setTimeout(()=>{NET_NOTE='Données inaccessibles pour l’instant — vérifiez votre connexion.';LOADING=false;render()},10000);
+  const ok=(k,meta)=>{if(!meta.fromCache){pending.delete(k);if(!pending.size){clearTimeout(timer);if(NET_NOTE.startsWith('Données inaccessibles'))NET_NOTE='';if(first){first=false;onFirst&&onFirst()}}}LOADING=false;render();if(CLOUD&&MIRROR)mirrorLocal()};
+  const fail=e=>{clearTimeout(timer);LOADING=false;NET_NOTE=e&&e.code==='permission-denied'?'Accès au cloud refusé (règles ou compte non autorisé).':'Connexion aux données interrompue. Rechargez la page.';render()};
+  COLS.forEach(col=>UNSUBS.push(DB.collection(col).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=d.data()});S[col]=o;ok(col,snap.metadata)},fail)));
+  UNSUBS.push(DB.collection('settings').onSnapshot(snap=>{let c={},l='';snap.docs.forEach(d=>{if(d.id==='config')c=d.data();if(d.id==='logo')l=(d.data()||{}).data||''});CFG=c;LOGO=l;ok('settings',snap.metadata)},fail));
+}
+
+/* ---------- Cloud de l'association (Firebase, partagé avec le programme de l'eau) ---------- */
+const FBV='10.14.1',FBADMIN='aitdaoudabdelaziz@gmail.com',CKEY='stk_cloud',CPRE='stk_';
+const FBCFG={apiKey:"AIzaSyB8WSV_5IJim98ltYsxlGp_nWPcnILa_yE",authDomain:"water-assoc.firebaseapp.com",projectId:"water-assoc",storageBucket:"water-assoc.firebasestorage.app",messagingSenderId:"1053204560068",appId:"1:1053204560068:web:d2a877234cbba162773191"};
+let FS=null,FAUTH=null,CUSER=null,CLOUD=false,MIRROR=false,mirT=null,LOCALSNAP=null;
+const cloudPref=()=>{try{return localStorage.getItem(CKEY)}catch(e){return null}};
+const setCloudPref=v=>{try{v?localStorage.setItem(CKEY,v):localStorage.removeItem(CKEY)}catch(e){}};
+const isAdmin=()=>!!(CUSER&&String(CUSER.email||'').toLowerCase()===FBADMIN);
+const fsShim={collection:c=>({doc:id=>FS.collection(CPRE+c).doc(id),onSnapshot:(n,e)=>FS.collection(CPRE+c).onSnapshot(n,e)}),doc:p=>{const a=p.split('/');return FS.collection(CPRE+a[0]).doc(a[1])}};
+function loadJs(u){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+async function loadFirebase(){if(window.firebase&&firebase.firestore&&firebase.auth)return;for(const m of['app','auth','firestore'])await loadJs(`https://www.gstatic.com/firebasejs/${FBV}/firebase-${m}-compat.js`);if(!(window.firebase&&firebase.firestore&&firebase.auth))throw new Error('firebase')}
+function rulesText(){return`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == '${FBADMIN}';
+    }
+    function isMember() {
+      return request.auth != null && (isAdmin() ||
+        exists(/databases/$(database)/documents/members/$(request.auth.token.email)));
+    }
+    match /members/{email} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+    match /{col}/{id} {
+      allow read, write: if isMember() && col in ['alfath', 'subs', 'inv', 'settings', 'stk_produits', 'stk_clients', 'stk_factures', 'stk_mouvements', 'stk_settings'];
+    }
+  }
+}`}
+function hideAuth(){const a=$('#auth');if(a)a.remove()}
+function authScreen(state,text,adm){
+  let a=$('#auth');if(!a){a=document.createElement('div');a.id='auth';a.className='ov';a.style.zIndex=55;a.style.alignItems='center';document.body.appendChild(a)}
+  const head=`<div style="text-align:center;margin-bottom:6px">${LOGO?`<img src="${LOGO}" style="max-height:56px;max-width:140px;object-fit:contain">`:''}<div style="font-weight:800;font-size:18px;margin-top:6px">${esc(cfg().nom||'Gestion de stock')}</div><div class="hint">Cloud de l’association</div></div>`;
+  let body='';
+  if(state==='wait')body=`<div style="text-align:center;padding:18px 0;color:var(--muted)">${esc(text||'Connexion au cloud…')}</div>`;
+  else if(state==='login')body=`<div class="hint" style="font-size:13px">Utilisez le <b>même compte</b> que le programme de l’eau (email et mot de passe).</div>
+    <label class="f" for="au_e">Email</label><input class="in" id="au_e" type="email" dir="ltr" autocomplete="username" value="${esc(text||'')}">
+    <label class="f" for="au_p">Mot de passe</label><input class="in" id="au_p" type="password" dir="ltr" autocomplete="current-password">
+    <div id="au_err" class="hint red" style="min-height:18px;margin-top:8px"></div>
+    <button class="btn block" onclick="authDo('in')">Se connecter</button>
+    <button class="btn sec block" style="margin-top:8px" onclick="authDo('up')">Créer mon compte (première fois)</button>
+    <button class="btn sec block" style="margin-top:8px;border:0;background:none;color:var(--acc)" onclick="authDo('reset')">Mot de passe oublié ?</button>
+    <button class="btn sec block" style="margin-top:4px" onclick="useLocal()">Continuer sans cloud (cet appareil seulement)</button>`;
+  else body=`<div style="font-size:14.5px;line-height:1.6;margin:8px 0 14px">${esc(text)}</div>
+    ${adm?`<label class="f">Nouvelles règles Firestore (à coller dans Firebase → Firestore → Rules → Publier)</label><textarea class="in" id="au_rules" readonly style="font-family:monospace;font-size:11px;min-height:150px;direction:ltr">${esc(rulesText())}</textarea><button class="btn block" style="margin-top:8px" onclick="copyRules()">Copier les règles</button>`:''}
+    <button class="btn sec block" style="margin-top:8px" onclick="cloudStart()">Réessayer</button>
+    <button class="btn sec block" style="margin-top:8px" onclick="cloudLogout()">Changer de compte</button>
+    <button class="btn sec block" style="margin-top:8px" onclick="useLocal()">Continuer sans cloud</button>`;
+  a.innerHTML=`<div class="sheet" style="max-width:420px;border-radius:18px;margin:16px"><div class="body">${head}${body}</div></div>`;
+}
+function copyRules(){const t=$('#au_rules')||$('#rules_txt');if(!t)return;t.select();try{navigator.clipboard.writeText(t.value).then(()=>toast('Règles copiées'),()=>{document.execCommand('copy');toast('Règles copiées')})}catch(e){try{document.execCommand('copy');toast('Règles copiées')}catch(_){}}}
+const AERR={'auth/invalid-credential':'Email ou mot de passe incorrect.','auth/wrong-password':'Email ou mot de passe incorrect.','auth/user-not-found':'Aucun compte avec cet email : utilisez « Créer mon compte ».','auth/invalid-login-credentials':'Email ou mot de passe incorrect.','auth/email-already-in-use':'Ce compte existe déjà : utilisez « Se connecter ».','auth/weak-password':'Mot de passe trop court (6 caractères minimum).','auth/invalid-email':'Adresse email invalide.','auth/network-request-failed':'Pas de connexion Internet.','auth/too-many-requests':'Trop de tentatives. Réessayez dans quelques minutes.'};
+async function authDo(kind){
+  const e=val('au_e').trim(),p=val('au_p'),er=$('#au_err');const say=m=>{if(er)er.textContent=m};
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return say('Adresse email invalide.');
+  try{
+    if(kind==='reset'){await FAUTH.sendPasswordResetEmail(e);say('Email de réinitialisation envoyé à '+e+'.');return}
+    if(p.length<6)return say('Mot de passe : 6 caractères minimum.');
+    say('Connexion…');
+    if(kind==='up')await FAUTH.createUserWithEmailAndPassword(e,p);else await FAUTH.signInWithEmailAndPassword(e,p);
+  }catch(x){say(AERR[x&&x.code]||('Erreur : '+(x&&x.message||x)))}
+}
+async function cloudBoot(){
+  if(INCLAUDE||cloudPref()==='local')return;
+  const wanted=cloudPref()==='cloud';
+  authScreen('wait');
+  try{await loadFirebase()}catch(e){
+    hideAuth();
+    if(wanted){RO=true;NET_NOTE='Hors ligne : le cloud est inaccessible. Données de cet appareil en lecture seule — reconnectez-vous à Internet pour modifier.';render()}
+    else{NET_NOTE='';toast('Cloud indisponible (pas d’Internet) : mode local');}
+    return}
+  try{if(!firebase.apps.length)firebase.initializeApp(FBCFG);FAUTH=firebase.auth();FS=firebase.firestore();try{await FS.enablePersistence({synchronizeTabs:true})}catch(e){}}catch(e){hideAuth();toast('Cloud indisponible');return}
+  FAUTH.onAuthStateChanged(u=>{CUSER=u;if(u)cloudStart();else{stopCloud();authScreen('login')}});
+}
+async function cloudStart(){
+  if(!CUSER)return authScreen('login');
+  authScreen('wait','Vérification de l’accès…');
+  try{await FS.collection(CPRE+'settings').doc('config').get()}catch(e){
+    if(e&&e.code==='permission-denied'){authScreen('msg',isAdmin()?'Le cloud n’autorise pas encore le programme de stock. Copiez les nouvelles règles ci-dessous, puis collez-les dans la console Firebase (Firestore Database → Règles → Publier). Ensuite appuyez sur « Réessayer ».':'Votre compte ('+CUSER.email+') n’est pas autorisé. Demandez à l’administrateur de l’association de vous ajouter comme membre (programme de l’eau → ☁ Cloud → Membres).',isAdmin());return}
+  }
+  if(!CLOUD){LOCALSNAP=JSON.parse(JSON.stringify({...S,config:CFG,logo:LOGO}));}
+  CLOUD=true;RO=false;MODE='cloud';NET_NOTE='';MIRROR=false;setCloudPref('cloud');hideAuth();
+  UNSUBS.forEach(f=>{try{f()}catch(e){}});UNSUBS=[];
+  startDb(fsShim,afterCloudLoad);
+}
+async function afterCloudLoad(){
+  const cloudCount=COLS.reduce((n,k)=>n+Object.keys(S[k]).length,0);
+  const L=LOCALSNAP||{};const localCount=COLS.reduce((n,k)=>n+Object.keys(L[k]||{}).length,0);
+  if(!cloudCount&&localCount&&await ask(`Le cloud est vide. Envoyer les ${localCount} élément(s) enregistrés sur cet appareil vers le cloud ?`,'Envoyer')){
+    COLS.forEach(k=>Object.entries(L[k]||{}).forEach(([id,v])=>put(k,id,v)));if(L.config&&Object.keys(L.config).length)putCfg(L.config);if(L.logo)putLogo(L.logo);toast(localCount+' élément(s) envoyés au cloud');render()}
+  MIRROR=true;mirrorLocal();
+}
+function mirrorLocal(){clearTimeout(mirT);mirT=setTimeout(()=>{if(!CLOUD||!MIRROR)return;if(ANDROID)flushAndroid();else if(DESKTOP)flushDesktop();else{try{localStorage.setItem(LS,JSON.stringify({...S,config:CFG,logo:LOGO}))}catch(e){}}},1500)}
+function stopCloud(){UNSUBS.forEach(f=>{try{f()}catch(e){}});UNSUBS=[];if(CLOUD){CLOUD=false;MIRROR=false;DB=null}}
+async function cloudLogout(){if(CLOUD&&!await ask('Se déconnecter du cloud sur cet appareil ?','Se déconnecter'))return;setCloudPref(null);try{await FAUTH.signOut()}catch(e){}}
+async function useLocal(){setCloudPref('local');stopCloud();hideAuth();if(FAUTH&&CUSER){try{await FAUTH.signOut()}catch(e){}}RO=false;NET_NOTE='';MODE=ANDROID?'android':DESKTOP?'desktop':'local';await loadLocalByMode();LOADING=false;render();toast('Mode local : données de cet appareil')}
+function enableCloud(){setCloudPref(null);if(FAUTH){CUSER?cloudStart():authScreen('login')}else cloudBoot()}
+function showRules(){openModal('Règles de sécurité Firebase',`<div class="hint">À coller dans la console Firebase → Firestore Database → Règles → Publier. Elles gardent le programme de l’eau tel quel et autorisent le programme de stock.</div><textarea class="in" id="rules_txt" readonly style="font-family:monospace;font-size:11px;min-height:260px;direction:ltr;margin-top:8px">${esc(rulesText())}</textarea><button class="btn block" style="margin-top:10px" onclick="copyRules()">Copier les règles</button>`)}
 
 /* ---------- Calculs ---------- */
 function calc(f){let brut=0,rem=0,ht=0;const tv={};(f.lignes||[]).forEach(l=>{const b=num(l.qte)*num(l.pu);const r=b*num(l.remise)/100;const n=b-r;brut+=b;rem+=r;ht+=n;const t=num(l.tva);tv[t]=(tv[t]||0)+n*t/100});let tva=0;for(const k in tv)tva+=tv[k];return{brut:r2(brut),rem:r2(rem),ht:r2(ht),tva:r2(tva),tvas:tv,ttc:r2(ht+tva)}}
@@ -228,7 +331,7 @@ window.addEventListener('hashchange',()=>{const v=location.hash.slice(1)||'accue
 function render(){
   const ae=document.activeElement,aid=ae&&$('#main').contains(ae)?ae.id:'',sel=ae&&ae.selectionStart;
   const c=cfg();
-  $('#top-name').innerHTML=esc(c.nom||'Ma gestion')+'<small>Stock &amp; facturation</small>';
+  $('#top-name').innerHTML=esc(c.nom||'Ma gestion')+'<small>Stock &amp; facturation'+(CLOUD?' · ☁ cloud':'')+'</small>';
   const tl=$('#top-logo');if(LOGO){tl.style.backgroundImage='url("'+LOGO+'")';tl.textContent=''}else{tl.style.backgroundImage='';tl.textContent=(c.nom||'G').charAt(0).toUpperCase()}
   $('#banner').innerHTML=NET_NOTE?'<div class="banner">'+esc(NET_NOTE)+'</div>':MODE==='local'?'<div class="banner">Mode local : les données restent dans ce navigateur. Pensez à faire des sauvegardes (Paramètres).</div>':'';
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));
@@ -381,8 +484,9 @@ reglages(){
   <div class="card"><div class="hint">Texte affiché sous le nom, à côté du logo :</div><div style="white-space:pre-line;font-size:13px;margin:4px 0 10px;padding:8px;background:#faf8f4;border-radius:8px">${esc(entete())||'—'}</div>
   <div class="hint">Pied de page (sur chaque page) :</div><div style="white-space:pre-line;font-size:12px;text-align:center;margin:4px 0 10px;padding:8px;background:#faf8f4;border-radius:8px">${esc(pied())||'—'}</div>
   <button class="btn sm" onclick="enteteForm()">Personnaliser</button> <button class="btn sm sec" onclick="apercuModele()">Aperçu</button></div>
+  ${INCLAUDE?'':`<h3>Cloud de l’association</h3><div class="card">${CLOUD?`<div><span class="badge green">● Connecté</span> <b>${esc(CUSER&&CUSER.email||'')}</b></div><div class="hint" style="margin:6px 0 10px">Toutes les modifications sont enregistrées dans le cloud et partagées avec les autres appareils et membres de l’association.</div><div class="row">${isAdmin()?'<button class="btn sm sec" onclick="showRules()">Règles de sécurité</button>':''}<button class="btn sm sec" onclick="cloudLogout()">Se déconnecter</button><button class="btn sm sec" onclick="useLocal()">Passer en mode local</button></div>`:`<div class="hint" style="margin-bottom:10px">Non connecté : les données restent sur cet appareil. Connectez-vous avec le compte du programme de l’eau pour partager les données entre tous vos appareils.</div><button class="btn sm" onclick="enableCloud()">☁ Se connecter au cloud</button>`}</div>`}
   <h3>Données</h3>
-  <div class="card"><div class="hint" style="margin-bottom:10px">${MODE==='db'?'Vos données sont enregistrées en ligne avec cette application et synchronisées entre vos appareils.':MODE==='android'?'Vos données sont enregistrées sur ce téléphone, avec une copie de sécurité automatique chaque jour. Faites aussi des sauvegardes JSON (elles vont dans Téléchargements/GestionStock).':MODE==='desktop'?'Vos données sont enregistrées sur cet ordinateur (dossier GestionStock dans AppData), avec une copie de sécurité automatique chaque jour.':'Mode local : données enregistrées uniquement dans ce navigateur.'}</div>
+  <div class="card"><div class="hint" style="margin-bottom:10px">${MODE==='db'?'Vos données sont enregistrées en ligne avec cette application et synchronisées entre vos appareils.':MODE==='cloud'?'Données synchronisées avec le cloud de l’association. Une copie est aussi gardée sur cet appareil.':MODE==='android'?'Vos données sont enregistrées sur ce téléphone, avec une copie de sécurité automatique chaque jour. Faites aussi des sauvegardes JSON (elles vont dans Téléchargements/GestionStock).':MODE==='desktop'?'Vos données sont enregistrées sur cet ordinateur (dossier GestionStock dans AppData), avec une copie de sécurité automatique chaque jour.':'Mode local : données enregistrées uniquement dans ce navigateur.'}</div>
   <div class="row"><button class="btn sm sec" onclick="exportCSV()">Exporter produits (CSV)</button><button class="btn sm sec" onclick="exportFacturesCSV()">Exporter factures (CSV)</button><button class="btn sm sec" onclick="backup()">Sauvegarde (JSON)</button><label class="btn sm sec">Restaurer…<input type="file" accept=".json,application/json" hidden onchange="restore(this)"></label></div></div>`;
 }
 };
