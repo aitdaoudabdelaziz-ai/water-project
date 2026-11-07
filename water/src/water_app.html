@@ -740,6 +740,7 @@ html[data-an="0"] #kpd .kp_b{transition:none}
 @media (prefers-reduced-motion:reduce){#kpd .kp_b{transition:none}}
 body.kbo #qk{padding-bottom:calc(var(--kbh,310px) + 24px)}
 .wa_b{color:#0B7A3E!important;border-color:#25D36680!important}html[data-th=dark] .wa_b{color:#5BE39A!important}
+#ek_w{position:fixed;inset:0;z-index:96;background:rgba(10,30,22,.6);display:flex;align-items:center;justify-content:center;padding:16px}#ek_w .ek_b{background:var(--card,#fff);color:var(--ink,#1D2B3A);border-radius:20px;max-width:420px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3)}#ek_w h3{margin:0 0 8px}#ek_w p{font-size:14px;line-height:1.8;margin:0 0 10px}#ek_w input{width:100%;box-sizing:border-box;margin:6px 0;font-size:16px}#ek_w small{color:var(--mut,#6B7A90)}.ek_e{color:#C0392B;font-weight:700;min-height:20px;font-size:13.5px}#ek_w .bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}#ek_w .bt button{flex:1;min-width:110px}@media print{#ek_w{display:none}}
 </style></head><body>
 <header><img id="lg" alt=""><b class="brand">جمعية الفتح للتنمية والتعاون<small>لجنة الماء الصالح للشرب</small></b><b id="bc"></b><span id="cnt"></span><span id="svs"></span><button class="k" id="thb" onclick="setTh()"></button><button class="k" id="lgb" onclick="setLang()">Français</button><button class="k" id="lo" onclick="logout()" hidden>خروج</button></header>
 <button type="button" id="qfab" class="g" data-p="ed" onclick="qkOpen()">⚡ تحصيل سريع</button>
@@ -1242,7 +1243,7 @@ function expAll(){if(needX()===undefined)return;let S=D.subs,nm=id=>S.find(x=>x.
 
 // نسخة احتياطية
 function bk(){if(window.desk){deskBk();return}bkFull()}
-function rs(el){let f=el.files[0];if(!f)return;let r=new FileReader();r.onload=e=>{try{let x=JSON.parse(e.target.result);if(!x.subs||!x.reads)throw 0;if(confirm("استبدال كل البيانات الحالية بالنسخة؟")){try{localStorage.setItem("w1pre",JSON.stringify(D))}catch(_){}let go=()=>{delete x.__files;D=x;flush();location.reload()};if(x.__files&&x.__files.length)flRestore(x.__files).then(go,()=>alert("تعذّر استرجاع المرفقات"));else go()}}catch(_){alert("ملف غير صالح")}};r.readAsText(f);el.value=""}
+function rs(el){let f=el.files[0];if(!f)return;let r=new FileReader();r.onload=async e=>{try{let x=JSON.parse(e.target.result);if(x&&x.enc===ENC_V){for(;;){let pw=await pwAsk("open");if(pw===null)return;try{x=JSON.parse(await encOpen(x,pw));break}catch(_){alert("كلمة السر غير صحيحة. حاول مرة أخرى.")}}}if(!x.subs||!x.reads)throw 0;if(confirm("استبدال كل البيانات الحالية بالنسخة؟")){try{localStorage.setItem("w1pre",JSON.stringify(D))}catch(_){}let go=()=>{delete x.__files;D=x;flush();location.reload()};if(x.__files&&x.__files.length)flRestore(x.__files).then(go,()=>alert("تعذّر استرجاع المرفقات"));else go()}}catch(_){alert("ملف غير صالح")}};r.readAsText(f);el.value=""}
 
 function abList(){let e=document.getElementById("abk");if(!e)return;let A=[];try{A=JSON.parse(localStorage.getItem("w1b")||"[]")}catch(_){}let P=localStorage.getItem("w1pre");
  let rows=A.slice().reverse().map((x,i)=>{let n="?";try{let d=JSON.parse(x.d);n=d.subs.length+" مشترك، "+d.invs.length+" فاتورة"}catch(_){}return `<div class="abr"><span style="flex:1">${fd(x.t)} — ${n}</span><button class="o" onclick="abRs(${A.length-1-i})">استرجاع</button></div>`});
@@ -1492,7 +1493,7 @@ const flB64=b=>new Promise((ok,no)=>{let r=new FileReader();r.onload=()=>ok(Stri
 async function flPack(){let A=await flAll(),o=[];for(const r of A)o.push({id:r.id,n:r.n,t:r.t,b:await flB64(r.blob)});return o}
 function flUnb(b,t){let s=atob(b),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return new Blob([a],{type:t})}
 async function flRestore(L){await flClr();for(const f of L){let bl=flUnb(f.b,f.t);await flPut({id:f.id,n:f.n,t:f.t,sz:bl.size,blob:bl})}}
-async function bkFull(){try{let F=[];try{F=await flPack()}catch(e){}D.lastBk=td();save();bkNote();let o=Object.assign({},D);if(F.length)o.__files=F;let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:"application/json"}));a.download="نسخة-الفتح-كاملة-"+new Date().toISOString().slice(0,10)+".json";a.click()}catch(e){alert("تعذّر إنشاء النسخة")}}
+async function bkFull(){try{let F=[];try{F=await flPack()}catch(e){}let o=Object.assign({},D);if(F.length)o.__files=F;let txt=JSON.stringify(o),pw=await pwAsk("set");if(pw===null)return;if(pw)txt=await encPack(txt,pw);D.lastBk=td();save();bkNote();let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"}));a.download="نسخة-الفتح-كاملة-"+new Date().toISOString().slice(0,10)+(pw?"-مشفرة":"")+".json";a.click()}catch(e){alert("تعذّر إنشاء النسخة")}}
 Object.assign(FRD,{"المرفقات (صور / PDF)":"Pièces jointes (images / PDF)","＋ إضافة ملف":"＋ Ajouter un fichier","لا توجد مرفقات":"Aucune pièce jointe","نسخة كاملة مع المرفقات":"Sauvegarde complète avec pièces jointes","تُضغط الصور تلقائياً قبل الحفظ.":"Les images sont compressées automatiquement."});
 
 // ===== المالية: مداخيل / مصاريف / صندوق / بنك =====
@@ -1582,6 +1583,32 @@ function waInv(id){let i=D.invs.find(x=>x.id==id);if(!i)return;let s=Object.assi
  if(!n)return alert("لا يوجد رقم هاتف صالح لهذا المشترك ("+(s.phone||"فارغ")+").\nأضِفه من «المشتركون» ← تعديل، مثلاً: 0612345678");
  waOpen("https://wa.me/"+n+"?text="+encodeURIComponent(waText(i)))}
 Object.assign(FRD,{"واتساب":"WhatsApp","إرسال تذكير عبر واتساب":"Envoyer un rappel par WhatsApp","إرسال تأكيد الأداء عبر واتساب":"Envoyer la confirmation par WhatsApp"});
+
+// ===== نسخ احتياطية مشفّرة بكلمة سر (AES-256-GCM + PBKDF2) =====
+const ENC_V="alfath-aes-gcm-v1",ENC_IT=250000;
+const ek_b64=u=>{u=new Uint8Array(u);let s="";for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)};
+const ek_ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function ek_key(pw,salt,it){const k=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",hash:"SHA-256",salt,iterations:it},k,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function encPack(txt,pw){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),k=await ek_key(pw,salt,ENC_IT),ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},k,new TextEncoder().encode(txt));
+ return JSON.stringify({enc:ENC_V,kdf:"PBKDF2-SHA256",it:ENC_IT,salt:ek_b64(salt),iv:ek_b64(iv),ct:ek_b64(ct),date:new Date().toISOString().slice(0,10),note:"نسخة احتياطية مشفّرة — تُفتح ببرنامج الماء وكلمة السر فقط"})}
+async function encOpen(x,pw){const k=await ek_key(pw,ek_ub(x.salt),x.it||ENC_IT);return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:ek_ub(x.iv)},k,ek_ub(x.ct)))}
+// نافذة كلمة السر: "set" عند الحفظ (اختيارية)، "open" عند الاسترجاع. ترجع null عند الإلغاء.
+function pwAsk(mode){return new Promise(ok=>{const can=!!(window.crypto&&crypto.subtle);
+ if(mode==="set"&&!can)return ok("");
+ if(mode==="open"&&!can){alert("هذا الجهاز لا يدعم فتح النسخ المشفّرة.");return ok(null)}
+ const w=document.createElement("div");w.id="ek_w";w.setAttribute("role","dialog");w.setAttribute("aria-modal","true");
+ w.innerHTML=`<div class="ek_b"><h3>${mode==="set"?"🔐 حماية النسخة بكلمة سر":"🔐 نسخة مشفّرة"}</h3>
+ <p>${mode==="set"?"اختر كلمة سر لتشفير النسخة الاحتياطية. لا يمكن فتح الملف بدونها، حتى لو وقع في يد أحد.<br><b>احفظها جيداً: لا يمكن استرجاعها إن ضاعت.</b>":"أدخل كلمة السر التي اخترتها عند حفظ هذه النسخة."}</p>
+ <input id="ek_p" type="password" autocomplete="new-password" placeholder="كلمة السر" aria-label="كلمة السر">
+ ${mode==="set"?`<input id="ek_p2" type="password" autocomplete="new-password" placeholder="أعد كتابة كلمة السر" aria-label="تأكيد كلمة السر"><small>6 أحرف على الأقل.</small>`:""}
+ <div class="ek_e" id="ek_e"></div>
+ <div class="bt"><button type="button" class="g" id="ek_ok">${mode==="set"?"تشفير وحفظ":"فتح"}</button>${mode==="set"?`<button type="button" class="k" id="ek_no">حفظ بدون كلمة سر</button>`:""}<button type="button" class="k" id="ek_x">إلغاء</button></div></div>`;
+ document.body.appendChild(w);const p=w.querySelector("#ek_p"),p2=w.querySelector("#ek_p2"),er=w.querySelector("#ek_e");setTimeout(()=>p.focus(),30);
+ const end=v=>{w.remove();ok(v)};
+ const go=()=>{const v=p.value;if(mode==="set"){if(v.length<6){er.textContent="كلمة السر قصيرة: 6 أحرف على الأقل.";return}if(v!==p2.value){er.textContent="كلمتا السر غير متطابقتين.";return}}else if(!v){er.textContent="أدخل كلمة السر.";return}end(v)};
+ w.querySelector("#ek_ok").onclick=go;w.querySelector("#ek_x").onclick=()=>end(null);const no=w.querySelector("#ek_no");if(no)no.onclick=()=>end("");
+ w.addEventListener("keydown",e=>{if(e.key==="Enter")go();if(e.key==="Escape")end(null)})})}
+Object.assign(FRD,{"🔐 حماية النسخة بكلمة سر":"🔐 Protéger la sauvegarde par mot de passe","🔐 نسخة مشفّرة":"🔐 Sauvegarde chiffrée","تشفير وحفظ":"Chiffrer et enregistrer","حفظ بدون كلمة سر":"Enregistrer sans mot de passe","فتح":"Ouvrir","إلغاء":"Annuler","كلمة السر":"Mot de passe","أعد كتابة كلمة السر":"Confirmer le mot de passe"});
 
 gate();if(!D.users.length||usr())go(first());
 </script></body></html>
