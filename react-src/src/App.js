@@ -98,7 +98,7 @@ export default function App() {
       <header className="top">
         <img src="../icon-192.png" alt="" width="44" height="44" />
         <div className="brand"><b>{assoc}</b><small>لجنة الماء الصالح للشرب</small></div>
-        {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''}>☁ {cloud.status === 'live' ? 'السحابة' : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span>}
+        {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''}>☁<span className="ct"> {cloud.status === 'live' ? 'السحابة' : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span></span>}
         <button type="button" className="icon" onClick={() => setReading({ id: null, queue: null })} aria-label="تحصيل سريع" title="تحصيل سريع">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg></button>
         <button type="button" className="icon" onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={dark ? 'الوضع الفاتح' : 'الوضع الداكن'}>{dark ? '☀' : '☾'}</button>

@@ -23,7 +23,7 @@ export default function Dashboard({ go }) {
   const wait = D.subs.filter(s => !D.reads[key(s.id, Y, R)]);
   const un = cur.filter(i => !i.paid).sort((a, b) => String(a.date).localeCompare(String(b.date)) || a.id - b.id);
   const pd = cur.filter(i => i.paid).sort((a, b) => String(b.pd || '').localeCompare(String(a.pd || '')) || b.id - a.id);
-  const name = D.cfg.short || D.cfg.aname || 'الجمعية';
+  const name = D.cfg.short || D.cfg.aname || 'جمعية الفتح';
 
   return (
     <div className="stack">
