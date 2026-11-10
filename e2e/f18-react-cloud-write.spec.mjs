@@ -43,7 +43,7 @@ async function live(o = {}) {
   await A.p.locator('.cchip.c-live').waitFor();
   return A;
 }
-const enableWrite = async p => { await p.getByRole('button', { name: 'تفعيل الحفظ في السحابة' }).click(); await p.getByText('الحفظ في السحابة مفعّل').waitFor(); };
+const enableWrite = async p => { await p.getByRole('button', { name: 'تفعيل الحفظ في السحابة' }).click(); await p.getByText('الحفظ في السحابة مفعّل:').waitFor(); };
 // مشترك بلا قراءة في الجولة الحالية
 const fresh = C => C.subs.find(s => !C.reads[s.id + '|' + Y + '|' + R]);
 async function record(p, s, o, n) {
