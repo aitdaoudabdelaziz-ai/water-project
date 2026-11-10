@@ -17,6 +17,7 @@ import Finance from './screens/Finance.js';
 import Settings from './screens/Settings.js';
 import Login from './screens/Login.js';
 import PrintArea from './components/Print.js';
+import Thermal from './components/Thermal.js';
 import { perms, session } from './lib/auth.js';
 
 // [المعرّف، الاسم، الأيقونة، الصلاحية، في «المزيد» على الهاتف]
@@ -45,6 +46,7 @@ export default function App() {
   const P = perms(data, cu);
   const [more, setMore] = useState(false);
   const [printIds, setPrintIds] = useState(null);
+  const [thermIds, setThermIds] = useState(null);
 
   useEffect(() => { if (theme) document.documentElement.dataset.th = theme; else delete document.documentElement.dataset.th;
     try { localStorage.setItem(THEME, theme); } catch { /* */ } }, [theme]);
@@ -64,7 +66,7 @@ export default function App() {
   const allowed = t => t[3] === 'dash' ? P.dash : t[3] === 'admin' ? P.admin : P.can(t[3]);
   const tabs = TABS.filter(allowed);
   useEffect(() => { if (!tabs.some(t => t[0] === tab) && tabs.length) setTab(tabs[0][0]); }, [tab, tabs.length, cu]);
-  const act = { update, assoc, can: P.can, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids),
+  const act = { update, assoc, can: P.can, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
     openReading: (id, queue) => setReading({ id, queue: queue || null }),
     openInvoice: id => setInvoice(id) };
   const next = () => { const q = reading.queue || [], k = q.indexOf(reading.id);
@@ -107,7 +109,8 @@ export default function App() {
           {P.user && <button type="button" className="opt" onClick={() => { setMore(false); login(null); }}><b>خروج</b><small>{P.user.u}</small></button>}</div>
       </Sheet>}
       </>}
-      {printIds && <PrintArea D={data} ids={printIds} onDone={() => setPrintIds(null)} />}
+      {printIds && <PrintArea D={data} ids={printIds} onDone={() => setPrintIds(null)} onThermal={() => { setThermIds(printIds); setPrintIds(null); }} />}
+      {thermIds && <Thermal ids={thermIds} onDone={() => setThermIds(null)} />}
       {reading && (reading.id == null
         ? <QuickPick onPick={id => setReading({ id, queue: null })} onClose={() => setReading(null)} />
         : <ReadingSheet key={reading.id} subId={reading.id} y={sel.y} r={sel.r} onClose={() => setReading(null)} onNext={reading.queue ? next : null} />)}

@@ -60,6 +60,7 @@ export default function ReadingSheet({ subId, y, r, onClose, onNext }) {
           {!inv.paid && canEd && <><button type="button" className="btn pay" onClick={() => doPay('c')}>تأكيد الدفع نقداً</button><button type="button" className="btn" onClick={() => doPay('b')}>تأكيد الدفع بنكياً</button></>}
           <button type="button" className="btn wa" onClick={wa}>واتساب</button>
           {act.can('pr') && <button type="button" className="btn" onClick={() => act.print([inv.id])}>🖨 طباعة</button>}
+          {act.can('pr') && <button type="button" className={'btn' + (inv.paid ? ' pri' : '')} onClick={() => act.thermal([inv.id])}>🧾 {inv.paid ? 'وصل حراري للأداء' : 'وصل حراري'}</button>}
         </div></div>}
     </Sheet>
   );

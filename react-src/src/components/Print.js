@@ -15,7 +15,7 @@ export function doPrint(name) {
 }
 
 /** معاينة على الشاشة (كما في البرنامج الأصلي) ثم الطباعة */
-export default function PrintArea({ D, ids, onDone }) {
+export default function PrintArea({ D, ids, onDone, onThermal }) {
   const [z, setZ] = useState(() => Math.min(1, (innerWidth - 16) / 794));
   useEffect(() => { const r = () => setZ(Math.min(1, (innerWidth - 16) / 794)); addEventListener('resize', r); return () => removeEventListener('resize', r); }, []);
   useEffect(() => { const k = e => e.key === 'Escape' && onDone(); document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k); }, [onDone]);
@@ -23,6 +23,7 @@ export default function PrintArea({ D, ids, onDone }) {
   return (
     <div className="pv" role="dialog" aria-modal="true" aria-label="معاينة الطباعة" style={{ '--z': z }}>
       <div className="pv-bar"><button type="button" className="btn pri" onClick={() => doPrint('AlFath-Water')} autoFocus>🖨 طباعة</button>
+        {onThermal && <button type="button" className="btn" onClick={onThermal}>🧾 وصل حراري</button>}
         <span>{ids.length > 1 ? ids.length + ' فواتير' : 'فاتورة واحدة'}</span><button type="button" className="btn" onClick={onDone}>إغلاق</button></div>
       <div className="pp">
         {ids.map(id => { const i = D.invs.find(x => x.id === id); if (!i) return null;

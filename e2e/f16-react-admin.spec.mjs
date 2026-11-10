@@ -113,3 +113,20 @@ test('F16-C2 printed invoice is pixel-for-pixel the same layout as the original 
   const lt = await l.locator('#pp .pg').first().innerText(), lb = await l.locator('#pp .pg').first().boundingBox();
   assert.equal(rt.replace(/\s+/g, ' ').trim(), lt.replace(/\s+/g, ' ').trim()); assert.equal(Math.round(rb.width), Math.round(lb.width)); assert.equal(Math.round(rb.height), Math.round(lb.height));
 });
+test('F16-C3 thermal payment receipt: same content as the original, 58 mm option, page sized to the ticket', async () => {
+  const { c, p } = await app(900);
+  const D = await data(p), i = D.invs.find(x => x.paid);
+  await tab(p, 'الفواتير'); await p.getByLabel('الحالة').selectOption('1'); await p.locator('.inv-r', { hasText: i.num }).click();
+  await p.getByRole('button', { name: 'وصل حراري للأداء' }).click(); await p.locator('.tkt').first().waitFor();
+  const rt = await p.locator('.tkt').first().innerText();
+  assert.match(rt, /وصل أداء - فاتورة الماء/); assert.match(rt, /✔ مدفوعة/);
+  const l = await c.newPage(); l.on('dialog', d => d.accept());
+  await l.addInitScript(d => { localStorage.setItem('wcloud_mode', 'local'); localStorage.setItem('w1', JSON.stringify(d)); }, D);
+  await l.goto(LURL); await l.waitForFunction(() => typeof thInv === 'function'); await l.evaluate(id => thInv([id]), i.id);
+  assert.equal(rt.replace(/\s+/g, ' ').trim(), (await l.locator('#tkw .tkt').first().innerText()).replace(/\s+/g, ' ').trim());
+  await p.getByLabel('الصيغة').selectOption('58');
+  assert.equal(Math.round((await p.locator('.tkt').first().boundingBox()).width), Math.round(58 * 96 / 25.4));
+  assert.deepEqual((await data(p)).cfg.th, { fmt: '58', w: 58, pad: 3, fs: 10, logo: 1, bar: 1 });
+  await p.locator('.tkb').getByRole('button', { name: 'طباعة' }).click();
+  assert.equal(await p.evaluate(() => window.__printed), 1); assert.match(await p.evaluate(() => document.getElementById('thpg').textContent), /@page\{size:58mm \d+mm;margin:0\}/);
+});
