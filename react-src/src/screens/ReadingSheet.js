@@ -16,7 +16,7 @@ export default function ReadingSheet({ subId, y, r, onClose, onNext }) {
   const [err, setErr] = useState(''); const [info, setInfo] = useState('');
   const nRef = useRef(null);
   const inv = D.invs.find(i => i.s === subId && i.y == y && i.r == r);
-  const locked = roundPaid(D, subId, y, r);
+  const locked = roundPaid(D, subId, y, r), canEd = act.can('ed');
   const c = n !== '' && o !== '' && !isNaN(n) && !isNaN(o) ? +(+n - +o).toFixed(3) : null;
   const est = useMemo(() => { if (c == null || c < 0) return null; const T = D.cfg.trOn && D.cfg.tr && D.cfg.tr.length ? D.cfg.tr : null;
     return (T ? tierAmt(c, T) : c * D.cfg.price) + (+D.cfg.fee || 0); }, [c, D.cfg]);
@@ -50,14 +50,16 @@ export default function ReadingSheet({ subId, y, r, onClose, onNext }) {
       {locked && <p className="warn">🔒 {PAID_LOCK}</p>}
       {info && <p className="state" role="status">{info}</p>}
       {err && <p className="err" role="alert">{err}</p>}
-      {!locked && <div className="row"><button type="button" className="btn pri" onClick={() => { setInfo(''); save(); }}>{v0 ? 'حفظ التعديل' : 'حفظ القراءة وإصدار الفاتورة'}</button>
+      {!canEd && <p className="warn">ليست لديك صلاحية التعديل.</p>}
+      {!locked && canEd && <div className="row"><button type="button" className="btn pri" onClick={() => { setInfo(''); save(); }}>{v0 ? 'حفظ التعديل' : 'حفظ القراءة وإصدار الفاتورة'}</button>
         {onNext && <button type="button" className="btn" onClick={() => { if (save()) onNext(); }}>حفظ والتالي</button>}
-        {v0 && <button type="button" className="btn ghost" onClick={del}>🗑 مسح القراءة</button>}</div>}
+        {v0 && act.can('del') && <button type="button" className="btn ghost" onClick={del}>🗑 مسح القراءة</button>}</div>}
       {inv && <div className="rs-inv">
         <p className={inv.paid ? 'ok' : ''}>فاتورة <bdi dir="ltr">{inv.num}</bdi>: <b><bdi dir="ltr">{n2(tot(inv))}</bdi> درهم</b>{inv.paid ? `، مؤداة ${inv.pw == 'b' ? 'بنكياً' : 'نقداً'} في ${inv.pd}` : '، غير مؤداة'}</p>
         <div className="row">
-          {!inv.paid && <><button type="button" className="btn pay" onClick={() => doPay('c')}>تأكيد الدفع نقداً</button><button type="button" className="btn" onClick={() => doPay('b')}>تأكيد الدفع بنكياً</button></>}
+          {!inv.paid && canEd && <><button type="button" className="btn pay" onClick={() => doPay('c')}>تأكيد الدفع نقداً</button><button type="button" className="btn" onClick={() => doPay('b')}>تأكيد الدفع بنكياً</button></>}
           <button type="button" className="btn wa" onClick={wa}>واتساب</button>
+          {act.can('pr') && <button type="button" className="btn" onClick={() => act.print([inv.id])}>🖨 طباعة</button>}
         </div></div>}
     </Sheet>
   );

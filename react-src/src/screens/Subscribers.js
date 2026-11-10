@@ -57,7 +57,7 @@ function Detail({ s, onClose }) {
           <div><dt>الديون</dt><dd className={debt ? 'bad' : 'good'}><bdi dir="ltr">{n2(debt)}</bdi> د.م</dd></div>
           <div><dt>الفواتير</dt><dd>{inv.length}</dd></div>
         </dl>
-        <div className="row"><button type="button" className="btn pri" onClick={() => { setSel({ y: Y, r: R }); onClose(); act.openReading(s.id); }}>تسجيل قراءة {roundName(R)}</button></div>
+        {act.can('ed') && <div className="row"><button type="button" className="btn pri" onClick={() => { setSel({ y: Y, r: R }); onClose(); act.openReading(s.id); }}>تسجيل قراءة {roundName(R)}</button></div>}
         <h4>الفواتير</h4>
         {!inv.length ? <Empty>لا توجد فواتير</Empty> : (
           <div className="tbl-w"><table className="tbl"><thead><tr><th>الرقم</th><th>الجولة</th><th>الاستهلاك</th><th>المبلغ</th><th>الحالة</th></tr></thead>

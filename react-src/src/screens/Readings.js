@@ -34,7 +34,7 @@ export default function Readings() {
             <button key={v} type="button" role="radio" aria-checked={f === v} className={f === v ? 'on' : ''} onClick={() => { setF(v); setLim(PAGE); }}>{l}</button>)}
         </div>
         <p className="legend"><span>＋ تسجيل قراءة</span><span>✎ تعديل أو مسح</span><span>🔒 مؤداة، مقفلة</span></p>
-        <button type="button" className="btn pri wide" onClick={issue}>إصدار فواتير {roundName(r)}</button>
+        {act.can('ed') && <button type="button" className="btn pri wide" onClick={issue}>إصدار فواتير {roundName(r)}</button>}
         {msg && <p className="note" role="status">{msg}</p>}
       </section>
       {!list.length ? <Empty>{f === 'wait' ? 'سُجّلت كل القراءات في هذه الجولة.' : 'لا توجد نتائج.'}</Empty> : (

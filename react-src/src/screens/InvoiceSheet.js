@@ -25,10 +25,11 @@ export default function InvoiceSheet({ id, onClose }) {
       </tbody></table>
       {err && <p className="err" role="alert">{err}</p>}
       <div className="row">
-        {!i.paid && <><button type="button" className="btn pay" data-autofocus onClick={() => act.update(D2 => pay(D2, [i.id], 'c'))}>تأكيد الدفع نقداً</button>
+        {!i.paid && act.can('ed') && <><button type="button" className="btn pay" data-autofocus onClick={() => act.update(D2 => pay(D2, [i.id], 'c'))}>تأكيد الدفع نقداً</button>
           <button type="button" className="btn" onClick={() => act.update(D2 => pay(D2, [i.id], 'b'))}>تأكيد الدفع بنكياً</button></>}
         <button type="button" className="btn wa" onClick={() => { const e = openWhatsApp(D, i, act.assoc); setErr(e || ''); }}>واتساب</button>
-        {i.paid && <button type="button" className="btn ghost" onClick={() => { if (confirm('إلغاء دفع الفاتورة ' + i.num + '؟ سيُنقص المبلغ من ' + (i.pw == 'b' ? 'البنك' : 'الصندوق') + '.')) act.update(D2 => unpay(D2, i.id)); }}>إلغاء الدفع</button>}
+        {act.can('pr') && <button type="button" className="btn" onClick={() => act.print([i.id])}>🖨 {i.paid ? 'طباعة الوصل' : 'طباعة الفاتورة'}</button>}
+        {i.paid && act.can('ed') && <button type="button" className="btn ghost" onClick={() => { if (confirm('إلغاء دفع الفاتورة ' + i.num + '؟ سيُنقص المبلغ من ' + (i.pw == 'b' ? 'البنك' : 'الصندوق') + '.')) act.update(D2 => unpay(D2, i.id)); }}>إلغاء الدفع</button>}
       </div>
     </Sheet>
   );

@@ -5,7 +5,7 @@ const ls = { get: k => { try { return localStorage.getItem(k); } catch { return 
 
 export function normalize(D) {
   if (!D || !Array.isArray(D.subs) || !D.reads) throw new Error('ملف غير صالح');
-  D.invs = D.invs || []; D.fin = D.fin || []; D.cfg = Object.assign({ price: 3, fee: 0, due: 15 }, D.cfg || {});
+  D.invs = D.invs || []; D.fin = D.fin || []; D.users = D.users || []; D.cfg = Object.assign({ price: 3, fee: 0, due: 15 }, D.cfg || {});
   return D;
 }
 

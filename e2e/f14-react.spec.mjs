@@ -3,6 +3,7 @@ import test, { after } from 'node:test'; import assert from 'node:assert/strict'
 import fs from 'node:fs';
 import { launch, close, URL } from './helpers.mjs';
 after(close);
+async function goData(r) { if (await r.locator('.nav .more-b').isVisible()) { await r.locator('.nav .more-b').click(); await r.locator('.dlg .opt', { hasText: 'البيانات' }).click(); } else await r.locator('.nav button', { hasText: 'البيانات' }).click(); }
 const BASE = URL.replace(/water\/www\/index\.html|cloud\/index\.html/, '');
 const RURL = BASE + 'react/', LURL = BASE + 'water/www/index.html';
 async function ctx(w = 390) { const b = await launch(); const c = await b.newContext({ viewport: { width: w, height: 844 } }); await c.route(/gstatic|googleapis|cdnjs/, r => r.abort()); return c; }
@@ -13,7 +14,7 @@ const num = s => +String(s).replace(/[^\d.-]/g, '');
 async function both(w = 390) {
   const c = await ctx(w), errs = [];
   const r = await page(c, RURL, errs); await r.locator('.kpi').first().waitFor();
-  await r.locator('.nav button', { hasText: 'البيانات' }).click(); await r.getByRole('button', { name: /بيانات تجريبية/ }).click(); await r.waitForTimeout(1300);
+  await goData(r); await r.getByRole('button', { name: /بيانات تجريبية/ }).click(); await r.waitForTimeout(1300);
   const D = await r.evaluate(() => JSON.parse(localStorage.getItem('w1react') || 'null'));
   const data = D ? D.data : null;
   await c.addInitScript(d => { localStorage.setItem('wcloud_mode', 'local'); if (d && !localStorage.getItem('w1')) localStorage.setItem('w1', JSON.stringify(d)); }, data);
@@ -23,7 +24,7 @@ async function both(w = 390) {
 test('F14-H1 React app opens with demo data, no errors, fits the phone, 4 tabs', async () => {
   const c = await ctx(), errs = []; const r = await page(c, RURL, errs);
   await r.locator('.kpi').first().waitFor(); await r.waitForTimeout(1300);
-  assert.equal(await r.locator('.nav button').count(), 5);
+  assert.equal(await r.locator('.nav button:visible').count(), 5);
   assert.ok(await r.evaluate(() => document.documentElement.scrollWidth) <= 390);
   await r.screenshot({ path: '/tmp/react-home.png' });
   assert.deepEqual(errs, []);
@@ -66,7 +67,7 @@ test('F14-H5 opens an encrypted backup made by the original app', async () => {
   await l.evaluate(() => { D.subs.push({ id: 999, name: 'مشترك من الأصل', meter: 'ENC-1' }); });
   const enc = await l.evaluate(async () => encPack(JSON.stringify(D), 'Secret#2026'));
   const f = '/tmp/react-enc.json'; fs.writeFileSync(f, enc);
-  const r = await page(c, RURL); await r.locator('.nav button', { hasText: 'البيانات' }).click();
+  const r = await page(c, RURL); await goData(r);
   await r.locator('input[type=file]').setInputFiles(f);
   await r.getByLabel('كلمة السر', { exact: true }).fill('nope'); await r.getByRole('button', { name: 'فتح', exact: true }).click();
   await r.getByRole('alert').waitFor();
@@ -77,7 +78,7 @@ test('F14-H5 opens an encrypted backup made by the original app', async () => {
 });
 test('F14-E1 React never writes into the original app data (w1 / w1c)', async () => {
   const c = await ctx(); await c.addInitScript(() => { if (!localStorage.getItem('w1')) localStorage.setItem('w1', JSON.stringify({ subs: [{ id: 1, name: 'أصلي', meter: 'X' }], reads: {}, invs: [], fin: [], cfg: {} })) });
-  const r = await page(c, RURL); await r.locator('.nav button', { hasText: 'البيانات' }).click();
+  const r = await page(c, RURL); await goData(r);
   await r.getByRole('button', { name: /بيانات البرنامج على هذا الجهاز/ }).click(); await r.locator('.kpi').first().waitFor();
   await r.getByRole('button', { name: /الوضع/ }).click();
   const w1 = await r.evaluate(() => localStorage.getItem('w1'));

@@ -155,3 +155,42 @@ tr.click{cursor:pointer}tr.click:hover{background:var(--soft)}
  .nav button{flex:0 0 auto;padding:12px 4px}.nav button::before{top:20%;bottom:20%;left:auto;right:0;width:3px;height:auto;border-radius:3px 0 0 3px}.top{margin-inline-start:-92px;padding-inline-start:108px}}
 .state{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:var(--soft);font-size:14px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;margin:0;font-size:12.5px;color:var(--mu)}
+/* الطباعة */
+.print-area{display:none}
+@media print{
+ @page{size:A4;margin:12mm}
+ body{background:#fff;padding:0!important}
+ body>#root>*:not(.print-area){display:none!important}
+ .print-area{display:block;color:#000;font-size:13pt}
+ .pg{page-break-after:always;break-after:page}.pg:last-child{page-break-after:auto;break-after:auto}
+ .pg-h{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border-bottom:2px solid #000;padding-bottom:8px}
+ .pg-h img{width:64px;height:64px;border-radius:50%}.pg-h b,.pg-h span,.pg-h small{display:block}.pg-h b{font-size:16pt}.pg-n{text-align:end}.pg-n b{font-size:18pt}
+ .pg-sub{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin:14px 0}.pg-sub span{display:block;font-size:10pt;color:#444}.pg-sub b{font-size:13pt}
+ .pg-t{width:100%;border-collapse:collapse;margin:10px 0}.pg-t th,.pg-t td{border:1px solid #000;padding:6px 8px;text-align:center}.pg-t th{background:#eee}
+ .pg-t tfoot td{font-weight:700;font-size:15pt}
+ .pg-st{margin:14px 0;padding:10px;border:2px solid #000;text-align:center;font-weight:700}.pg-st.paid{border-style:double}
+ .pg-f{font-size:11pt}.pg-sig{display:flex;justify-content:space-between;margin-top:40px}.pg-sig span{border-top:1px solid #000;padding-top:4px;min-width:40%;text-align:center}
+}
+/* المالية والإعدادات والدخول */
+.bal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.bal div{background:var(--card);padding:10px 12px}.bal span,.bal small{display:block;font-size:12.5px;color:var(--mu)}.bal b{display:block;font-family:var(--fd);font-size:20px}.bal .tot{background:var(--ink);color:#fff}.bal .tot span,.bal .tot small{color:#9FC3CF}
+@media(max-width:560px){.bal{grid-template-columns:1fr 1fr}.bal .tot{grid-column:1/-1}}
+.fr{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;cursor:pointer}
+.fr:disabled{cursor:default}.fr:not(:disabled):hover{background:var(--soft)}.fr:focus-visible{outline:3px solid var(--water);outline-offset:-3px}
+.fr-t{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--soft)}
+.fr-i{min-width:0}.fr-i b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fr-i small{display:block;color:var(--mu);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-a{font-family:var(--fd);font-size:16px;font-weight:700;white-space:nowrap}.t-in{color:var(--palm)}.t-out{color:var(--pom)}.t-dep,.t-wd{color:var(--water)}
+.form{display:grid;gap:12px;margin-top:12px}.form.two{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.field input,.field select{width:100%}.field small{color:var(--mu);font-size:12px}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}.chk input{width:20px;height:20px;accent-color:var(--water)}
+.perms{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px}.perms legend{padding:0 6px;color:var(--mu);font-size:13px}
+.tiers{display:flex;flex-direction:column;gap:10px}input.mini{width:90px;border:1px solid var(--line);background:var(--stone);border-radius:8px;padding:6px 8px;color:var(--tx)}
+.ur{display:flex;align-items:center;gap:10px;padding:10px 14px}.ur .rr-n{flex:1}.ur-b{display:flex;gap:6px}.ur-b .btn{min-height:38px;padding:6px 12px}
+.code{font-family:var(--fd);font-size:28px;letter-spacing:4px;text-align:center;background:var(--soft);border-radius:12px;padding:12px}
+.login{min-height:calc(100vh - 140px);display:flex;align-items:center;justify-content:center;padding:16px}
+.login-b{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px;text-align:center}
+.login-b img{align-self:center;border-radius:50%}.login-b .field{text-align:start}
+/* «المزيد» على الهاتف، وكل الأقسام في الشريط الجانبي على الحاسوب */
+@media(max-width:899px){.nav .in-more{display:none}}
+@media(min-width:900px){.nav .more-b{display:none}}
+.nav .more-b svg{stroke-width:3}

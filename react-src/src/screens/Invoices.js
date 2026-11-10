@@ -27,6 +27,7 @@ export default function Invoices({ init }) {
           <label>الحالة<select value={st} onChange={e => { setSt(e.target.value); setLim(PAGE); }}><option value="">الكل</option><option value="0">غير مؤداة</option><option value="1">مؤداة</option></select></label>
           <label className="grow">بحث<input value={q} onChange={e => { setQ(e.target.value); setLim(PAGE); }} placeholder="الرقم أو الاسم أو العداد" /></label>
         </div>
+        {act.can('pr') && list.length > 0 && <button type="button" className="btn" onClick={() => { if (list.length <= 20 || confirm('طباعة ' + list.length + ' فاتورة؟')) act.print(list.map(i => i.id)); }}>🖨 طباعة القائمة ({list.length})</button>}
         <div className="sums">
           <div><span>المجموع</span><b><bdi dir="ltr">{fmt(sum)}</bdi> د.م</b></div>
           <div className="good"><span>المؤدى</span><b><bdi dir="ltr">{fmt(paid)}</bdi> د.م</b></div>

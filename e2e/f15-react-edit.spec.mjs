@@ -3,6 +3,7 @@ import test, { after } from 'node:test'; import assert from 'node:assert/strict'
 import fs from 'node:fs';
 import { launch, close, URL } from './helpers.mjs';
 after(close);
+async function goData(r) { if (await r.locator('.nav .more-b').isVisible()) { await r.locator('.nav .more-b').click(); await r.locator('.dlg .opt', { hasText: 'البيانات' }).click(); } else await r.locator('.nav button', { hasText: 'البيانات' }).click(); }
 const BASE = URL.replace(/water\/www\/index\.html|cloud\/index\.html/, ''), RURL = BASE + 'react/', LURL = BASE + 'water/www/index.html';
 async function app(w = 390) {
   const b = await launch(), c = await b.newContext({ viewport: { width: w, height: 844 } }); await c.route(/gstatic|googleapis|cdnjs/, r => r.abort());
@@ -71,7 +72,7 @@ test('F15-H6 WhatsApp reminder: Moroccan number and the original message text', 
 });
 test('F15-C1 a backup saved by React opens in the original app with identical totals', async () => {
   const { c, p } = await app(); await record(p, 130, 100);
-  await p.keyboard.press('Escape'); await tab(p, 'البيانات');
+  await p.keyboard.press('Escape'); await goData(p);
   const [dl] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'حفظ النسخة' }).click()]);
   const f = await dl.path(), J = JSON.parse(fs.readFileSync(f, 'utf8'));
   const l = await c.newPage(); l.on('dialog', d => d.accept());
