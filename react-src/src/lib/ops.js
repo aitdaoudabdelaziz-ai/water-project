@@ -49,3 +49,11 @@ export function openWhatsApp(D, i, assoc) {
   const C = window.Capacitor; if (C && C.isNativePlatform && C.isNativePlatform()) location.href = u; else window.open(u, '_blank', 'noopener');
   return null;
 }
+
+/** مسح قراءة الجولة وفاتورتها غير المؤداة. الفاتورة المؤداة تمنع المسح */
+export function deleteReading(D, id, y, r) {
+  if (roundPaid(D, id, y, r)) return PAID_LOCK;
+  delete D.reads[key(id, y, r)];
+  D.invs = D.invs.filter(x => !(x.s == id && x.y == y && x.r == r && !x.paid && !x.lk));
+  return null;
+}

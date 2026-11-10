@@ -33,6 +33,7 @@ export default function Readings() {
           {[['wait', 'بانتظار القراءة'], ['done', 'مسجّلة'], ['', 'الكل']].map(([v, l]) =>
             <button key={v} type="button" role="radio" aria-checked={f === v} className={f === v ? 'on' : ''} onClick={() => { setF(v); setLim(PAGE); }}>{l}</button>)}
         </div>
+        <p className="legend"><span>＋ تسجيل قراءة</span><span>✎ تعديل أو مسح</span><span>🔒 مؤداة، مقفلة</span></p>
         <button type="button" className="btn pri wide" onClick={issue}>إصدار فواتير {roundName(r)}</button>
         {msg && <p className="note" role="status">{msg}</p>}
       </section>
@@ -43,7 +44,7 @@ export default function Readings() {
               <span className="rr-n"><b>{s.name}</b><small>العداد {s.meter}</small></span>
               <span className="rr-v"><small>السابقة</small><bdi dir="ltr">{v ? v.o : pv ?? '—'}</bdi></span>
               <span className="rr-v"><small>الجديدة</small><bdi dir="ltr">{v ? v.n : '—'}</bdi></span>
-              <span className={'rr-s' + (inv ? (inv.paid ? ' paid' : ' inv') : v ? ' ok' : '')}>{inv ? (inv.paid ? 'مؤداة' : <><bdi dir="ltr">{n2(tot(inv))}</bdi> د.م</>) : v ? 'بدون فاتورة' : 'تسجيل'}</span>
+              <span className={'rr-s' + (inv ? (inv.paid ? ' paid' : ' inv') : v ? ' ok' : '')}>{inv ? (inv.paid ? '🔒 مؤداة' : <>✎ <bdi dir="ltr">{n2(tot(inv))}</bdi></>) : v ? '✎ تعديل' : '＋ تسجيل'}</span>
             </button></li>); })}
         </ul>)}
       {list.length > lim && <button type="button" className="btn wide" onClick={() => setLim(lim + PAGE)}>عرض المزيد ({list.length - lim})</button>}

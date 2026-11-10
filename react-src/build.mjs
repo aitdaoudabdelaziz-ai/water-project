@@ -1,5 +1,5 @@
 // يبني نسخة React إلى ../react/ (تُنشر على alfath-eau.org/react/)
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 let nodePaths = [], esb;
@@ -13,4 +13,6 @@ await build({
 });
 copyFileSync('index.html', '../react/index.html');
 copyFileSync('src/styles.css', '../react/styles.css');
+mkdirSync('../react/fonts', { recursive: true });
+for (const f of readdirSync('fonts/noto-kufi-arabic')) copyFileSync('fonts/noto-kufi-arabic/' + f, '../react/fonts/' + f.replace('LICENSE', 'LICENSE-noto-kufi-arabic.txt'));
 console.log('ok ../react/');

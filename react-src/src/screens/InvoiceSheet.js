@@ -16,7 +16,7 @@ export default function InvoiceSheet({ id, onClose }) {
         <small>{i.paid ? `مؤداة ${i.pw == 'b' ? 'بنكياً' : 'نقداً'} في ${i.pd}` : lt > 0 ? `متأخرة ${lt} يوم (آخر أجل ${dd})` : 'آخر أجل للأداء ' + dd}</small>
       </div>
       <table className="tbl"><tbody>
-        <tr><th>القراءة</th><td><bdi dir="ltr">{i.o} → {i.n}</bdi></td></tr>
+        <tr><th>القراءة</th><td>من <bdi dir="ltr">{i.o}</bdi> إلى <bdi dir="ltr">{i.n}</bdi></td></tr>
         <tr><th>الاستهلاك</th><td><bdi dir="ltr">{c}</bdi> م³</td></tr>
         {i.tr ? tierLines(c, i.tr).map((l, k) => <tr key={k}><th>شطر {k + 1}</th><td><bdi dir="ltr">{l.q} × {n2(l.price)} = {n2(l.amt)}</bdi></td></tr>)
           : <tr><th>الثمن</th><td><bdi dir="ltr">{c} × {n2(i.price)} = {n2(c * i.price)}</bdi></td></tr>}
@@ -25,7 +25,7 @@ export default function InvoiceSheet({ id, onClose }) {
       </tbody></table>
       {err && <p className="err" role="alert">{err}</p>}
       <div className="row">
-        {!i.paid && <><button type="button" className="btn good" data-autofocus onClick={() => act.update(D2 => pay(D2, [i.id], 'c'))}>تأكيد الدفع نقداً</button>
+        {!i.paid && <><button type="button" className="btn pay" data-autofocus onClick={() => act.update(D2 => pay(D2, [i.id], 'c'))}>تأكيد الدفع نقداً</button>
           <button type="button" className="btn" onClick={() => act.update(D2 => pay(D2, [i.id], 'b'))}>تأكيد الدفع بنكياً</button></>}
         <button type="button" className="btn wa" onClick={() => { const e = openWhatsApp(D, i, act.assoc); setErr(e || ''); }}>واتساب</button>
         {i.paid && <button type="button" className="btn ghost" onClick={() => { if (confirm('إلغاء دفع الفاتورة ' + i.num + '؟ سيُنقص المبلغ من ' + (i.pw == 'b' ? 'البنك' : 'الصندوق') + '.')) act.update(D2 => unpay(D2, i.id)); }}>إلغاء الدفع</button>}

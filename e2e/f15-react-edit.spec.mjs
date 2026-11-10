@@ -86,3 +86,20 @@ test('F15-E1 React edits never touch the original data (w1)', async () => {
   await record(p, 120, 100);
   assert.equal(await p.evaluate(() => JSON.parse(localStorage.getItem('w1')).subs[0].name), 'أصلي');
 });
+test('F15-H7 a recorded reading shows it can be edited or deleted; delete removes the unpaid invoice too', async () => {
+  const { p, dialogs } = await app(); await record(p, 140, 100);
+  await p.keyboard.press('Escape'); await p.getByRole('radio', { name: 'مسجّلة' }).click();
+  const row = p.locator('.rr').first(); assert.match(await row.locator('.rr-s').innerText(), /✎/);
+  const name = await row.locator('.rr-n b').innerText(); await row.click();
+  assert.match(await p.locator('.state').innerText(), /قراءة مسجّلة/);
+  await p.getByLabel('القراءة الجديدة').fill('150'); await p.getByRole('button', { name: 'حفظ التعديل' }).click();
+  let D = await data(p); const s = D.subs.find(x => x.name === name), Y = new Date().getFullYear(), R = Math.floor(new Date().getMonth() / 3), k = s.id + '|' + Y + '|' + R;
+  assert.equal(D.reads[k].n, 150); assert.equal(D.invs.find(i => i.s === s.id && i.y === Y && i.r === R).n, 150);
+  await p.getByRole('button', { name: /مسح القراءة/ }).click(); assert.match(dialogs.join(), /مسح قراءة/);
+  D = await data(p); assert.equal(D.reads[k], undefined); assert.equal(D.invs.some(i => i.s === s.id && i.y === Y && i.r === R), false);
+});
+test('F15-N2 a paid round shows the lock and no delete button', async () => {
+  const { p } = await app(); await record(p, 110, 100);
+  await p.getByRole('button', { name: 'تأكيد الدفع نقداً' }).click(); await p.getByText(/مؤداة نقداً/).waitFor();
+  assert.equal(await p.getByRole('button', { name: /مسح القراءة/ }).count(), 0); assert.match(await p.locator('.warn').innerText(), /🔒/);
+});
