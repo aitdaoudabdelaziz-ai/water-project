@@ -5,7 +5,7 @@ import { Empty } from '../components/ui.js';
 
 const PAGE = 80;
 export default function Invoices({ init }) {
-  const { D, X, Y } = useData();
+  const { D, X, Y, act } = useData();
   const years = useMemo(() => [...new Set(D.invs.map(i => i.y).concat(Y))].sort((a, b) => b - a), [D, Y]);
   const [y, setY] = useState(init && init.y != null ? String(init.y) : String(Y));
   const [r, setR] = useState(init && init.r != null ? String(init.r) : '');
@@ -19,7 +19,7 @@ export default function Invoices({ init }) {
   const sum = list.reduce((t, i) => t + tot(i), 0), paid = list.filter(i => i.paid).reduce((t, i) => t + tot(i), 0);
   return (
     <div className="stack">
-      <div className="card toolbar">
+      <div className="panel toolbar">
         <h2>الفواتير <span className="cnt">{list.length}</span></h2>
         <div className="filters">
           <label>السنة<select value={y} onChange={e => { setY(e.target.value); setLim(PAGE); }}><option value="">الكل</option>{years.map(v => <option key={v} value={v}>{v}</option>)}</select></label>
@@ -36,11 +36,11 @@ export default function Invoices({ init }) {
       {!list.length ? <Empty>لا توجد فواتير بهذه الشروط</Empty> : (
         <ul className="list inv">
           {list.slice(0, lim).map(i => { const s = X.byId.get(i.s) || {}, dd = due(i, D.cfg.due), lt = !i.paid ? daysBetween(dd, td) : 0; return (
-            <li key={i.id} className={'inv-r' + (i.paid ? ' paid' : lt > 0 ? ' late' : ' un')}>
-              <div className="inv-a"><b>{s.name}</b><small><bdi dir="ltr">{i.num}</bdi> · {roundName(i.r)} {i.y} · <bdi dir="ltr">{+(i.n - i.o).toFixed(3)}</bdi> م³</small></div>
-              <div className="inv-b"><b><bdi dir="ltr">{n2(tot(i))}</bdi> <em>د.م</em></b>
-                <small className={i.paid ? 'good' : lt > 0 ? 'bad' : ''}>{i.paid ? '✓ ' + (i.pw == 'b' ? 'بنكي' : 'نقداً') + ' ' + (i.pd || '') : lt > 0 ? `متأخرة ${lt} يوم` : 'تستحق ' + dd}</small></div>
-            </li>); })}
+            <li key={i.id}><button type="button" onClick={() => act.openInvoice(i.id)} className={'inv-r' + (i.paid ? ' paid' : lt > 0 ? ' late' : ' un')}>
+              <span className="inv-a"><b>{s.name}</b><small><bdi dir="ltr">{i.num}</bdi>، {roundName(i.r)} {i.y}، <bdi dir="ltr">{+(i.n - i.o).toFixed(3)}</bdi> م³</small></span>
+              <span className="inv-b"><b><bdi dir="ltr">{n2(tot(i))}</bdi> <em>د.م</em></b>
+                <small className={i.paid ? 'good' : lt > 0 ? 'bad' : ''}>{i.paid ? '✓ ' + (i.pw == 'b' ? 'بنكياً' : 'نقداً') + ' ' + (i.pd || '') : lt > 0 ? `متأخرة ${lt} يوم` : 'تستحق ' + dd}</small></span>
+            </button></li>); })}
         </ul>)}
       {list.length > lim && <button type="button" className="btn wide" onClick={() => setLim(lim + PAGE)}>عرض المزيد ({list.length - lim})</button>}
     </div>

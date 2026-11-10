@@ -54,3 +54,17 @@ export async function decryptBackup(x, pw) {
   const k = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: ub(x.salt), iterations: x.it || 250000 }, k0, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
   return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ub(x.iv) }, k, ub(x.ct))));
 }
+
+// ---- تصدير نسخة احتياطية (نفس صيغة البرنامج الأصلي، مع تشفير اختياري) ----
+const b64 = u => { u = new Uint8Array(u); let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return btoa(s); };
+export async function encryptBackup(txt, pw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), it = 250000;
+  const k0 = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  const k = await crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: it }, k0, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, new TextEncoder().encode(txt));
+  return JSON.stringify({ enc: ENC_V, kdf: 'PBKDF2-SHA256', it, salt: b64(salt), iv: b64(iv), ct: b64(ct), date: new Date().toISOString().slice(0, 10) });
+}
+export function download(txt, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'application/json' })); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}

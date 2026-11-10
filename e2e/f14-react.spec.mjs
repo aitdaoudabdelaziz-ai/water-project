@@ -6,7 +6,7 @@ after(close);
 const BASE = URL.replace(/water\/www\/index\.html|cloud\/index\.html/, '');
 const RURL = BASE + 'react/', LURL = BASE + 'water/www/index.html';
 async function ctx(w = 390) { const b = await launch(); const c = await b.newContext({ viewport: { width: w, height: 844 } }); await c.route(/gstatic|googleapis|cdnjs/, r => r.abort()); return c; }
-async function page(c, u, errs = []) { const p = await c.newPage(); p.on('pageerror', e => errs.push(String(e))); p.on('console', m => m.type() === 'error' && errs.push(m.text())); p.on('dialog', d => d.accept()); await p.goto(u); return p; }
+async function page(c, u, errs = []) { const p = await c.newPage(); p.on('pageerror', e => errs.push(String(e))); p.on('console', m => m.type() === 'error' && !/ERR_FAILED/.test(m.text()) && errs.push(m.text())); p.on('dialog', d => d.accept()); await p.goto(u); return p; }
 const num = s => +String(s).replace(/[^\d.-]/g, '');
 
 /** React (بيانات تجريبية) + البرنامج الأصلي بنفس البيانات */
@@ -23,7 +23,7 @@ async function both(w = 390) {
 test('F14-H1 React app opens with demo data, no errors, fits the phone, 4 tabs', async () => {
   const c = await ctx(), errs = []; const r = await page(c, RURL, errs);
   await r.locator('.kpi').first().waitFor(); await r.waitForTimeout(1300);
-  assert.equal(await r.locator('.nav button').count(), 4);
+  assert.equal(await r.locator('.nav button').count(), 5);
   assert.ok(await r.evaluate(() => document.documentElement.scrollWidth) <= 390);
   await r.screenshot({ path: '/tmp/react-home.png' });
   assert.deepEqual(errs, []);
@@ -57,7 +57,7 @@ test('F14-H4 subscribers: search, debt filter and detail sheet', async () => {
   assert.ok(await r.locator('.tbl tbody tr').count() >= 1);
   await r.screenshot({ path: '/tmp/react-sub.png' });
   await r.keyboard.press('Escape'); assert.equal(await r.getByRole('dialog').count(), 0);
-  await r.getByLabel('بحث في المشتركين').fill(''); await r.getByRole('button', { name: 'عليهم ديون' }).click();
+  await r.getByLabel('بحث في المشتركين').fill(''); await r.getByRole('button', { name: 'عليهم ديون', exact: true }).click();
   const n = await r.locator('.toolbar h2 .cnt').innerText(), late = await r.evaluate(() => 0);
   assert.ok(num(n) > 0 && num(n) < 40, n);
 });
@@ -68,9 +68,9 @@ test('F14-H5 opens an encrypted backup made by the original app', async () => {
   const f = '/tmp/react-enc.json'; fs.writeFileSync(f, enc);
   const r = await page(c, RURL); await r.locator('.nav button', { hasText: 'البيانات' }).click();
   await r.locator('input[type=file]').setInputFiles(f);
-  await r.getByLabel('كلمة السر').fill('nope'); await r.getByRole('button', { name: 'فتح', exact: true }).click();
+  await r.getByLabel('كلمة السر', { exact: true }).fill('nope'); await r.getByRole('button', { name: 'فتح', exact: true }).click();
   await r.getByRole('alert').waitFor();
-  await r.getByLabel('كلمة السر').fill('Secret#2026'); await r.getByRole('button', { name: 'فتح', exact: true }).click();
+  await r.getByLabel('كلمة السر', { exact: true }).fill('Secret#2026'); await r.getByRole('button', { name: 'فتح', exact: true }).click();
   await r.locator('.kpi').first().waitFor(); await r.locator('.nav button', { hasText: 'المشتركون' }).click();
   await r.getByLabel('بحث في المشتركين').fill('ENC-1'); await r.waitForTimeout(200);
   assert.match(await r.locator('.list').innerText(), /مشترك من الأصل/);

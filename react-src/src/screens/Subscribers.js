@@ -16,7 +16,7 @@ export default function Subscribers() {
   const s = sel != null ? X.byId.get(sel) : null;
   return (
     <div className="stack">
-      <div className="card toolbar">
+      <div className="panel toolbar">
         <h2>المشتركون <span className="cnt">{list.length}</span></h2>
         <div className="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4-4" /></svg>
           <input value={q} onChange={e => { setQ(e.target.value); setLim(PAGE); }} placeholder="بحث بالاسم أو العداد أو البطاقة أو الهاتف" aria-label="بحث في المشتركين" /></div>
@@ -30,7 +30,7 @@ export default function Subscribers() {
           {list.slice(0, lim).map(s => { const d = X.debtBySub.get(s.id); return (
             <li key={s.id}><button type="button" className="row-b" onClick={() => setSel(s.id)}>
               <Avatar sub={s} />
-              <span className="row-i"><b>{s.name}</b><small>العداد {s.meter}{s.phone ? <> · <bdi dir="ltr">{s.phone}</bdi></> : null}</small></span>
+              <span className="row-i"><b>{s.name}</b><small>العداد {s.meter}{s.phone ? <>، <bdi dir="ltr">{s.phone}</bdi></> : null}</small></span>
               {d ? <span className="tag bad"><bdi dir="ltr">{n2(d)}</bdi> د.م</span> : <span className="tag good">لا ديون</span>}
             </button></li>); })}
         </ul>)}
@@ -41,7 +41,7 @@ export default function Subscribers() {
 }
 
 function Detail({ s, onClose }) {
-  const { D, X } = useData();
+  const { D, X, act, setSel, Y, R } = useData();
   const inv = X.live.filter(i => i.s === s.id).sort((a, b) => b.y - a.y || b.r - a.r);
   const debt = X.debtBySub.get(s.id) || 0;
   return (
@@ -57,10 +57,11 @@ function Detail({ s, onClose }) {
           <div><dt>الديون</dt><dd className={debt ? 'bad' : 'good'}><bdi dir="ltr">{n2(debt)}</bdi> د.م</dd></div>
           <div><dt>الفواتير</dt><dd>{inv.length}</dd></div>
         </dl>
+        <div className="row"><button type="button" className="btn pri" onClick={() => { setSel({ y: Y, r: R }); onClose(); act.openReading(s.id); }}>تسجيل قراءة {roundName(R)}</button></div>
         <h4>الفواتير</h4>
         {!inv.length ? <Empty>لا توجد فواتير</Empty> : (
           <div className="tbl-w"><table className="tbl"><thead><tr><th>الرقم</th><th>الجولة</th><th>الاستهلاك</th><th>المبلغ</th><th>الحالة</th></tr></thead>
-            <tbody>{inv.map(i => <tr key={i.id}><td><bdi dir="ltr">{i.num}</bdi></td><td>{roundName(i.r)} {i.y}</td><td><bdi dir="ltr">{+(i.n - i.o).toFixed(3)}</bdi> م³</td>
+            <tbody>{inv.map(i => <tr key={i.id} className="click" onClick={() => { onClose(); act.openInvoice(i.id); }}><td><bdi dir="ltr">{i.num}</bdi></td><td>{roundName(i.r)} {i.y}</td><td><bdi dir="ltr">{+(i.n - i.o).toFixed(3)}</bdi> م³</td>
               <td><bdi dir="ltr">{n2(tot(i))}</bdi></td><td className={i.paid ? 'good' : 'bad'}>{i.paid ? '✓ ' + (i.pd || '') : 'غير مؤداة'}</td></tr>)}</tbody></table></div>)}
         <p className="note">مجموع المؤدى: <bdi dir="ltr">{fmt(inv.filter(i => i.paid).reduce((t, i) => t + tot(i), 0))}</bdi> د.م</p>
       </div>

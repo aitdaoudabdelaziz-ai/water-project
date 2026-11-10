@@ -5,7 +5,7 @@ import { Kpi, CountUp, Avatar, Empty } from '../components/ui.js';
 
 const LIM = 5;
 export default function Dashboard({ go }) {
-  const { D, X, Y, R } = useData();
+  const { D, X, Y, R, act, setSel } = useData();
   const k = useMemo(() => {
     const now = new Date(), cy = now.getFullYear(), cm = now.getMonth(), mIdx = Y == cy ? cm : 11;
     const paid = X.live.filter(i => i.paid), ym = i => String(i.pd || i.date || '').slice(0, 7);
@@ -29,7 +29,7 @@ export default function Dashboard({ go }) {
     <div className="stack">
       <section className="card hero" aria-labelledby="ov">
         <div className="hero-h">
-          <div><h2 id="ov">نظرة عامة</h2><small>{name} · {new Date().toLocaleDateString('ar-MA', { day: 'numeric', month: 'long', year: 'numeric' })}</small></div>
+          <div><h2 id="ov">نظرة عامة</h2><small>{name}، {new Date().toLocaleDateString('ar-MA', { day: 'numeric', month: 'long', year: 'numeric' })}</small></div>
           <button type="button" className="bell" onClick={() => go('invoices', { st: '0' })} aria-label={'المتأخرون عن الأداء: ' + k.late}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
             {k.late > 0 && <b>{k.late}</b>}
@@ -37,7 +37,7 @@ export default function Dashboard({ go }) {
         </div>
         <div className="hero-g">
           <div className="kpis">
-            <Kpi label={'المداخيل — ' + MO[k.mIdx]} tone="pri" pill={k.nPay + ' أداء'} onClick={() => go('invoices', { st: '1' })}><CountUp value={Math.round(k.mon[k.mIdx])} format={fmt} /><em>د.م</em></Kpi>
+            <Kpi label={'مداخيل ' + MO[k.mIdx]} tone="pri" pill={k.nPay + ' أداء'} onClick={() => go('invoices', { st: '1' })}><CountUp value={Math.round(k.mon[k.mIdx])} format={fmt} /><em>د.م</em></Kpi>
             <Kpi label={'الاستخلاص ' + Y} pill={k.nPd + '/' + k.nInv} onClick={() => go('invoices')}><CountUp value={k.pc} suffix="%" format={v => Math.round(v)} /></Kpi>
             <Kpi label="المشتركون" pill={k.ok + ' قراءة'} onClick={() => go('subs')}><CountUp value={D.subs.length} format={fmt} /></Kpi>
             <Kpi label="الديون" tone="bad" pill={k.late + ' مشترك'} onClick={() => go('invoices', { st: '0' })}><CountUp value={Math.round(k.debt)} format={fmt} /><em>د.م</em></Kpi>
@@ -51,31 +51,30 @@ export default function Dashboard({ go }) {
           </div>
         </div>
         <div className="tiles">
-          <div className="tile"><span>الاستهلاك — {roundName(R)}</span><b><bdi dir="ltr">{+k.cons.toFixed(2)}</bdi> م³</b><small>قراءات: <bdi dir="ltr">{k.ok} / {D.subs.length}</bdi></small></div>
-          <div className="tile"><span>الخزينة</span><b><bdi dir="ltr">{fmt(X.balance[0] + X.balance[1])}</bdi> د.م</b><small>صندوق <bdi dir="ltr">{fmt(X.balance[0])}</bdi> · بنك <bdi dir="ltr">{fmt(X.balance[1])}</bdi></small></div>
+          <div className="tile"><span>الاستهلاك في {roundName(R)}</span><b><bdi dir="ltr">{+k.cons.toFixed(2)}</bdi> م³</b><small>قراءات: <bdi dir="ltr">{k.ok} / {D.subs.length}</bdi></small></div>
+          <div className="tile"><span>الخزينة</span><b><bdi dir="ltr">{fmt(X.balance[0] + X.balance[1])}</bdi> د.م</b><small>الصندوق <bdi dir="ltr">{fmt(X.balance[0])}</bdi>، البنك <bdi dir="ltr">{fmt(X.balance[1])}</bdi></small></div>
         </div>
       </section>
 
       <section className="card flow" aria-labelledby="fl">
-        <div className="flow-t"><h3 id="fl">سير الجولة</h3><span>{roundName(R)} — {Y}</span></div>
+        <div className="flow-t"><h3 id="fl">سير الجولة</h3><span>{roundName(R)} {Y}</span></div>
         <div className="cols">
           <Col title="بانتظار القراءة" dot="g" n={wait.length} more={() => go('subs')}>
             {wait.slice(0, LIM).map(s => { const pv = prevNew(D, s.id, Y, R); return (
-              <Item key={s.id} sub={s} line={<>العداد {s.meter}{pv != null && <> · آخر قراءة <bdi dir="ltr">{pv}</bdi></>}</>} status="بانتظار القراءة" />); })}
+              <Item key={s.id} sub={s} line={<>العداد {s.meter}{pv != null && <>، آخر قراءة <bdi dir="ltr">{pv}</bdi></>}</>} status="سجّل القراءة" onClick={() => { setSel({ y: Y, r: R }); act.openReading(s.id, wait.map(x => x.id)); }} />); })}
             {!wait.length && <Empty>✔ كل القراءات مسجّلة</Empty>}
           </Col>
           <Col title="غير مؤداة" dot="o" n={un.length} more={() => go('invoices', { y: Y, r: R, st: '0' })}>
             {un.slice(0, LIM).map(i => { const s = X.byId.get(i.s), dd = due(i, D.cfg.due), lt = daysBetween(dd, td); return (
-              <Item key={i.id} sub={s} tone={lt > 0 ? 'late' : 'un'} line={<>{i.num} · <bdi dir="ltr">{n2(tot(i))}</bdi> د.م</>} status={lt > 0 ? `⏱ متأخرة ${lt} يوم` : 'تستحق ' + dd} bad={lt > 0} />); })}
+              <Item key={i.id} sub={s} tone={lt > 0 ? 'late' : 'un'} line={<><bdi dir="ltr">{n2(tot(i))}</bdi> د.م، فاتورة <bdi dir="ltr">{i.num}</bdi></>} status={lt > 0 ? `متأخرة ${lt} يوم` : 'تستحق ' + dd} bad={lt > 0} onClick={() => act.openInvoice(i.id)} />); })}
             {!un.length && <Empty>لا توجد فواتير غير مؤداة</Empty>}
           </Col>
           <Col title="مؤداة" dot="ok" n={pd.length} more={() => go('invoices', { y: Y, r: R, st: '1' })}>
-            {pd.slice(0, LIM).map(i => <Item key={i.id} sub={X.byId.get(i.s)} tone="paid" line={<><bdi dir="ltr">{n2(tot(i))}</bdi> د.م · {i.pw == 'b' ? 'بنكي' : 'نقداً'}</>} status={'✓ ' + (i.pd || '')} good />)}
+            {pd.slice(0, LIM).map(i => <Item key={i.id} sub={X.byId.get(i.s)} tone="paid" line={<><bdi dir="ltr">{n2(tot(i))}</bdi> د.م، {i.pw == 'b' ? 'بنكياً' : 'نقداً'}</>} status={'✓ ' + (i.pd || '')} good onClick={() => act.openInvoice(i.id)} />)}
             {!pd.length && <Empty>لا توجد أداءات بعد</Empty>}
           </Col>
         </div>
       </section>
-      <p className="note">{RN[R]} — {Y}</p>
     </div>
   );
 }
@@ -85,16 +84,16 @@ function Col({ title, dot, n, more, children }) {
     <div className="col">
       <div className="col-h"><i className={'dot ' + dot} /><b>{title}</b><span className="cnt">{n}</span></div>
       {children}
-      {n > LIM && <button type="button" className="more" onClick={more}>عرض الكل ({n}) ←</button>}
+      {n > LIM && <button type="button" className="more" onClick={more}>عرض الكل ({n})</button>}
     </div>
   );
 }
-function Item({ sub, line, status, tone, bad, good }) {
+function Item({ sub, line, status, tone, bad, good, onClick }) {
   return (
-    <div className={'item' + (tone ? ' t-' + tone : '')}>
+    <button type="button" onClick={onClick} className={'item' + (tone ? ' t-' + tone : '')}>
       <Avatar sub={sub} />
-      <div className="item-i"><b>{sub ? sub.name : '—'}</b><small>{line}</small></div>
-      <div className={'item-s' + (bad ? ' bad' : good ? ' good' : '')}>{status}</div>
-    </div>
+      <span className="item-i"><b>{sub ? sub.name : '—'}</b><small>{line}</small></span>
+      <span className={'item-s' + (bad ? ' bad' : good ? ' good' : '')}>{status}</span>
+    </button>
   );
 }
