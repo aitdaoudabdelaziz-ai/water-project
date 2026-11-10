@@ -107,7 +107,7 @@ export default function App() {
           {P.user && <button type="button" className="opt" onClick={() => { setMore(false); login(null); }}><b>خروج</b><small>{P.user.u}</small></button>}</div>
       </Sheet>}
       </>}
-      {printIds && <PrintArea D={data} ids={printIds} assoc={assoc} onDone={() => setPrintIds(null)} />}
+      {printIds && <PrintArea D={data} ids={printIds} onDone={() => setPrintIds(null)} />}
       {reading && (reading.id == null
         ? <QuickPick onPick={id => setReading({ id, queue: null })} onClose={() => setReading(null)} />
         : <ReadingSheet key={reading.id} subId={reading.id} y={sel.y} r={sel.r} onClose={() => setReading(null)} onNext={reading.queue ? next : null} />)}

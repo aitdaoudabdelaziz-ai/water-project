@@ -80,13 +80,14 @@ test('F16-H4 a user with "subscribers only" sees only that section and cannot ed
   assert.deepEqual((await p.locator('.nav button:visible span').allInnerTexts()), ['المشتركون']);
   await p.locator('.row-b').first().click(); assert.equal(await p.getByRole('button', { name: /تسجيل قراءة/ }).count(), 0);
 });
-test('F16-H5 print: invoice sheet prints that invoice (A4 page with number and name)', async () => {
+test('F16-H5 print: same invoice template as the original, preview then print', async () => {
   const { p } = await app(); await tab(p, 'الفواتير'); await p.locator('.inv-r').first().click();
   const num = (await p.locator('#is-t').innerText()).replace('فاتورة ', '');
-  await p.getByRole('button', { name: /طباعة الفاتورة|طباعة الوصل/ }).click(); await p.waitForTimeout(300);
-  assert.equal(await p.evaluate(() => window.__printed), 1);
-  assert.match(await p.locator('.print-area').textContent(), new RegExp(num.replace('/', '\\/')));
-  await p.emulateMedia({ media: 'print' }); await p.screenshot({ path: '/tmp/react-print.png' }); await p.emulateMedia({ media: 'screen' });
+  await p.getByRole('button', { name: /طباعة الفاتورة|طباعة الوصل/ }).click();
+  const pg = p.locator('.pv .pg'); await pg.first().waitFor();
+  assert.match(await pg.first().textContent(), new RegExp(num.replace('/', '\\/'))); assert.match(await pg.first().textContent(), /فاتورة الماء الصالح للشرب/);
+  await p.locator('.pv-bar').getByRole('button', { name: '🖨 طباعة' }).click(); assert.equal(await p.evaluate(() => window.__printed), 1);
+  await p.locator('.pv-bar').getByRole('button', { name: 'إغلاق' }).click(); assert.equal(await p.locator('.pv').count(), 0);
 });
 test('F16-C1 a user created in React can log in to the original app (same password hashing)', async () => {
   const { c, p } = await app(); await tab(p, 'الإعدادات');
@@ -97,4 +98,18 @@ test('F16-C1 a user created in React can log in to the original app (same passwo
   await l.goto(LURL); await l.locator('#lk').waitFor({ state: 'visible' });
   await l.fill('#lu', 'boss'); await l.fill('#lp', 'Secret99'); await l.getByRole('button', { name: 'دخول' }).click();
   await l.locator('#lk').waitFor({ state: 'hidden' });
+});
+
+test('F16-C2 printed invoice is pixel-for-pixel the same layout as the original app', async () => {
+  const { c, p } = await app(1000);
+  const D = await data(p), i = D.invs.find(x => x.paid);
+  await p.evaluate(id => { window.__id = id; }, i.id);
+  await tab(p, 'الفواتير'); await p.getByLabel('الحالة').selectOption('1'); await p.locator('.inv-r', { hasText: i.num }).click();
+  await p.getByRole('button', { name: /طباعة الوصل/ }).click(); await p.locator('.pv .pg').first().waitFor();
+  const rt = await p.locator('.pv .pg').first().innerText(), rb = await p.locator('.pv .pg').first().boundingBox();
+  const l = await c.newPage(); l.on('dialog', d => d.accept());
+  await l.addInitScript(d => { localStorage.setItem('wcloud_mode', 'local'); localStorage.setItem('w1', JSON.stringify(d)); }, D);
+  await l.goto(LURL); await l.waitForFunction(() => typeof showInv === 'function'); await l.evaluate(id => showInv([id]), i.id);
+  const lt = await l.locator('#pp .pg').first().innerText(), lb = await l.locator('#pp .pg').first().boundingBox();
+  assert.equal(rt.replace(/\s+/g, ' ').trim(), lt.replace(/\s+/g, ' ').trim()); assert.equal(Math.round(rb.width), Math.round(lb.width)); assert.equal(Math.round(rb.height), Math.round(lb.height));
 });

@@ -13,6 +13,7 @@ await build({
 });
 copyFileSync('index.html', '../react/index.html');
 copyFileSync('src/styles.css', '../react/styles.css');
+copyFileSync('assets/logo.jpg', '../react/logo.jpg');
 mkdirSync('../react/fonts', { recursive: true });
 for (const f of readdirSync('fonts/noto-kufi-arabic')) copyFileSync('fonts/noto-kufi-arabic/' + f, '../react/fonts/' + f.replace('LICENSE', 'LICENSE-noto-kufi-arabic.txt'));
 console.log('ok ../react/');

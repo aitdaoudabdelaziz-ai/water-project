@@ -19,6 +19,8 @@ export default function Settings() {
       <section className="panel"><h2>الجمعية</h2>
         <div className="form two">
           <Field label="اسم الجمعية" value={D.cfg.aname || 'جمعية الفتح للتنمية والتعاون'} onSave={v => set('aname', v.trim())} />
+          <Field label="المكان (يظهر على الفاتورة)" value={D.cfg.acity || 'أقايغان - إقليم طاطا'} onSave={v => set('acity', v.trim())} />
+          <Field label="سطر التعريف (يظهر على الفاتورة)" value={D.cfg.alc || 'جمعية تنموية - مرخصة لتوزيع الماء الصالح للشرب'} onSave={v => set('alc', v.trim())} />
           <Field label="الهاتف" value={D.cfg.phone} inputMode="tel" onSave={v => set('phone', v.trim())} hint="يظهر في رسائل واتساب والفواتير" />
           <Field label="البريد الإلكتروني" value={D.cfg.email} type="email" onSave={v => set('email', v.trim())} />
           <Field label="البنك" value={D.cfg.bank} onSave={v => set('bank', v.trim())} />
