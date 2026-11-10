@@ -1,0 +1,32 @@
+name: Fetch Arabic fonts (self-hosted)
+on:
+  workflow_dispatch:
+jobs:
+  fonts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Download fonts (fontsource, OFL)
+        run: |
+          mkdir -p /tmp/f && cd /tmp/f && npm init -y >/dev/null
+          npm i --no-audit --no-fund @fontsource/tajawal @fontsource/cairo @fontsource/almarai @fontsource/noto-kufi-arabic @fontsource/ibm-plex-sans-arabic @fontsource/readex-pro @fontsource/noto-naskh-arabic
+          cd $GITHUB_WORKSPACE && mkdir -p react-src/fonts
+          for f in tajawal cairo almarai noto-kufi-arabic ibm-plex-sans-arabic readex-pro noto-naskh-arabic; do
+            mkdir -p react-src/fonts/$f
+            for w in 400 500 700 800; do
+              for s in arabic latin; do
+                src=/tmp/f/node_modules/@fontsource/$f/files/$f-$s-$w-normal.woff2
+                [ -f "$src" ] && cp "$src" react-src/fonts/$f/ || true
+              done
+            done
+            cp /tmp/f/node_modules/@fontsource/$f/LICENSE react-src/fonts/$f/ 2>/dev/null || true
+          done
+          ls -R react-src/fonts | head -80
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add react-src/fonts && git commit -m "Self-hosted Arabic fonts for the React version (OFL, from fontsource)" && git pull --rebase && git push || echo "nothing to commit"
