@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { demoData, deviceData, normalize, decryptBackup, encryptBackup, download, ENC_V } from '../lib/store.js';
 import { useData } from '../lib/useData.js';
+import { signIn, signOut, AERR, DEFFB } from '../lib/cloud.js';
 import { PasswordDialog } from '../components/ui.js';
 
 export default function DataSource({ current, onPick }) {
-  const { D } = useData();
+  const { D, act } = useData();
   const [pw, setPw] = useState(''); const [xmsg, setXmsg] = useState('');
   const file = useRef(null); const [enc, setEnc] = useState(null); const [err, setErr] = useState('');
   const dev = deviceData();
@@ -26,6 +27,7 @@ export default function DataSource({ current, onPick }) {
         </div>
         <input ref={file} type="file" accept=".json,application/json" hidden onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) read(f); }} />
       </section>
+      <Cloud act={act} />
       <section className="panel">
         <h2>حفظ نسخة من بيانات React</h2>
         <p className="note">تُفتح بالبرنامج الحالي من الإعدادات، استرجاع نسخة. كلمة السر اختيارية: بدونها يُحفظ الملف غير مشفّر.</p>
@@ -41,5 +43,32 @@ export default function DataSource({ current, onPick }) {
         try { const x = await decryptBackup(enc, pw); delete x.__files; setEnc(null); onPick(normalize(x), 'نسخة مشفّرة'); }
         catch { setErr('كلمة السر غير صحيحة. حاول مرة أخرى.'); } }} />}
     </div>
+  );
+}
+
+/** الاتصال بسحابة الجمعية (Firebase) — قراءة فقط في هذه المرحلة */
+function Cloud({ act }) {
+  const c = act.cloud || {}, on = act.readOnly;
+  const [em, setEm] = useState(DEFFB.admin || ''); const [pw, setPw] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
+  const go = async e => { e.preventDefault(); setBusy(true); setErr('');
+    try { await signIn(em, pw); setPw(''); act.setCloudMode(true); } catch (x) { setErr(AERR[x && x.code] || 'تعذّر الدخول: ' + (x && x.message || x)); } finally { setBusy(false); } };
+  return (
+    <section className="panel" aria-labelledby="cl-h">
+      <h2 id="cl-h">☁ سحابة الجمعية</h2>
+      {!on || c.status === 'login' ? <>
+        <p className="note">اعرض بياناتك الحقيقية من السحابة داخل نسخة React. <b>للقراءة فقط</b> في هذه المرحلة: لا يُكتب أي شيء في السحابة.</p>
+        <form className="form two" onSubmit={go}>
+          <label className="field">البريد الإلكتروني<input type="email" value={em} onChange={e => setEm(e.target.value)} autoComplete="username" /></label>
+          <label className="field">كلمة سر السحابة<input type="password" value={pw} onChange={e => setPw(e.target.value)} autoComplete="current-password" /></label>
+          {err && <p className="err" role="alert">{err}</p>}
+          <button type="submit" className="btn pri" disabled={busy || !pw}>{busy ? 'جارٍ الاتصال...' : 'الاتصال بالسحابة (قراءة فقط)'}</button>
+        </form>
+        {on && <button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى نسخة React المحلية</button>}
+      </> : <>
+        <p className={c.status === 'error' ? 'err' : 'state'} role="status">{c.status === 'live' ? `متصل بالسحابة${c.user ? ' بحساب ' + c.user : ''}. البيانات تتحدّث مباشرة${c.cache ? ' (من النسخة المحفوظة على الجهاز)' : ''}.` : c.status === 'error' ? c.error : 'جارٍ تحميل بيانات الجمعية من السحابة...'}</p>
+        <div className="row"><button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى نسخة React المحلية</button>
+          <button type="button" className="btn ghost" onClick={async () => { await signOut(); act.setCloudMode(false); }}>تسجيل الخروج من السحابة</button></div>
+      </>}
+    </section>
   );
 }

@@ -19,6 +19,7 @@ import Login from './screens/Login.js';
 import PrintArea from './components/Print.js';
 import Thermal from './components/Thermal.js';
 import { perms, session } from './lib/auth.js';
+import { connect } from './lib/cloud.js';
 
 // [المعرّف، الاسم، الأيقونة، الصلاحية، في «المزيد» على الهاتف]
 const TABS = [
@@ -43,6 +44,21 @@ export default function App() {
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem(THEME) || ''; } catch { return ''; } });
   const X = useDerived(data);
   const [cu, setCu] = useState(() => session.get());
+  // السحابة: قراءة فقط في هذه الخطوة. البيانات المحلية لنسخة React تبقى كما هي.
+  const [cloudOn, setCloudOn] = useState(() => { try { return localStorage.getItem('w1react_cloud') === '1'; } catch { return false; } });
+  const [cloud, setCloud] = useState({ status: 'off' });
+  const local = useRef(null);
+  useEffect(() => {
+    if (!cloudOn) { setCloud({ status: 'off' }); if (local.current) { setDs(local.current); local.current = null; } return; }
+    try { const c = JSON.parse(localStorage.getItem('w1react_cloudcache') || 'null'); if (c && c.subs) { if (!local.current) local.current = cur.current; setDs({ data: c, source: 'السحابة (نسخة محفوظة)' }); } } catch { /* */ }
+    let stop = () => {}, alive = true;
+    connect(ev => { if (!alive) return; setCloud(ev);
+      if (ev.data) { if (!local.current) local.current = cur.current; try { localStorage.setItem('w1react_cloudcache', JSON.stringify(ev.data)); } catch { /* */ }
+        setDs({ data: ev.data, source: 'السحابة' }); } }).then(f => { stop = f; });
+    return () => { alive = false; stop(); };
+  }, [cloudOn]);
+  const setCloudMode = on => { try { on ? localStorage.setItem('w1react_cloud', '1') : localStorage.removeItem('w1react_cloud'); } catch { /* */ } setCloudOn(on); };
+  const readOnly = cloudOn;
   const P = perms(data, cu);
   const [more, setMore] = useState(false);
   const [printIds, setPrintIds] = useState(null);
@@ -56,6 +72,7 @@ export default function App() {
   // التعديل متزامن حتى ترجع العملية نتيجتها (خطأ أو عدد) مباشرة
   const cur = useRef(null); if (!cur.current || cur.current.data !== data) cur.current = { data, source };
   const update = useCallback(fn => {
+    if (cur.current.source && cur.current.source.startsWith('السحابة')) { alert('بيانات السحابة للقراءة فقط في هذه المرحلة. التعديل غير مفعّل بعد.'); return; }
     const prev = cur.current, D2 = JSON.parse(JSON.stringify(prev.data)); fn(D2);
     cur.current = { data: D2, source: prev.source }; saveCopy(D2, prev.source); setDs(cur.current);
   }, []);
@@ -66,7 +83,8 @@ export default function App() {
   const allowed = t => t[3] === 'dash' ? P.dash : t[3] === 'admin' ? P.admin : P.can(t[3]);
   const tabs = TABS.filter(allowed);
   useEffect(() => { if (!tabs.some(t => t[0] === tab) && tabs.length) setTab(tabs[0][0]); }, [tab, tabs.length, cu]);
-  const act = { update, assoc, can: P.can, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
+  const can = k => (readOnly && (k === 'ed' || k === 'del')) ? false : P.can(k);
+  const act = { update, assoc, can, readOnly, cloud, setCloudMode, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
     openReading: (id, queue) => setReading({ id, queue: queue || null }),
     openInvoice: id => setInvoice(id) };
   const next = () => { const q = reading.queue || [], k = q.indexOf(reading.id);
@@ -80,6 +98,7 @@ export default function App() {
       <header className="top">
         <img src="../icon-192.png" alt="" width="44" height="44" />
         <div className="brand"><b>{assoc}</b><small>لجنة الماء الصالح للشرب</small></div>
+        {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''}>☁ {cloud.status === 'live' ? 'السحابة' : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span>}
         <button type="button" className="icon" onClick={() => setReading({ id: null, queue: null })} aria-label="تحصيل سريع" title="تحصيل سريع">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg></button>
         <button type="button" className="icon" onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={dark ? 'الوضع الفاتح' : 'الوضع الداكن'}>{dark ? '☀' : '☾'}</button>

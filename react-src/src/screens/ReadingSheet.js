@@ -50,7 +50,7 @@ export default function ReadingSheet({ subId, y, r, onClose, onNext }) {
       {locked && <p className="warn">🔒 {PAID_LOCK}</p>}
       {info && <p className="state" role="status">{info}</p>}
       {err && <p className="err" role="alert">{err}</p>}
-      {!canEd && <p className="warn">ليست لديك صلاحية التعديل.</p>}
+      {!canEd && <p className="warn">{act.readOnly ? '☁ بيانات السحابة للقراءة فقط حالياً.' : 'ليست لديك صلاحية التعديل.'}</p>}
       {!locked && canEd && <div className="row"><button type="button" className="btn pri" onClick={() => { setInfo(''); save(); }}>{v0 ? 'حفظ التعديل' : 'حفظ القراءة وإصدار الفاتورة'}</button>
         {onNext && <button type="button" className="btn" onClick={() => { if (save()) onNext(); }}>حفظ والتالي</button>}
         {v0 && act.can('del') && <button type="button" className="btn ghost" onClick={del}>🗑 مسح القراءة</button>}</div>}
