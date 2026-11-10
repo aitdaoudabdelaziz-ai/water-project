@@ -1,5 +1,5 @@
 // السحابة (Firebase) — نفس صيغة تخزين البرنامج الحالي حرفياً (مجموعة alfath، وثائق main / s0-7 / r_y_r / i_y_r / f0-3 / users)
-// المرحلة 4، الخطوة 1: قراءة فقط. لا يكتب هذا الملف شيئاً في السحابة.
+// القراءة مباشرة، والكتابة (push) بنفس طريقة البرنامج الحالي: الفرق فقط، سجلاً بسجل، مع الدمج.
 const FBV = '10.14.1', COL = 'alfath';
 export const DEFFB = {"cfg":{"apiKey":"AIzaSyB8WSV_5IJim98ltYsxlGp_nWPcnILa_yE","authDomain":"water-assoc.firebaseapp.com","projectId":"water-assoc","storageBucket":"water-assoc.firebasestorage.app","messagingSenderId":"1053204560068","appId":"1:1053204560068:web:d2a877234cbba162773191","measurementId":"G-F71JXGQ5YK"},"admin":"aitdaoudabdelaziz@gmail.com"};
 
@@ -66,10 +66,40 @@ export async function connect(on) {
     on({ status: 'loading', user: u.email });
     unsub = fb.db.collection(COL).onSnapshot({ includeMetadataChanges: true }, s => {
       if (!s.docs.length && s.metadata.fromCache) return;
-      on({ status: 'live', user: u.email, data: fromDocs(s.docs), cache: s.metadata.fromCache, at: Date.now() });
+      const D = fromDocs(s.docs); setRemote(D);
+      on({ status: 'live', user: u.email, data: D, cache: s.metadata.fromCache, pending: s.metadata.hasPendingWrites, at: Date.now() });
     }, e => on({ status: 'error', user: u.email, error: e && e.code === 'permission-denied' ? 'بريدك ' + u.email + ' غير مفعّل في قائمة أعضاء الجمعية. اطلب من المسؤول إضافته.' : 'خطأ في الاتصال بالسحابة: ' + (e && e.message || e) }));
   });
   return () => { if (unsub) unsub(); stopAuth && stopAuth(); };
 }
 export async function signIn(email, pw) { await sdk(); return fb.auth.signInWithEmailAndPassword(email.trim().toLowerCase(), pw); }
 export async function signOut() { if (fb) await fb.auth.signOut(); }
+
+// ---------- الكتابة (المرحلة 4، الخطوة 2): نفس طريقة push في البرنامج الحالي ----------
+let LAST = null;            // آخر حالة معروفة في السحابة (سجلات canon)
+export const setRemote = D => { LAST = recs(D); };
+/** يرفع الفرق فقط بين D وآخر حالة في السحابة. يرجع عدد السجلات المرفوعة */
+export async function push(D, by) {
+  if (!fb || !LAST) throw new Error('غير متصل بالسحابة');
+  const cur = recs(D), ch = {}; let n = 0;
+  for (const k in cur) if (cur[k] !== LAST[k]) { ch[k] = cur[k]; n++; }
+  for (const k in LAST) if (!(k in cur)) { ch[k] = null; n++; }
+  if (!n) return 0;
+  LAST = cur;
+  const per = {};
+  for (const rk in ch) { const [doc, key] = place(rk); (per[doc] = per[doc] || []).push([key, ch[rk]]); }
+  const del = fb.F.firestore.FieldValue.delete(), docs = Object.keys(per), jobs = [];
+  for (let s = 0; s < docs.length; s += 450) {
+    const b = fb.db.batch();
+    docs.slice(s, s + 450).forEach(doc => {
+      const ref = fb.db.collection(COL).doc(doc);
+      if (doc === 'main') { const v = per[doc][0][1]; if (v != null) b.set(ref, { j: v, at: Date.now(), by }); return; }
+      const m = {}; per[doc].forEach(([k, v]) => m[k] = v == null ? del : v);
+      b.set(ref, { m, at: Date.now(), by }, { merge: true });
+    });
+    jobs.push(b.commit());
+  }
+  await Promise.all(jobs);
+  return n;
+}
+export const WERR = e => e && e.code === 'permission-denied' ? 'ليست لديك صلاحية الحفظ في السحابة. اطلب من المسؤول إضافة بريدك إلى الأعضاء.' : 'تعذّر الحفظ في السحابة: ' + (e && e.message || e);

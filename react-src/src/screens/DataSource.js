@@ -46,9 +46,28 @@ export default function DataSource({ current, onPick }) {
   );
 }
 
-/** الاتصال بسحابة الجمعية (Firebase) — قراءة فقط في هذه المرحلة */
+/** تفعيل/إيقاف الحفظ في السحابة + النسخ الاحتياطية المأخوذة قبل التعديل */
+function CloudWrite({ act }) {
+  let L = []; try { L = JSON.parse(localStorage.getItem('w1react_cloudbak') || '[]'); } catch { /* */ }
+  const on = act.cloudWrite;
+  const toggle = () => {
+    if (on) { act.setCloudWrite(false); return; }
+    if (confirm('تفعيل الحفظ في السحابة؟\n\nكل تعديل في نسخة React سيُحفظ مباشرة في بيانات الجمعية الحقيقية ويظهر في البرنامج الحالي.\nقبل أول تعديل كل يوم تُحفظ نسخة احتياطية من السحابة على هذا الجهاز.')) act.setCloudWrite(true);
+  };
+  return (
+    <div className="cw">
+      <p className={on ? 'state' : 'note'} role="status">{on ? <>✏️ <b>الحفظ في السحابة مفعّل:</b> تعديلاتك تُحفظ في بيانات الجمعية وتظهر في البرنامج الحالي.</> : <>👁 <b>قراءة فقط:</b> لا يُكتب أي شيء في السحابة.</>}</p>
+      <div className="row">
+        <button type="button" className={'btn ' + (on ? '' : 'pri')} onClick={toggle}>{on ? 'إيقاف الحفظ (الرجوع إلى القراءة فقط)' : 'تفعيل الحفظ في السحابة'}</button>
+        {L.map(b => <button key={b.at} type="button" className="btn ghost" onClick={() => download(JSON.stringify(b.data), 'alfath-cloud-' + b.day + '.json')}>⬇ نسخة السحابة {b.day}</button>)}
+      </div>
+    </div>
+  );
+}
+
+/** الاتصال بسحابة الجمعية (Firebase) */
 function Cloud({ act }) {
-  const c = act.cloud || {}, on = act.readOnly;
+  const c = act.cloud || {}, on = act.cloudOn;
   const [em, setEm] = useState(DEFFB.admin || ''); const [pw, setPw] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
   const go = async e => { e.preventDefault(); setBusy(true); setErr('');
     try { await signIn(em, pw); setPw(''); act.setCloudMode(true); } catch (x) { setErr(AERR[x && x.code] || 'تعذّر الدخول: ' + (x && x.message || x)); } finally { setBusy(false); } };
@@ -56,7 +75,7 @@ function Cloud({ act }) {
     <section className="panel" aria-labelledby="cl-h">
       <h2 id="cl-h">☁ سحابة الجمعية</h2>
       {!on || c.status === 'login' ? <>
-        <p className="note">اعرض بياناتك الحقيقية من السحابة داخل نسخة React. <b>للقراءة فقط</b> في هذه المرحلة: لا يُكتب أي شيء في السحابة.</p>
+        <p className="note">اعرض بياناتك الحقيقية من السحابة داخل نسخة React. يبدأ <b>للقراءة فقط</b>، ويمكنك بعد الاتصال تفعيل الحفظ في السحابة.</p>
         <form className="form two" onSubmit={go}>
           <label className="field">البريد الإلكتروني<input type="email" value={em} onChange={e => setEm(e.target.value)} autoComplete="username" /></label>
           <label className="field">كلمة سر السحابة<input type="password" value={pw} onChange={e => setPw(e.target.value)} autoComplete="current-password" /></label>
@@ -66,6 +85,7 @@ function Cloud({ act }) {
         {on && <button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى نسخة React المحلية</button>}
       </> : <>
         <p className={c.status === 'error' ? 'err' : 'state'} role="status">{c.status === 'live' ? `متصل بالسحابة${c.user ? ' بحساب ' + c.user : ''}. البيانات تتحدّث مباشرة${c.cache ? ' (من النسخة المحفوظة على الجهاز)' : ''}.` : c.status === 'error' ? c.error : 'جارٍ تحميل بيانات الجمعية من السحابة...'}</p>
+        {c.status === 'live' && <CloudWrite act={act} />}
         <div className="row"><button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى نسخة React المحلية</button>
           <button type="button" className="btn ghost" onClick={async () => { await signOut(); act.setCloudMode(false); }}>تسجيل الخروج من السحابة</button></div>
       </>}

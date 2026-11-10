@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { nid } from '../lib/ops.js';
 import { useData } from '../lib/useData.js';
 import { MO, fmt, n2, eff, today } from '../lib/calc.js';
 import Sheet from '../components/Sheet.js';
@@ -59,7 +60,7 @@ function FinSheet({ x, onClose }) {
     if (!cc || !(amt > 0)) { setErr('اكتب البيان ومبلغاً صحيحاً.'); return; }
     const y = { t, w: t === 'in' || t === 'out' ? w : 'b', d, c: cc, a: amt, n: n.trim() }; if (t === 'dep' || t === 'wd') y.lk = lk ? 1 : 0;
     act.update(D2 => { if (x.id) { const f = D2.fin.find(z => z.id === x.id); Object.assign(f, y); if (!(t === 'dep' || t === 'wd')) delete f.lk; }
-      else { D2.fid = (+D2.fid || 0) + 1; D2.fin.push({ id: D2.fid, ...y }); } });
+      else { D2.fin.push({ id: nid(D2, 'fid'), ...y }); } });
     onClose(); };
   return (
     <Sheet title={x.id ? 'تعديل عملية' : 'عملية مالية جديدة'} onClose={onClose} labelId="fs-t">

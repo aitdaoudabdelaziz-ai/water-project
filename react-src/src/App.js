@@ -19,7 +19,8 @@ import Login from './screens/Login.js';
 import PrintArea from './components/Print.js';
 import Thermal from './components/Thermal.js';
 import { perms, session } from './lib/auth.js';
-import { connect } from './lib/cloud.js';
+import { connect, push, setRemote, WERR } from './lib/cloud.js';
+import { cloudIds } from './lib/ops.js';
 
 // [المعرّف، الاسم، الأيقونة، الصلاحية، في «المزيد» على الهاتف]
 const TABS = [
@@ -32,6 +33,13 @@ const TABS = [
   ['data', 'البيانات', 'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3Zm0 0v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3', 'admin', 1],
 ];
 const THEME = 'w1react_theme';
+/** نسخة احتياطية من بيانات السحابة على الجهاز قبل أول تعديل في كل يوم (آخر 3 نسخ) */
+export const CBAK = 'w1react_cloudbak';
+function cloudBackup(D) {
+  try { const L = JSON.parse(localStorage.getItem(CBAK) || '[]'), day = new Date().toISOString().slice(0, 10);
+    if (L.length && L[0].day === day) return;
+    L.unshift({ day, at: Date.now(), data: D }); localStorage.setItem(CBAK, JSON.stringify(L.slice(0, 3)));
+  } catch { /* مساحة غير كافية: نكمل */ } }
 
 export default function App() {
   const [{ data, source }, setDs] = useState(() => { const x = loadSaved(); if (x) return x; const d = { data: demoData(), source: 'بيانات تجريبية' }; saveCopy(d.data, d.source); return d; });
@@ -54,11 +62,16 @@ export default function App() {
     let stop = () => {}, alive = true;
     connect(ev => { if (!alive) return; setCloud(ev);
       if (ev.data) { if (!local.current) local.current = cur.current; try { localStorage.setItem('w1react_cloudcache', JSON.stringify(ev.data)); } catch { /* */ }
-        setDs({ data: ev.data, source: 'السحابة' }); } }).then(f => { stop = f; });
+        remote.current = ev.data; setDs({ data: ev.data, source: 'السحابة' }); } }).then(f => { stop = f; });
     return () => { alive = false; stop(); };
   }, [cloudOn]);
   const setCloudMode = on => { try { on ? localStorage.setItem('w1react_cloud', '1') : localStorage.removeItem('w1react_cloud'); } catch { /* */ } setCloudOn(on); };
-  const readOnly = cloudOn;
+  // الكتابة في السحابة: مفتاح منفصل، يُفعَّل يدوياً من «البيانات»
+  const [cloudWrite, setCW] = useState(() => { try { return localStorage.getItem('w1react_cloudwrite') === '1'; } catch { return false; } });
+  const setCloudWrite = on => { try { on ? localStorage.setItem('w1react_cloudwrite', '1') : localStorage.removeItem('w1react_cloudwrite'); } catch { /* */ } setCW(on); };
+  const readOnly = cloudOn && !cloudWrite;
+  cloudIds(cloudOn && cloudWrite);
+  const remote = useRef(null); // آخر بيانات وصلت من السحابة
   const P = perms(data, cu);
   const [more, setMore] = useState(false);
   const [printIds, setPrintIds] = useState(null);
@@ -70,10 +83,22 @@ export default function App() {
 
   /** كل تعديل: نسخة جديدة من البيانات ← حفظ في w1react */
   // التعديل متزامن حتى ترجع العملية نتيجتها (خطأ أو عدد) مباشرة
+  const wr = useRef({}); wr.current = { on: cloudOn && cloudWrite, status: cloud.status, user: cloud.user };
   const cur = useRef(null); if (!cur.current || cur.current.data !== data) cur.current = { data, source };
   const update = useCallback(fn => {
-    if (cur.current.source && cur.current.source.startsWith('السحابة')) { alert('بيانات السحابة للقراءة فقط في هذه المرحلة. التعديل غير مفعّل بعد.'); return; }
-    const prev = cur.current, D2 = JSON.parse(JSON.stringify(prev.data)); fn(D2);
+    const prev = cur.current;
+    if (prev.source && prev.source.startsWith('السحابة')) {
+      const W = wr.current;
+      if (!W.on) { alert('بيانات السحابة للقراءة فقط. فعّل «الحفظ في السحابة» من صفحة البيانات.'); return; }
+      if (W.status !== 'live' || !remote.current) { alert('لم يكتمل الاتصال بالسحابة بعد. انتظر قليلاً ثم أعد المحاولة.'); return; }
+      const base = remote.current, D2 = JSON.parse(JSON.stringify(prev.data)); fn(D2);
+      cloudBackup(base);
+      cur.current = { data: D2, source: 'السحابة' }; setDs(cur.current);
+      try { localStorage.setItem('w1react_cloudcache', JSON.stringify(D2)); } catch { /* */ }
+      push(D2, W.user || '').catch(e => { alert(WERR(e)); setRemote(base); try { localStorage.setItem('w1react_cloudcache', JSON.stringify(base)); } catch { /* */ } remote.current = base; cur.current = { data: base, source: 'السحابة' }; setDs(cur.current); });
+      return;
+    }
+    const D2 = JSON.parse(JSON.stringify(prev.data)); fn(D2);
     cur.current = { data: D2, source: prev.source }; saveCopy(D2, prev.source); setDs(cur.current);
   }, []);
   const go = (t, opts) => { setInit(opts || null); setTab(t); };
@@ -84,7 +109,7 @@ export default function App() {
   const tabs = TABS.filter(allowed);
   useEffect(() => { if (!tabs.some(t => t[0] === tab) && tabs.length) setTab(tabs[0][0]); }, [tab, tabs.length, cu]);
   const can = k => (readOnly && (k === 'ed' || k === 'del')) ? false : P.can(k);
-  const act = { update, assoc, can, readOnly, cloud, setCloudMode, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
+  const act = { update, assoc, can, readOnly, cloudOn, cloud, setCloudMode, cloudWrite: cloudOn && cloudWrite, setCloudWrite, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
     openReading: (id, queue) => setReading({ id, queue: queue || null }),
     openInvoice: id => setInvoice(id) };
   const next = () => { const q = reading.queue || [], k = q.indexOf(reading.id);
@@ -94,11 +119,11 @@ export default function App() {
 
   return (
     <DataCtx.Provider value={{ D: data, X, Y, R, act, sel, setSel }}>
-      <div className="preview" role="note">نسخة React التجريبية: لا تؤثر على برنامجك. <a href="../cloud/">البرنامج الحالي</a></div>
+      <div className="preview" role="note">{cloudOn && cloudWrite ? 'نسخة React: الحفظ في السحابة مفعّل — تعديلاتك تظهر في البرنامج الحالي.' : 'نسخة React التجريبية: لا تؤثر على برنامجك.'} <a href="../cloud/">البرنامج الحالي</a></div>
       <header className="top">
         <img src="../icon-192.png" alt="" width="44" height="44" />
         <div className="brand"><b>{assoc}</b><small>لجنة الماء الصالح للشرب</small></div>
-        {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''}>☁<span className="ct"> {cloud.status === 'live' ? 'السحابة' : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span></span>}
+        {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''}>☁<span className="ct"> {cloud.status === 'live' ? (cloudWrite ? (cloud.pending ? 'جارٍ الحفظ…' : 'السحابة ✓') : 'السحابة (قراءة)') : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span></span>}
         <button type="button" className="icon" onClick={() => setReading({ id: null, queue: null })} aria-label="تحصيل سريع" title="تحصيل سريع">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg></button>
         <button type="button" className="icon" onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={dark ? 'الوضع الفاتح' : 'الوضع الداكن'}>{dark ? '☀' : '☾'}</button>

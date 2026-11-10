@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { nid } from '../lib/ops.js';
 import { useData } from '../lib/useData.js';
 import { hs, rnd, PL, DEF } from '../lib/auth.js';
 import { n2 } from '../lib/calc.js';
@@ -97,7 +98,7 @@ function AddUser({ first, onClose, onCode }) {
     if (D.users.some(x => x.u === un)) return setErr('رمز الدخول مستعمل.');
     if (r === 'u' && !pm.some(k => k[0] === 'v')) return setErr('اختر الاطلاع على قسم واحد على الأقل.');
     const s = rnd(), h = await hs(p, s); let rc = null, rch = null; if (first) { rc = rnd(); rch = await hs(rc, 'rc'); }
-    let id; act.update(D2 => { D2.uid = (+D2.uid || 0) + 1; id = D2.uid; D2.users.push({ id, u: un, s, h, r: first ? 'a' : r, p: first || r === 'a' ? null : pm }); if (rch) D2.rc = rch; });
+    let id; act.update(D2 => { id = nid(D2, 'uid'); D2.users.push({ id, u: un, s, h, r: first ? 'a' : r, p: first || r === 'a' ? null : pm }); if (rch) D2.rc = rch; });
     if (first) act.login({ id });
     onClose(); if (rc) onCode(rc);
   };

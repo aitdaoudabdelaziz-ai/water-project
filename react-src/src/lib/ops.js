@@ -2,6 +2,10 @@
 import { key, tot, n2, RN, due, today } from './calc.js';
 
 const trOn = D => (D.cfg.trOn && D.cfg.tr && D.cfg.tr.length ? D.cfg.tr : null);
+let CLOUD_IDS = false;
+export const cloudIds = on => { CLOUD_IDS = !!on; };
+/** معرّف جديد: نفس NID في البرنامج الحالي — في السحابة لا يقل عن Date.now() حتى لا يتصادم جهازان */
+export function nid(D, k) { let v = (+D[k] || 0) + 1; if (CLOUD_IDS) v = Math.max(v, Date.now()); D[k] = v; return v; }
 export const roundPaid = (D, id, y, r) => D.invs.some(x => x.s == id && x.y == y && x.r == r && x.paid);
 export const PAID_LOCK = 'فاتورة هذه الجولة مدفوعة. لتعديل القراءة ألغِ الدفع أولاً من الفواتير.';
 
