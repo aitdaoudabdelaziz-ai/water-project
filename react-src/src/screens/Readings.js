@@ -37,7 +37,8 @@ export default function Readings() {
         {act.can('ed') && <button type="button" className="btn pri wide" onClick={issue}>إصدار فواتير {roundName(r)}</button>}
         {msg && <p className="note" role="status">{msg}</p>}
       </section>
-      {!list.length ? <Empty>{f === 'wait' ? 'سُجّلت كل القراءات في هذه الجولة.' : 'لا توجد نتائج.'}</Empty> : (
+      {!list.length ? <Empty>{f === 'wait' ? 'سُجّلت كل القراءات في هذه الجولة.' : 'لا توجد نتائج.'}</Empty> : (<div>
+        <div className="lh lh-r" aria-hidden="true"><span>المشترك</span><span>السابقة</span><span>الجديدة</span><span>الحالة</span></div>
         <ul className="rows">
           {list.slice(0, lim).map(s => { const v = D.reads[key(s.id, y, r)], pv = prevNew(D, s.id, y, r), inv = D.invs.find(i => i.s === s.id && i.y == y && i.r == r); return (
             <li key={s.id}><button type="button" className="rr" onClick={() => open(s.id)}>
@@ -46,7 +47,7 @@ export default function Readings() {
               <span className="rr-v"><small>الجديدة</small><bdi dir="ltr">{v ? v.n : '—'}</bdi></span>
               <span className={'rr-s' + (inv ? (inv.paid ? ' paid' : ' inv') : v ? ' ok' : '')}>{inv ? (inv.paid ? '🔒 مؤداة' : <>✎ <bdi dir="ltr">{n2(tot(inv))}</bdi></>) : v ? '✎ تعديل' : '＋ تسجيل'}</span>
             </button></li>); })}
-        </ul>)}
+        </ul></div>)}
       {list.length > lim && <button type="button" className="btn wide" onClick={() => setLim(lim + PAGE)}>عرض المزيد ({list.length - lim})</button>}
     </div>
   );

@@ -34,7 +34,8 @@ export default function Invoices({ init }) {
           <div className="bad"><span>الباقي</span><b><bdi dir="ltr">{fmt(sum - paid)}</bdi> د.م</b></div>
         </div>
       </div>
-      {!list.length ? <Empty>لا توجد فواتير بهذه الشروط</Empty> : (
+      {!list.length ? <Empty>لا توجد فواتير بهذه الشروط</Empty> : (<div>
+        <div className="lh lh-s" aria-hidden="true"><span>المشترك والفاتورة</span><span>المبلغ والحالة</span></div>
         <ul className="list inv">
           {list.slice(0, lim).map(i => { const s = X.byId.get(i.s) || {}, dd = due(i, D.cfg.due), lt = !i.paid ? daysBetween(dd, td) : 0; return (
             <li key={i.id}><button type="button" onClick={() => act.openInvoice(i.id)} className={'inv-r' + (i.paid ? ' paid' : lt > 0 ? ' late' : ' un')}>
@@ -42,7 +43,7 @@ export default function Invoices({ init }) {
               <span className="inv-b"><b><bdi dir="ltr">{n2(tot(i))}</bdi> <em>د.م</em></b>
                 <small className={i.paid ? 'good' : lt > 0 ? 'bad' : ''}>{i.paid ? '✓ ' + (i.pw == 'b' ? 'بنكياً' : 'نقداً') + ' ' + (i.pd || '') : lt > 0 ? `متأخرة ${lt} يوم` : 'تستحق ' + dd}</small></span>
             </button></li>); })}
-        </ul>)}
+        </ul></div>)}
       {list.length > lim && <button type="button" className="btn wide" onClick={() => setLim(lim + PAGE)}>عرض المزيد ({list.length - lim})</button>}
     </div>
   );

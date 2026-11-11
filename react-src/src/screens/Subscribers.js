@@ -30,7 +30,8 @@ export default function Subscribers() {
             <button key={v} type="button" className={'chip' + (f === v ? ' on' : '')} aria-pressed={f === v} onClick={() => { setF(v); setLim(PAGE); }}>{l}</button>)}
         </div>
       </div>
-      {!list.length ? <Empty>لا يوجد مشتركون مطابقون للبحث</Empty> : (
+      {!list.length ? <Empty>لا يوجد مشتركون مطابقون للبحث</Empty> : (<div>
+        <div className="lh lh-s" aria-hidden="true"><span>المشترك</span><span>الديون</span></div>
         <ul className="list">
           {list.slice(0, lim).map(s => { const d = X.debtBySub.get(s.id); return (
             <li key={s.id}><button type="button" className="row-b" onClick={() => setSel(s.id)}>
@@ -38,7 +39,7 @@ export default function Subscribers() {
               <span className="row-i"><b>{s.name}</b><small>العداد {s.meter}{s.phone ? <>، <bdi dir="ltr">{s.phone}</bdi></> : null}</small></span>
               {d ? <span className="tag bad"><bdi dir="ltr">{n2(d)}</bdi> د.م</span> : <span className="tag good">لا ديون</span>}
             </button></li>); })}
-        </ul>)}
+        </ul></div>)}
       {list.length > lim && <button type="button" className="btn wide" onClick={() => setLim(lim + PAGE)}>عرض المزيد ({list.length - lim})</button>}
       {s && <Detail s={s} onClose={() => setSel(null)} onEdit={() => { setSel(null); setForm({ id: s.id }); }} />}
       {form && <SubSheet id={form.id} onClose={id => { setForm(null); if (id != null) setSel(id); }} />}

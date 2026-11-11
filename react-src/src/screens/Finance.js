@@ -37,13 +37,14 @@ export default function Finance() {
           <div className="tot"><span>المجموع</span><b><bdi dir="ltr">{fmt(close[0] + close[1])}</bdi> د.م</b><small>المداخيل <bdi dir="ltr">{fmt(tin)}</bdi>، المصاريف <bdi dir="ltr">{fmt(tout)}</bdi></small></div>
         </div>
       </section>
-      {!shown.length ? <Empty>لا توجد عمليات في هذه الفترة.</Empty> : (
+      {!shown.length ? <Empty>لا توجد عمليات في هذه الفترة.</Empty> : (<div>
+        <div className="lh lh-f" aria-hidden="true"><span>النوع</span><span>البيان</span><span>المبلغ (د.م)</span></div>
         <ul className="rows">{shown.map((x, i) => (
           <li key={(x.id || 'w') + '-' + i}><button type="button" className="fr" disabled={x.water || !act.can('ed')} onClick={() => setEd(D.fin.find(f => f.id === x.id))}>
             <span className={'fr-t t-' + x.t}>{x.t === 'in' ? '+' : x.t === 'out' ? '−' : '⇄'}</span>
             <span className="fr-i"><b>{x.c}</b><small>{x.d}، {acc(x)}{x.n ? '، ' + x.n : ''}</small></span>
             <span className={'fr-a t-' + x.t}><bdi dir="ltr">{n2(x.a)}</bdi></span>
-          </button></li>))}</ul>)}
+          </button></li>))}</ul></div>)}
       {ed && <FinSheet x={ed} onClose={() => setEd(null)} />}
     </div>
   );

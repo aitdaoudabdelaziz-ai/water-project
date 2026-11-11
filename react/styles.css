@@ -360,3 +360,25 @@ h2{position:relative}
  .top .icon{border-color:var(--line);background:var(--stone);color:var(--ink)}
 }
 :root[data-th=dark] .act.a-n{border:1px solid var(--line)}@media (prefers-color-scheme:dark){:root:not([data-th=light]) .act.a-n{border:1px solid var(--line)}}
+/* ===== الصفحات: نفس شكل الجداول (رأس كحلي، شارات، خط ذهبي تحت العناوين) ===== */
+.panel>h2,.toolbar>h2,.panel>.ph-t h2{padding-bottom:6px;border-bottom:3px solid var(--gold);align-self:flex-start;color:var(--ink);font-weight:800}
+.toolbar>h2{display:inline-flex}
+.lh{display:grid;align-items:center;gap:10px;background:var(--navy);color:#fff;font-weight:700;font-size:13.5px;padding:10px 14px;border-radius:14px 14px 0 0}
+:root[data-th=dark] .lh{background:#16324A}
+.lh+.list,.lh+.rows{border-radius:0 0 14px 14px;border-top:0}
+.lh-s{grid-template-columns:minmax(0,1fr) auto}
+.lh-r{grid-template-columns:minmax(0,1fr) 64px 64px 88px;text-align:center}.lh-r span:first-child{text-align:start}
+.lh-f{grid-template-columns:32px minmax(0,1fr) auto;gap:12px}
+@media(max-width:480px){.lh-r{grid-template-columns:minmax(0,1fr) 56px 56px 78px;gap:6px;padding:10px 12px}}
+.lh+.rows .rr-v small{display:none}
+.list,.rows{border-radius:14px}
+.list li:nth-child(even),.rows li:nth-child(even){background:color-mix(in srgb,var(--soft) 45%,var(--card))}
+.tag.bad{background:#FBE0DD;color:#B3261E!important}.tag.good{background:#DDF1E3;color:#1E7A45!important}
+.inv-b small{display:inline-block!important;margin-top:3px;padding:1px 9px;border-radius:7px;font-weight:700;background:#FCEFD6;color:#9A6A07}
+.inv-b small.good{background:#DDF1E3;color:#1E7A45!important}.inv-b small.bad{background:#FBE0DD;color:#B3261E!important}
+.inv-b b{color:var(--ink)}
+.rr-s{border-radius:8px}.rr-s.paid{background:#DDF1E3;border-color:#DDF1E3}.rr-s.ok{background:#FCEFD6;border-color:#FCEFD6;color:#9A6A07}
+.fr-t.t-in{background:#DDF1E3}.fr-t.t-out{background:#FBE0DD}.fr-t.t-dep,.fr-t.t-wd{background:#DCEBF7}
+.sums>div,.bal>div{border-top:3px solid var(--gold)}
+.bal .tot b,.sums b{color:var(--ink)}
+.main .panel h2{width:fit-content;padding-bottom:6px;border-bottom:3px solid var(--gold);color:var(--ink);font-weight:800}
