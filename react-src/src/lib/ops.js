@@ -61,3 +61,22 @@ export function deleteReading(D, id, y, r) {
   D.invs = D.invs.filter(x => !(x.s == id && x.y == y && x.r == r && !x.paid && !x.lk));
   return null;
 }
+
+// ---------- المشتركون (نفس قواعد addSub / rmSubs / ctTg في البرنامج الحالي) ----------
+/** إضافة (eid فارغ) أو تعديل مشترك. يرجع رسالة خطأ أو المعرّف */
+export function saveSub(D, eid, v) {
+  const s = { name: (v.name || '').trim(), meter: (v.meter || '').trim(), cin: (v.cin || '').trim().toUpperCase(), phone: (v.phone || '').trim(), addr: (v.addr || '').trim() };
+  if (!s.name || !s.meter) return { error: 'الاسم ورقم العداد إجباريان' };
+  if (D.subs.some(x => x.meter == s.meter && x.id != eid)) return { error: 'رقم العداد موجود مسبقاً' };
+  if (eid != null) { Object.assign(D.subs.find(x => x.id == eid), s); return { id: eid }; }
+  s.id = nid(D, 'sid'); s.fl = []; D.subs.push(s); return { id: s.id };
+}
+/** حذف مشتركين: المبالغ المؤداة تبقى في المالية كمدخول «(مشترك محذوف)» */
+export function removeSubs(D, ids) {
+  const S = new Set(ids), name = id => (D.subs.find(x => x.id == id) || {}).name || '';
+  D.invs.filter(i => i.paid && S.has(i.s)).forEach(i => { const a = tot(i);
+    if (a > 0) D.fin.push({ id: nid(D, 'fid'), t: 'in', w: i.pw || 'c', d: i.pd || i.date, c: 'مياه الشرب', a, n: i.num + ' - ' + name(i.s) + ' (مشترك محذوف)' }); });
+  D.subs = D.subs.filter(x => !S.has(x.id)); D.invs = D.invs.filter(i => !S.has(i.s));
+  for (const k in D.reads) if (S.has(+k.split('|')[0])) delete D.reads[k];
+}
+export function toggleContract(D, id) { const s = D.subs.find(x => x.id == id); s.ct = s.ct ? 0 : 1; s.cd = s.ct ? today() : null; }
