@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { iconOf } from '../lib/brand.js';
 import { hs } from '../lib/auth.js';
 
 let bad = 0, lockT = 0;
@@ -12,7 +13,7 @@ export default function Login({ D, onLogin, assoc }) {
   return (
     <div className="login">
       <form className="login-b" onSubmit={go}>
-        <img src="../icon-192.png" alt="" width="64" height="64" />
+        <img src={iconOf(D.cfg)} alt="" width="64" height="64" />
         <h2>{assoc}</h2><p className="note">لجنة الماء الصالح للشرب</p>
         <label className="field">رمز الدخول<input value={u} onChange={e => { setU(e.target.value); setErr(''); }} autoComplete="username" autoFocus /></label>
         <label className="field">كلمة السر<input ref={pr} type="password" value={p} onChange={e => { setP(e.target.value); setErr(''); }} autoComplete="current-password" /></label>

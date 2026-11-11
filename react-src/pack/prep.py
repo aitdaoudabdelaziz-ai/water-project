@@ -2,7 +2,9 @@
 """prep.py: يجهّز نسخة React للتطبيقات (APK و EXE) دون لمس البرنامج الحالي.
   prep.py www  OUT_DIR           ← نسخة الصفحة (react/) مع إصلاح الروابط + جسر الهاتف
   prep.py android APP_DIR         ← android-app منسوخ: معرّف واسم مختلفان (يُثبَّت بجانب البرنامج الحالي)
-  prep.py desktop DESK_DIR        ← desktop منسوخ: اسم ومجلد نسخ مختلفان، والنسخ الاحتياطي يقرأ بيانات React"""
+  prep.py desktop DESK_DIR        ← desktop منسوخ: اسم ومجلد نسخ مختلفان، والنسخ الاحتياطي يقرأ بيانات React
+  prep.py desktop-keep DESK_DIR   ← نفس الاسم والمعرّف (تحديث فوق التطبيق نفسه)، فقط النسخ الاحتياطي والفحص للبرنامج الجديد
+  www OUT [SRC ICON]              ← SRC مجلد البناء (الافتراضي react/)، ICON أيقونة 192"""
 import sys, json, re, shutil, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 mode, out = sys.argv[1], pathlib.Path(sys.argv[2])
@@ -33,9 +35,11 @@ NATIVE = r'''<script>
 </script>'''
 
 if mode == 'www':
-    if out.exists(): shutil.rmtree(out)
-    shutil.copytree(ROOT / 'react', out)
-    shutil.copy(ROOT / 'icon-192.png', out / 'icon-192.png')
+    if out.exists() and not (len(sys.argv) > 3 and pathlib.Path(sys.argv[3]).resolve() == out.resolve()): shutil.rmtree(out)
+    src = pathlib.Path(sys.argv[3]) if len(sys.argv) > 3 else ROOT / 'react'
+    icon = pathlib.Path(sys.argv[4]) if len(sys.argv) > 4 else ROOT / 'icon-192.png'
+    if src.resolve() != out.resolve(): shutil.copytree(src, out)
+    shutil.copy(icon, out / 'icon-192.png')
     rep(out / 'index.html', 'href="../icon-192.png"', 'href="icon-192.png"')
     h = out / 'index.html'; h.write_text(re.sub(r'<link rel="preload"[^>]*>\n?', '', h.read_text(encoding='utf-8')), encoding='utf-8')  # file:// يرفض preload
     rep(out / 'index.html', '<div id="root"></div>', '<div id="root"></div>\n' + NATIVE)
@@ -50,20 +54,22 @@ elif mode == 'android':
     (out / 'capacitor.config.json').write_text(json.dumps(c, ensure_ascii=False, indent=1), encoding='utf-8')
     for f in (out / 'native').glob('*.java'): rep(f, 'package ma.alfath.water;', 'package ma.alfath.water.react;')
     p = json.loads((out / 'package.json').read_text(encoding='utf-8')); p['version'] = VER; (out / 'package.json').write_text(json.dumps(p, indent=1), encoding='utf-8')
-elif mode == 'desktop':
+elif mode in ('desktop', 'desktop-keep'):
+  if mode == 'desktop':
     p = json.loads((out / 'package.json').read_text(encoding='utf-8'))
     p.update(name='alfath-water-react', productName=FILE, version=VER)
     b = p['build']; b.update(appId=APPID, productName=FILE)
     b['nsis'].update(shortcutName=NAME, artifactName=FILE + '-Setup-${version}.exe'); b['portable']['artifactName'] = FILE + '-Portable-${version}.exe'
     (out / 'package.json').write_text(json.dumps(p, ensure_ascii=False, indent=1), encoding='utf-8')
+  if True:
     m = out / 'main.js'
     # النسخ الاحتياطي: بيانات React المعروضة (السحابة إن كانت مفعّلة، وإلا النسخة المحلية)
     GET = 'const GET = `(()=>{const L=localStorage,j=k=>{try{return JSON.parse(L.getItem(k)||"null")}catch(e){return null}};const c=L.getItem("w1react_cloud")==="1"&&j("w1react_cloudcache"),o=j("w1react");return JSON.stringify(c||(o&&o.data)||{})})()`;'
     s = m.read_text(encoding='utf-8'); s = re.sub(r'const GET = `.*?`;', lambda _: GET, s, count=1); m.write_text(s, encoding='utf-8')
-    rep(m, '"AlFath-Water-Backups"', '"AlFath-Water-React-Backups"', 2)
+    if mode == 'desktop': rep(m, '"AlFath-Water-Backups"', '"AlFath-Water-React-Backups"', 2)
     rep(m, 'typeof D=="object"&&Array.isArray(D.subs)&&!!document.querySelector("nav")&&typeof XLSX=="object"',
         '!!document.querySelector(".kpi")&&Array.isArray((JSON.parse(localStorage.getItem("w1react")||"{}").data||{}).subs)')
     rep(m, 'win.webContents.once("did-finish-load", async () => {', 'win.webContents.once("did-finish-load", async () => { await new Promise(r => setTimeout(r, 3000));')
-    rep(m, 'title: "جمعية الفتح - تدبير الماء"', 'title: "جمعية الفتح - تدبير الماء (React)"')
+    if mode == 'desktop': rep(m, 'title: "جمعية الفتح - تدبير الماء"', 'title: "جمعية الفتح - تدبير الماء (React)"')
 else: sys.exit('mode?')
 print('ok', mode, out)

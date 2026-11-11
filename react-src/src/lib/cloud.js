@@ -1,7 +1,8 @@
 // السحابة (Firebase) — نفس صيغة تخزين البرنامج الحالي حرفياً (مجموعة alfath، وثائق main / s0-7 / r_y_r / i_y_r / f0-3 / users)
 // القراءة مباشرة، والكتابة (push) بنفس طريقة البرنامج الحالي: الفرق فقط، سجلاً بسجل، مع الدمج.
 const FBV = '10.14.1', COL = 'alfath';
-export const DEFFB = {"cfg":{"apiKey":"AIzaSyB8WSV_5IJim98ltYsxlGp_nWPcnILa_yE","authDomain":"water-assoc.firebaseapp.com","projectId":"water-assoc","storageBucket":"water-assoc.firebasestorage.app","messagingSenderId":"1053204560068","appId":"1:1053204560068:web:d2a877234cbba162773191","measurementId":"G-F71JXGQ5YK"},"admin":"aitdaoudabdelaziz@gmail.com"};
+import { PRO } from './brand.js';
+export const DEFFB = PRO ? null : {"cfg":{"apiKey":"AIzaSyB8WSV_5IJim98ltYsxlGp_nWPcnILa_yE","authDomain":"water-assoc.firebaseapp.com","projectId":"water-assoc","storageBucket":"water-assoc.firebasestorage.app","messagingSenderId":"1053204560068","appId":"1:1053204560068:web:d2a877234cbba162773191","measurementId":"G-F71JXGQ5YK"},"admin":"aitdaoudabdelaziz@gmail.com"};
 
 export function canon(v) { if (v === null || typeof v !== 'object') return JSON.stringify(v === undefined ? null : v); if (Array.isArray(v)) return '[' + v.map(canon).join(',') + ']';
   return '{' + Object.keys(v).filter(k => v[k] !== undefined && typeof v[k] !== 'function').sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}'; }

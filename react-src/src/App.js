@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DataCtx, useDerived, useData } from './lib/useData.js';
 import { norm } from './lib/calc.js';
 import Sheet from './components/Sheet.js';
-import { loadSaved, saveCopy, demoData, deviceData } from './lib/store.js';
+import { loadSaved, saveCopy, demoData, deviceData, normalize } from './lib/store.js';
 import Dashboard from './screens/Dashboard.js';
 import Readings from './screens/Readings.js';
 import Invoices from './screens/Invoices.js';
@@ -20,6 +20,8 @@ import PrintArea from './components/Print.js';
 import Thermal from './components/Thermal.js';
 import { perms, session } from './lib/auth.js';
 import { connect, push, setRemote, WERR } from './lib/cloud.js';
+import { PRO, AS0, iconOf } from './lib/brand.js';
+import { useLicense, LicenseBar, LicenseDialog } from './components/License.js';
 import { cloudIds } from './lib/ops.js';
 
 // [المعرّف، الاسم، الأيقونة، الصلاحية، في «المزيد» على الهاتف]
@@ -48,14 +50,14 @@ function adopt() {
   try {
     if (localStorage.getItem('w1react_adopted')) return; localStorage.setItem('w1react_adopted', '1');
     const dev = deviceData(); if (!dev) return;
-    if (localStorage.getItem('wcloud_mode') !== 'local') { localStorage.setItem('w1react_cloud', '1'); localStorage.setItem('w1react_cloudwrite', '1'); return; }
+    if (!PRO && localStorage.getItem('wcloud_mode') !== 'local') { localStorage.setItem('w1react_cloud', '1'); localStorage.setItem('w1react_cloudwrite', '1'); return; }
     const x = loadSaved(); if (!x || x.source === 'بيانات تجريبية') saveCopy(dev.data, 'بيانات هذا الجهاز (البرنامج القديم)');
   } catch { /* */ }
 }
 adopt();
 
 export default function App() {
-  const [{ data, source }, setDs] = useState(() => { const x = loadSaved(); if (x) return x; const d = { data: demoData(), source: 'بيانات تجريبية' }; saveCopy(d.data, d.source); return d; });
+  const [{ data, source }, setDs] = useState(() => { const x = loadSaved(); if (x) return x; const d = PRO ? { data: normalize({ subs: [], reads: {}, invs: [], sid: 0, seq: 0, fin: [], fid: 0, users: [], uid: 0, cfg: { price: 3, fee: 0, due: 15 } }), source: 'بيانات هذا الجهاز' } : { data: demoData(), source: 'بيانات تجريبية' }; saveCopy(d.data, d.source); return d; });
   const [tab, setTab] = useState('home');
   const [init, setInit] = useState(null);
   const now = new Date(), Y = now.getFullYear(), R = Math.floor(now.getMonth() / 3);
@@ -66,7 +68,7 @@ export default function App() {
   const X = useDerived(data);
   const [cu, setCu] = useState(() => session.get());
   // السحابة: قراءة، والحفظ بعد تفعيله. البيانات المحلية تبقى كما هي.
-  const [cloudOn, setCloudOn] = useState(() => { try { return localStorage.getItem('w1react_cloud') === '1'; } catch { return false; } });
+  const [cloudOn, setCloudOn] = useState(() => { try { return !PRO && localStorage.getItem('w1react_cloud') === '1'; } catch { return false; } });
   const [cloud, setCloud] = useState({ status: 'off' });
   const local = useRef(null);
   useEffect(() => {
@@ -116,13 +118,14 @@ export default function App() {
   }, []);
   const go = (t, opts) => { setInit(opts || null); setTab(t); };
   const pick = (d, src) => { saveCopy(d, src); setDs({ data: d, source: src }); go('home'); };
-  const assoc = data.cfg.aname || 'جمعية الفتح للتنمية والتعاون';
+  const assoc = data.cfg.aname || AS0;
+  const lic = PRO ? useLicense(data, update) : null; // eslint-disable-line react-hooks/rules-of-hooks -- PRO ثابت عند البناء
   const login = u => { session.set(u); setCu(u); };
   const allowed = t => t[3] === 'dash' ? P.dash : t[3] === 'admin' ? P.admin : P.can(t[3]);
   const tabs = TABS.filter(allowed);
   useEffect(() => { if (!tabs.some(t => t[0] === tab) && tabs.length) setTab(tabs[0][0]); }, [tab, tabs.length, cu]);
   const can = k => (readOnly && (k === 'ed' || k === 'del')) ? false : P.can(k);
-  const act = { update, assoc, can, readOnly, goData: () => go('data'), cloudOn, cloud, setCloudMode, cloudWrite: cloudOn && cloudWrite, setCloudWrite, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
+  const act = { update, assoc, lic: PRO ? lic : null, can, readOnly, goData: () => go('data'), cloudOn, cloud, setCloudMode, cloudWrite: cloudOn && cloudWrite, setCloudWrite, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
     openReading: (id, queue) => setReading({ id, queue: queue || null }),
     openInvoice: id => setInvoice(id) };
   const next = () => { const q = reading.queue || [], k = q.indexOf(reading.id);
@@ -132,8 +135,10 @@ export default function App() {
 
   return (
     <DataCtx.Provider value={{ D: data, X, Y, R, act, sel, setSel }}>
+      {PRO && <LicenseBar lic={lic} />}
+      {PRO && <LicenseDialog lic={lic} D={data} assoc={assoc} />}
       <header className="top">
-        <img src="../icon-192.png" alt="" width="44" height="44" />
+        <img src={iconOf(data.cfg)} alt="" width="44" height="44" />
         <div className="brand"><b>{assoc}</b><small>لجنة الماء الصالح للشرب</small></div>
         {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''} onClick={() => go('data')} style={{ cursor: 'pointer' }}>☁<span className="ct"> {cloud.status === 'live' ? (cloudWrite ? (cloud.pending ? 'جارٍ الحفظ…' : 'السحابة ✓') : 'السحابة (قراءة)') : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span></span>}
         <button type="button" className="icon" onClick={() => setReading({ id: null, queue: null })} aria-label="تحصيل سريع" title="تحصيل سريع">

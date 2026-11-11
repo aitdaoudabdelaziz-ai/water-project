@@ -27,7 +27,7 @@ export default function DataSource({ current, onPick }) {
         </div>
         <input ref={file} type="file" accept=".json,application/json" hidden onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) read(f); }} />
       </section>
-      <Cloud act={act} />
+      {DEFFB && <Cloud act={act} />}
       <section className="panel">
         <h2>حفظ نسخة احتياطية من البيانات</h2>
         <p className="note">تُفتح بالبرنامج القديم من الإعدادات، استرجاع نسخة. كلمة السر اختيارية: بدونها يُحفظ الملف غير مشفّر.</p>

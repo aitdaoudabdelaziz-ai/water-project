@@ -257,3 +257,15 @@ tr.click{cursor:pointer}tr.click:hover{background:var(--soft)}
 @media(max-width:520px){.top{gap:8px;padding:10px 12px}.brand b{font-size:15.5px}.cchip .ct{display:none}.icon{width:38px;height:38px}.kpi{padding:12px}}
 .btn.danger{color:var(--bad,#C0392B);border-color:currentColor}
 .btn.ro-hint{white-space:normal;text-align:start;font-size:.85em;background:var(--warn-bg,#FFF4D6);color:#6B4B00;border-color:#F0D58A}
+/* نسخة البيع: الترخيص */
+.lic-bar{position:sticky;top:0;z-index:56;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:7px 12px;background:#FFF4D6;color:#6B4B00;border-bottom:1px solid #F0D58A;font-size:13.5px;text-align:center}
+.lic-bar.ex{background:#FBE3DF;color:#8F2A1E;border-color:#F1B9AF}
+.lic-bar button{border:1px solid currentColor;background:#fff;color:inherit;border-radius:10px;padding:3px 12px;font:inherit;font-weight:700;cursor:pointer}
+html[data-th=dark] .lic-bar{background:#3A3016;color:#FFE3A1;border-color:#5C4A1C}
+.lic-dlg{z-index:95}.lic-dlg .dlg-b{max-width:440px}.lic-dlg li,.lic-dlg p{line-height:1.8}
+.lic-id{font:800 22px/1.4 monospace;letter-spacing:3px;text-align:center;direction:ltr;background:var(--soft,#F1F7F3);border-radius:12px;padding:10px;margin:4px 0 12px;user-select:all}
+.lic-in{width:100%;box-sizing:border-box;font:700 20px monospace;letter-spacing:2px;text-align:center;direction:ltr;text-transform:uppercase;padding:10px;border-radius:12px;border:1px solid var(--line,#ccd)}
+.lic-ok{background:#E3F5EA;color:#1F7A4A;border-radius:12px;padding:10px 12px;font-weight:700}
+.lic-l{margin:0}
+@media print{.lic-bar,.lic-dlg{display:none!important}}
+.logo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}.logo-row img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid var(--line,#ddd);background:#fff}

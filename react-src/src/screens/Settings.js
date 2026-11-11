@@ -4,6 +4,8 @@ import { useData } from '../lib/useData.js';
 import { hs, rnd, PL, DEF } from '../lib/auth.js';
 import { n2 } from '../lib/calc.js';
 import Sheet from '../components/Sheet.js';
+import { AS0, CT0, LC0, PRO, logoOf } from '../lib/brand.js';
+import { LicenseCard } from '../components/License.js';
 
 /** حقل يحفظ عند الخروج منه (لا يعيد الحفظ مع كل حرف) */
 function Field({ label, value, onSave, type = 'text', inputMode, hint }) {
@@ -17,16 +19,19 @@ export default function Settings() {
   const set = (k, v) => act.update(D2 => { D2.cfg[k] = v; });
   return (
     <div className="stack">
+      {PRO && act.lic && <LicenseCard lic={act.lic} />}
       <section className="panel"><h2>الجمعية</h2>
         <div className="form two">
-          <Field label="اسم الجمعية" value={D.cfg.aname || 'جمعية الفتح للتنمية والتعاون'} onSave={v => set('aname', v.trim())} />
-          <Field label="المكان (يظهر على الفاتورة)" value={D.cfg.acity || 'أقايغان - إقليم طاطا'} onSave={v => set('acity', v.trim())} />
-          <Field label="سطر التعريف (يظهر على الفاتورة)" value={D.cfg.alc || 'جمعية تنموية - مرخصة لتوزيع الماء الصالح للشرب'} onSave={v => set('alc', v.trim())} />
+          <Field label="اسم الجمعية" value={D.cfg.aname || AS0} onSave={v => set('aname', v.trim())} />
+          <Field label="المكان (يظهر على الفاتورة)" value={D.cfg.acity || CT0} onSave={v => set('acity', v.trim())} />
+          <Field label="سطر التعريف (يظهر على الفاتورة)" value={D.cfg.alc || LC0} onSave={v => set('alc', v.trim())} />
           <Field label="الهاتف" value={D.cfg.phone} inputMode="tel" onSave={v => set('phone', v.trim())} hint="يظهر في رسائل واتساب والفواتير" />
           <Field label="البريد الإلكتروني" value={D.cfg.email} type="email" onSave={v => set('email', v.trim())} />
           <Field label="البنك" value={D.cfg.bank} onSave={v => set('bank', v.trim())} />
           <Field label="رقم الحساب البنكي (RIB)" value={D.cfg.rib} inputMode="numeric" onSave={v => set('rib', v.trim())} />
+          <Field label="اسم مختصر (لوحة القيادة)" value={D.cfg.short} onSave={v => set('short', v.trim())} />
         </div>
+        <Logo />
       </section>
       <section className="panel"><h2>الثمن والأداء</h2>
         <p className="note">التغيير يطبَّق على الفواتير الجديدة فقط. الفواتير السابقة تحتفظ بثمنها.</p>
@@ -129,4 +134,17 @@ function PwSheet({ id, onClose }) {
         const s = rnd(), h = await hs(p, s); act.update(D2 => { const x = D2.users.find(y => y.id === id); x.s = s; x.h = h; }); onClose(); }}>حفظ كلمة السر</button></div>
     </Sheet>
   );
+}
+
+/** شعار الجمعية: يظهر في الرأس وعلى الفاتورة والوصل (يُصغَّر إلى 256 بكسل) */
+function Logo() {
+  const { D, act } = useData();
+  const pick = e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => {
+      const m = 256, k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+      const url = c.toDataURL('image/jpeg', 0.88); act.update(D2 => { D2.cfg.logo = url; }); }; im.src = r.result; }; r.readAsDataURL(f); };
+  return <div className="logo-row"><img src={logoOf(D.cfg)} alt="شعار الجمعية" width="64" height="64" />
+    <label className="btn">اختيار الشعار<input type="file" accept="image/*" hidden onChange={pick} /></label>
+    {D.cfg.logo && <button type="button" className="btn ghost" onClick={() => act.update(D2 => { delete D2.cfg.logo; })}>إزالة</button>}</div>;
 }

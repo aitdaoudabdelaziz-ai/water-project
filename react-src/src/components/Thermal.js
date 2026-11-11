@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useData } from '../lib/useData.js';
 import { tot, n2, RN, due, tierLines, tierAmt } from '../lib/calc.js';
-import { AS0, CT0 } from './Print.js';
+import { AS0, CT0, logoOf } from '../lib/brand.js';
 
 const TH_DEF = { fmt: '80', w: 80, pad: 4, fs: 12, logo: 1, bar: 1 };
 const fd = d => String(d || '').split('-').reverse().join('/');
@@ -36,7 +36,7 @@ export default function Thermal({ ids, onDone }) {
   const { D, act } = useData();
   const c = Object.assign({}, TH_DEF, D.cfg.th || {});
   const wrap = useRef(null);
-  const AS = D.cfg.aname || AS0, CT = D.cfg.acity || CT0, ph = D.cfg.phone || '', LOGO = D.cfg.logo || 'logo.jpg';
+  const AS = D.cfg.aname || AS0, CT = D.cfg.acity || CT0, ph = D.cfg.phone || '', LOGO = logoOf(D.cfg);
   const set = patch => act.update(D2 => { D2.cfg.th = Object.assign({}, TH_DEF, D2.cfg.th || {}, patch); });
   const fmt = v => set(v === '80' ? { fmt: '80', w: 80, pad: 4, fs: 12 } : v === '58' ? { fmt: '58', w: 58, pad: 3, fs: 10 } : { fmt: 'custom' });
   const clamp = (v, a, b, d) => Math.min(b, Math.max(a, +v || d));

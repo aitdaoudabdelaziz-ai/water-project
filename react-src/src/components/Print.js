@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { tot, n2, RN, due, tierLines, tierAmt } from '../lib/calc.js';
 
-export const AS0 = 'جمعية الفتح للتنمية والتعاون', CT0 = 'أقايغان - إقليم طاطا', LC0 = 'جمعية تنموية - مرخصة لتوزيع الماء الصالح للشرب';
+export { AS0, CT0, LC0 } from '../lib/brand.js';
+import { AS0, CT0, LC0, logoOf } from '../lib/brand.js';
 const FD = ['01/01', '01/04', '01/07', '01/10'], LD = ['31/03', '30/06', '30/09', '31/12'];
 const fd = d => String(d || '').split('-').reverse().join('/');
 const cs = (o, n) => +(n - o).toFixed(3);
@@ -19,7 +20,7 @@ export default function PrintArea({ D, ids, onDone, onThermal }) {
   const [z, setZ] = useState(() => Math.min(1, (innerWidth - 16) / 794));
   useEffect(() => { const r = () => setZ(Math.min(1, (innerWidth - 16) / 794)); addEventListener('resize', r); return () => removeEventListener('resize', r); }, []);
   useEffect(() => { const k = e => e.key === 'Escape' && onDone(); document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k); }, [onDone]);
-  const C = D.cfg, AS = C.aname || AS0, CT = C.acity || CT0, LC = C.alc || LC0, LOGO = C.logo || 'logo.jpg';
+  const C = D.cfg, AS = C.aname || AS0, CT = C.acity || CT0, LC = C.alc || LC0, LOGO = logoOf(C);
   return (
     <div className="pv" role="dialog" aria-modal="true" aria-label="معاينة الطباعة" style={{ '--z': z }}>
       <div className="pv-bar"><button type="button" className="btn pri" onClick={() => doPrint('AlFath-Water')} autoFocus>🖨 طباعة</button>
