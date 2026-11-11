@@ -23,6 +23,7 @@ jobs:
         with: { python-version: '3.12' }
       - name: Prepare
         shell: bash
+        env: { PYTHONUTF8: '1' }
         run: |
           cp -r water/desktop $RUNNER_TEMP/desk
           python react-src/pack/prep.py desktop $RUNNER_TEMP/desk

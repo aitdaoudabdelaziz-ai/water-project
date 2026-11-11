@@ -6,7 +6,7 @@
 import sys, json, re, shutil, pathlib
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 mode, out = sys.argv[1], pathlib.Path(sys.argv[2])
-VER = json.loads((ROOT / 'react-src/package.json').read_text())['version']
+VER = json.loads((ROOT / 'react-src/package.json').read_text(encoding='utf-8'))['version']
 APPID, NAME, FILE = 'ma.alfath.water.react', 'ماء الفتح React', 'AlFath-Water-React'
 
 def rep(p, a, b, n=1):
@@ -49,7 +49,7 @@ elif mode == 'android':
     c['appId'], c['appName'] = APPID, NAME
     (out / 'capacitor.config.json').write_text(json.dumps(c, ensure_ascii=False, indent=1), encoding='utf-8')
     for f in (out / 'native').glob('*.java'): rep(f, 'package ma.alfath.water;', 'package ma.alfath.water.react;')
-    p = json.loads((out / 'package.json').read_text()); p['version'] = VER; (out / 'package.json').write_text(json.dumps(p, indent=1))
+    p = json.loads((out / 'package.json').read_text(encoding='utf-8')); p['version'] = VER; (out / 'package.json').write_text(json.dumps(p, indent=1), encoding='utf-8')
 elif mode == 'desktop':
     p = json.loads((out / 'package.json').read_text(encoding='utf-8'))
     p.update(name='alfath-water-react', productName=FILE, version=VER)
