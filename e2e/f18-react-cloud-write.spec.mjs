@@ -100,3 +100,9 @@ test('F18-N2 turning writing off goes back to read-only: nothing more is written
   assert.match(await p.locator('.warn').innerText(), /للقراءة فقط/);
   assert.equal(await p.evaluate(() => window.__fbWrites), n);
 });
+test('F18-H3 read-only cloud: subscribers page explains how to enable editing', async () => {
+  const { p } = await live(); await p.locator('.nav button', { hasText: 'المشتركون' }).click();
+  assert.equal(await p.getByRole('button', { name: '＋ مشترك جديد' }).count(), 0);
+  await p.getByRole('button', { name: /فعّل «الحفظ في السحابة»/ }).click(); await p.getByRole('button', { name: 'تفعيل الحفظ في السحابة' }).click();
+  await p.locator('.nav button', { hasText: 'المشتركون' }).click(); await p.getByRole('button', { name: '＋ مشترك جديد' }).waitFor();
+});

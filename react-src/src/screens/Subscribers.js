@@ -22,6 +22,7 @@ export default function Subscribers() {
       <div className="panel toolbar">
         <h2>المشتركون <span className="cnt">{list.length}</span></h2>
         {act.can('ed') && <button type="button" className="btn pri" onClick={() => setForm({})}>＋ مشترك جديد</button>}
+        {act.readOnly && <button type="button" className="btn ro-hint" onClick={act.goData}>🔒 السحابة للقراءة فقط — للإضافة والتعديل والحذف فعّل «الحفظ في السحابة»</button>}
         <div className="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4-4" /></svg>
           <input value={q} onChange={e => { setQ(e.target.value); setLim(PAGE); }} placeholder="بحث بالاسم أو العداد أو البطاقة أو الهاتف" aria-label="بحث في المشتركين" /></div>
         <div className="chips" role="group" aria-label="تصفية">

@@ -109,7 +109,7 @@ export default function App() {
   const tabs = TABS.filter(allowed);
   useEffect(() => { if (!tabs.some(t => t[0] === tab) && tabs.length) setTab(tabs[0][0]); }, [tab, tabs.length, cu]);
   const can = k => (readOnly && (k === 'ed' || k === 'del')) ? false : P.can(k);
-  const act = { update, assoc, can, readOnly, cloudOn, cloud, setCloudMode, cloudWrite: cloudOn && cloudWrite, setCloudWrite, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
+  const act = { update, assoc, can, readOnly, goData: () => go('data'), cloudOn, cloud, setCloudMode, cloudWrite: cloudOn && cloudWrite, setCloudWrite, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
     openReading: (id, queue) => setReading({ id, queue: queue || null }),
     openInvoice: id => setInvoice(id) };
   const next = () => { const q = reading.queue || [], k = q.indexOf(reading.id);
