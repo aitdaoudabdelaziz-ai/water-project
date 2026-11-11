@@ -24,12 +24,13 @@ export function CountUp({ value, suffix = '', format = v => v }) {
   return <bdi dir="ltr">{format(v)}{suffix}</bdi>;
 }
 
-export function Kpi({ label, children, pill, tone, onClick }) {
+export function Kpi({ label, children, pill, tone, onClick, icon }) {
   return (
-    <button type="button" className={'kpi' + (tone ? ' kpi-' + tone : '')} onClick={onClick}>
-      <span className="kpi-l">{label}</span>
+    <button type="button" className={'kpi' + (tone ? ' kpi-' + tone : '') + (icon ? ' kpi-ic' : '')} onClick={onClick}>
+      {icon && <span className="kpi-i">{icon}</span>}
+      <span className="kpi-c"><span className="kpi-l">{label}</span>
       <b className="kpi-v">{children}</b>
-      {pill != null && <i className="pill">{pill}</i>}
+      {pill != null && <span className="pill">{pill}</span>}</span>
     </button>
   );
 }

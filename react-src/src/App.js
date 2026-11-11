@@ -157,6 +157,7 @@ export default function App() {
         {tab === 'data' && <DataSource current={source} onPick={pick} />}
       </main>
       <nav className="nav" aria-label="التنقل">
+        <div className="side-b" aria-hidden="true"><img src={iconOf(data.cfg)} alt="" width="76" height="76" /><b>{data.cfg.short || assoc}</b><small>تدبير الماء الصالح للشرب</small></div>
         {tabs.map(([id, label, d, , m]) => (
           <button key={id} type="button" className={(tab === id ? 'on' : '') + (m ? ' in-more' : '')} aria-current={tab === id ? 'page' : undefined} onClick={() => go(id)}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg><span>{label}</span>
