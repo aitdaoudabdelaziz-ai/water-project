@@ -1,6 +1,6 @@
 {
   "name": "alfath-water-react",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "برنامج الماء — نسخة React (المرحلة 1: لوحة القيادة، المشتركون، الفواتير — عرض فقط)",
   "scripts": { "build": "node build.mjs" },

@@ -1,0 +1,111 @@
+name: React - APK + EXE
+
+# نسخة React كتطبيق منفصل: معرّف واسم مختلفان (ماء الفتح React)،
+# فتُثبَّت بجانب البرنامج الحالي ولا تعوّضه. نفس مفتاح التوقيع الثابت.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'react/**'
+      - 'react-src/pack/**'
+      - '.github/workflows/react-apps.yml'
+
+jobs:
+  exe:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Prepare
+        shell: bash
+        run: |
+          cp -r water/desktop $RUNNER_TEMP/desk
+          python react-src/pack/prep.py desktop $RUNNER_TEMP/desk
+          python react-src/pack/prep.py www $RUNNER_TEMP/desk/app
+          echo "DESK=$RUNNER_TEMP/desk" >> $GITHUB_ENV
+      - name: Install
+        shell: bash
+        run: cd "$DESK" && npm install
+      - name: Build Windows installer + portable
+        shell: bash
+        run: cd "$DESK" && npx electron-builder --win --x64 --publish never
+      - name: Smoke test (opens the real EXE, shows the dashboard, writes a backup)
+        shell: pwsh
+        run: |
+          $p = Start-Process "$env:DESK\dist\win-unpacked\AlFath-Water-React.exe" -ArgumentList "--smoke-test" -PassThru
+          if (-not $p.WaitForExit(90000)) { $p.Kill(); throw "smoke test timeout" }
+          if ($p.ExitCode -ne 0) { throw "smoke test failed: $($p.ExitCode)" }
+          Get-ChildItem "$env:USERPROFILE\Documents\AlFath-Water-React-Backups"
+      - name: Collect
+        shell: bash
+        run: mkdir -p out && cp "$DESK"/dist/*.exe out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AlFath-Water-React-Windows
+          path: out/*.exe
+          if-no-files-found: error
+
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency: apk-signing-react
+    env:
+      KEYPASS: ${{ secrets.APK_KEY_PASS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Prepare
+        run: |
+          A=$RUNNER_TEMP/aa; cp -r water/android-app $A
+          python3 react-src/pack/prep.py android $A
+          python3 react-src/pack/prep.py www $A/www
+          echo "A=$A" >> $GITHUB_ENV
+      - name: Install Capacitor
+        run: cd "$A" && npm install
+      - name: Create Android project
+        run: |
+          cd "$A"
+          npx cap add android
+          J=android/app/src/main/java/ma/alfath/water/react
+          ls $J
+          cp native/*.java $J/
+          cp -r res/* android/app/src/main/res/
+          npx cap sync android
+          V=$(node -p "require('./package.json').version")
+          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"$V\"/" android/app/build.gradle
+          grep -E "applicationId|versionCode|versionName" android/app/build.gradle
+          echo "APKV=$V" >> $GITHUB_ENV
+      - name: Signing key
+        if: env.KEYPASS != ''
+        run: |
+          K=$RUNNER_TEMP/release.jks
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in water/android-app/signing/release.jks.enc -out "$K" -pass env:KEYPASS
+          echo "KS=$K" >> $GITHUB_ENV
+      - name: Build APK
+        run: |
+          cd "$A/android"; chmod +x gradlew
+          mkdir -p $GITHUB_WORKSPACE/out; OUT=$GITHUB_WORKSPACE/out/AlFath-Water-React-$APKV.apk
+          if [ -n "$KS" ]; then
+            ./gradlew assembleRelease --no-daemon
+            BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+            $BT/zipalign -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk /tmp/aligned.apk
+            $BT/apksigner sign --ks "$KS" --ks-key-alias alfath --ks-pass env:KEYPASS --key-pass env:KEYPASS --out $OUT /tmp/aligned.apk
+            $BT/apksigner verify --print-certs $OUT | head -3
+          else
+            echo "::warning::APK_KEY_PASS secret not set - debug signature"
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk $OUT
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AlFath-Water-React-Android
+          path: out/*.apk
+          if-no-files-found: error
