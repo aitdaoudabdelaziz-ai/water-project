@@ -388,3 +388,4 @@ h2{position:relative}
 .logo-ed.sm .logo-pen{width:20px;height:20px;line-height:20px;font-size:11px;bottom:-4px;inset-inline-start:-6px}
 .logo-ed:hover .logo-pen{filter:brightness(1.1);transform:scale(1.08)}
 .logo-ed:focus-within{outline:3px solid var(--gold);outline-offset:3px;border-radius:50%}
+@media(min-width:900px){.top .logo-ed{display:none}}
