@@ -6,6 +6,7 @@ import { n2 } from '../lib/calc.js';
 import Sheet from '../components/Sheet.js';
 import { AS0, CT0, LC0, PRO, logoOf } from '../lib/brand.js';
 import { LicenseCard } from '../components/License.js';
+import { readLogo } from '../lib/logo.js';
 
 /** حقل يحفظ عند الخروج منه (لا يعيد الحفظ مع كل حرف) */
 function Field({ label, value, onSave, type = 'text', inputMode, hint }) {
@@ -139,11 +140,7 @@ function PwSheet({ id, onClose }) {
 /** شعار الجمعية: يظهر في الرأس وعلى الفاتورة والوصل (يُصغَّر إلى 256 بكسل) */
 function Logo() {
   const { D, act } = useData();
-  const pick = e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
-    const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => {
-      const m = 256, k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
-      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
-      const url = c.toDataURL('image/jpeg', 0.88); act.update(D2 => { D2.cfg.logo = url; }); }; im.src = r.result; }; r.readAsDataURL(f); };
+  const pick = e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; readLogo(f, url => act.update(D2 => { D2.cfg.logo = url; })); };
   return <div className="logo-row"><img src={logoOf(D.cfg)} alt="شعار الجمعية" width="64" height="64" />
     <label className="btn">اختيار الشعار<input type="file" accept="image/*" hidden onChange={pick} /></label>
     {D.cfg.logo && <button type="button" className="btn ghost" onClick={() => act.update(D2 => { delete D2.cfg.logo; })}>إزالة</button>}</div>;

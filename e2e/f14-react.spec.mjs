@@ -68,7 +68,7 @@ test('F14-H5 opens an encrypted backup made by the original app', async () => {
   const enc = await l.evaluate(async () => encPack(JSON.stringify(D), 'Secret#2026'));
   const f = '/tmp/react-enc.json'; fs.writeFileSync(f, enc);
   const r = await page(c, RURL); await goData(r);
-  await r.locator('input[type=file]').setInputFiles(f);
+  await r.locator('main input[type=file]').setInputFiles(f);
   await r.getByLabel('كلمة السر', { exact: true }).fill('nope'); await r.getByRole('button', { name: 'فتح', exact: true }).click();
   await r.getByRole('alert').waitFor();
   await r.getByLabel('كلمة السر', { exact: true }).fill('Secret#2026'); await r.getByRole('button', { name: 'فتح', exact: true }).click();

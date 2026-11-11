@@ -382,3 +382,9 @@ h2{position:relative}
 .sums>div,.bal>div{border-top:3px solid var(--gold)}
 .bal .tot b,.sums b{color:var(--ink)}
 .main .panel h2{width:fit-content;padding-bottom:6px;border-bottom:3px solid var(--gold);color:var(--ink);font-weight:800}
+.logo-ed{position:relative;display:inline-block;cursor:pointer;flex:none;line-height:0}
+.logo-ed img{display:block}
+.logo-pen{position:absolute;bottom:-2px;inset-inline-start:-4px;width:26px;height:26px;border-radius:50%;background:var(--gold);color:#12324D;font-size:14px;line-height:26px;text-align:center;font-weight:800;border:2px solid var(--navy);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.logo-ed.sm .logo-pen{width:20px;height:20px;line-height:20px;font-size:11px;bottom:-4px;inset-inline-start:-6px}
+.logo-ed:hover .logo-pen{filter:brightness(1.1);transform:scale(1.08)}
+.logo-ed:focus-within{outline:3px solid var(--gold);outline-offset:3px;border-radius:50%}

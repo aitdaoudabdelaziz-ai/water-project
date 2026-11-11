@@ -38,7 +38,6 @@ export default function Dashboard({ go }) {
     return { mon, mIdx, pc: billed ? Math.round(coll / billed * 100) : 0, nPd: inv.filter(i => i.paid).length, nInv: inv.length, debt, late, ok, cons, alerts, nLate, last,
       nPay: X.live.filter(i => i.paid && String(i.pd || '').slice(0, 7) === mk).length, nCash: X.live.filter(i => i.paid && i.pw != 'b' && String(i.pd || '').slice(0, 7) === mk).length };
   }, [D, X, Y, R]);
-  const mx = Math.max(1, ...k.mon);
   const name = D.cfg.short || D.cfg.aname || SHORT0;
   const wait = D.subs.length - k.ok;
   const date = new Date().toLocaleDateString('fr-MA', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -101,15 +100,6 @@ export default function Dashboard({ go }) {
 
       <p className="rule"><span>قراءات {roundName(R)}: <b><bdi dir="ltr">{k.ok} / {D.subs.length}</bdi></b></span><i /><span>بانتظار القراءة: <b>{wait}</b></span></p>
 
-      <section className="dpanel" aria-labelledby="ch">
-        <h3 className="dp-h" id="ch">{I.coins}المداخيل الشهرية <small>{Y}</small></h3>
-        <div className="chart" role="img" aria-label={'المداخيل الشهرية ' + Y}>
-          <div className="bars">{k.mon.map((v, m) => (
-            <div key={m} className={'bar' + (m === k.mIdx ? ' cur' : '')} title={MO[m] + ': ' + fmt(v) + ' د.م'}>
-              <i style={{ height: Math.max(4, v / mx * 100) + '%' }} /><small>{MO[m].slice(0, 3)}</small>
-            </div>))}</div>
-        </div>
-      </section>
 
       <div className="acts">
         <button type="button" className="act a-n" onClick={() => go('subs')}>{I.people}عرض المشتركين</button>

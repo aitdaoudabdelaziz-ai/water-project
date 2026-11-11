@@ -47,3 +47,12 @@ test('F19-H2 delete a subscriber: readings and invoices go, paid money stays in 
   const nf = D.fin.slice(f0); assert.equal(nf.length, paid.length); assert.ok(nf.every(f => f.t === 'in' && /مشترك محذوف/.test(f.n)));
   assert.ok(Math.abs(nf.reduce((t, f) => t + f.a, 0) - sum) < 0.01);
 });
+test('F19-H3 admin changes the association logo from the ✎ button; monthly chart removed', async () => {
+  const { p, errs } = await app();
+  assert.equal(await p.getByText('المداخيل الشهرية').count(), 0);
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAxMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==', 'base64');
+  await p.locator('.top .logo-ed input').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: png });
+  await p.waitForFunction(() => /^data:image\/jpeg/.test(JSON.parse(localStorage.getItem('w1react')).data.cfg.logo || ''));
+  assert.match(await p.locator('.top .logo-ed img').getAttribute('src'), /^data:image\/jpeg/);
+  assert.deepEqual(errs, []);
+});

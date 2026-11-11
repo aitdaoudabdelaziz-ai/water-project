@@ -21,6 +21,7 @@ import Thermal from './components/Thermal.js';
 import { perms, session } from './lib/auth.js';
 import { connect, push, setRemote, WERR } from './lib/cloud.js';
 import { PRO, AS0, iconOf } from './lib/brand.js';
+import { readLogo } from './lib/logo.js';
 import { useLicense, LicenseBar, LicenseDialog } from './components/License.js';
 import { cloudIds } from './lib/ops.js';
 
@@ -55,6 +56,15 @@ function adopt() {
   } catch { /* */ }
 }
 adopt();
+
+/** شعار الجمعية: للمسؤول زر ✎ لتغييره مباشرة */
+function LogoEdit({ cfg, size, act, small }) {
+  const img = <img src={iconOf(cfg)} alt="" width={size} height={size} />;
+  if (!act.admin || !act.can('ed')) return img;
+  return <label className={'logo-ed' + (small ? ' sm' : '')} title="تعديل شعار الجمعية">{img}<span className="logo-pen" aria-hidden="true">✎</span>
+    <span className="sr">تعديل شعار الجمعية</span>
+    <input type="file" accept="image/*" hidden onChange={e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; readLogo(f, url => act.update(D2 => { D2.cfg.logo = url; })); }} /></label>;
+}
 
 export default function App() {
   const [{ data, source }, setDs] = useState(() => { const x = loadSaved(); if (x) return x; const d = PRO ? { data: normalize({ subs: [], reads: {}, invs: [], sid: 0, seq: 0, fin: [], fid: 0, users: [], uid: 0, cfg: { price: 3, fee: 0, due: 15 } }), source: 'بيانات هذا الجهاز' } : { data: demoData(), source: 'بيانات تجريبية' }; saveCopy(d.data, d.source); return d; });
@@ -138,7 +148,7 @@ export default function App() {
       {PRO && <LicenseBar lic={lic} />}
       {PRO && <LicenseDialog lic={lic} D={data} assoc={assoc} />}
       <header className="top">
-        <img src={iconOf(data.cfg)} alt="" width="44" height="44" />
+        <LogoEdit cfg={data.cfg} size={44} act={act} small />
         <div className="brand"><b>{assoc}</b><small>لجنة الماء الصالح للشرب</small></div>
         {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''} onClick={() => go('data')} style={{ cursor: 'pointer' }}>☁<span className="ct"> {cloud.status === 'live' ? (cloudWrite ? (cloud.pending ? 'جارٍ الحفظ…' : 'السحابة ✓') : 'السحابة (قراءة)') : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span></span>}
         <button type="button" className="icon" onClick={() => setReading({ id: null, queue: null })} aria-label="تحصيل سريع" title="تحصيل سريع">
@@ -157,7 +167,7 @@ export default function App() {
         {tab === 'data' && <DataSource current={source} onPick={pick} />}
       </main>
       <nav className="nav" aria-label="التنقل">
-        <div className="side-b" aria-hidden="true"><img src={iconOf(data.cfg)} alt="" width="76" height="76" /><b>{data.cfg.short || assoc}</b><small>تدبير الماء الصالح للشرب</small></div>
+        <div className="side-b"><LogoEdit cfg={data.cfg} size={76} act={act} /><b>{data.cfg.short || assoc}</b><small>تدبير الماء الصالح للشرب</small></div>
         {tabs.map(([id, label, d, , m]) => (
           <button key={id} type="button" className={(tab === id ? 'on' : '') + (m ? ' in-more' : '')} aria-current={tab === id ? 'page' : undefined} onClick={() => go(id)}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg><span>{label}</span>
