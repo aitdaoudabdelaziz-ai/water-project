@@ -17,20 +17,20 @@ export default function DataSource({ current, onPick }) {
     <div className="stack">
       <section className="panel">
         <h2>مصدر البيانات</h2>
-        <p>نسخة React تعمل على نسختها الخاصة من البيانات. ما تغيّره هنا لا يصل إلى برنامجك الحالي.</p>
+        <p>البيانات المحلية لهذا الجهاز (بدون سحابة). ما تغيّره هنا يبقى في هذا الجهاز فقط.</p>
         <p className="note">المصدر الحالي: <b>{current || '—'}</b></p>
         <div className="opts">
           <button type="button" className="opt" onClick={() => onPick(demoData(), 'بيانات تجريبية')}><b>🧪 بيانات تجريبية</b><small>40 مشتركاً وهمياً لتجربة كل الشاشات</small></button>
           <button type="button" className="opt" onClick={() => file.current.click()}><b>📂 فتح نسخة احتياطية</b><small>ملف ‎.json‎ من برنامج الماء، عادي أو مشفّر</small></button>
           <button type="button" className="opt" disabled={!dev} onClick={() => dev && onPick(JSON.parse(JSON.stringify(dev.data)), 'بيانات هذا الجهاز')}>
-            <b>📱 بيانات البرنامج على هذا الجهاز</b><small>{dev ? `${dev.data.subs.length} مشترك، تُنسخ إلى React` : 'لا توجد بيانات للبرنامج الأصلي في هذا المتصفح'}</small></button>
+            <b>📱 بيانات البرنامج على هذا الجهاز</b><small>{dev ? `${dev.data.subs.length} مشترك، تُنسخ إلى البرنامج` : 'لا توجد بيانات للبرنامج الأصلي في هذا المتصفح'}</small></button>
         </div>
         <input ref={file} type="file" accept=".json,application/json" hidden onChange={e => { const f = e.target.files[0]; e.target.value = ''; if (f) read(f); }} />
       </section>
       <Cloud act={act} />
       <section className="panel">
-        <h2>حفظ نسخة من بيانات React</h2>
-        <p className="note">تُفتح بالبرنامج الحالي من الإعدادات، استرجاع نسخة. كلمة السر اختيارية: بدونها يُحفظ الملف غير مشفّر.</p>
+        <h2>حفظ نسخة احتياطية من البيانات</h2>
+        <p className="note">تُفتح بالبرنامج القديم من الإعدادات، استرجاع نسخة. كلمة السر اختيارية: بدونها يُحفظ الملف غير مشفّر.</p>
         <label className="field">كلمة السر (اختيارية، 6 أحرف على الأقل)<input type="password" value={pw} onChange={e => { setPw(e.target.value); setXmsg(''); }} autoComplete="new-password" /></label>
         <button type="button" className="btn pri" onClick={async () => {
           if (pw && pw.length < 6) { setXmsg('كلمة السر قصيرة: 6 أحرف على الأقل.'); return; }
@@ -52,11 +52,11 @@ function CloudWrite({ act }) {
   const on = act.cloudWrite;
   const toggle = () => {
     if (on) { act.setCloudWrite(false); return; }
-    if (confirm('تفعيل الحفظ في السحابة؟\n\nكل تعديل في نسخة React سيُحفظ مباشرة في بيانات الجمعية الحقيقية ويظهر في البرنامج الحالي.\nقبل أول تعديل كل يوم تُحفظ نسخة احتياطية من السحابة على هذا الجهاز.')) act.setCloudWrite(true);
+    if (confirm('تفعيل الحفظ في السحابة؟\n\nكل تعديل سيُحفظ مباشرة في بيانات الجمعية الحقيقية ويظهر في البرنامج القديم.\nقبل أول تعديل كل يوم تُحفظ نسخة احتياطية من السحابة على هذا الجهاز.')) act.setCloudWrite(true);
   };
   return (
     <div className="cw">
-      <p className={on ? 'state' : 'note'} role="status">{on ? <>✏️ <b>الحفظ في السحابة مفعّل:</b> تعديلاتك تُحفظ في بيانات الجمعية وتظهر في البرنامج الحالي.</> : <>👁 <b>قراءة فقط:</b> لا يُكتب أي شيء في السحابة.</>}</p>
+      <p className={on ? 'state' : 'note'} role="status">{on ? <>✏️ <b>الحفظ في السحابة مفعّل:</b> تعديلاتك تُحفظ في بيانات الجمعية وتظهر في البرنامج القديم.</> : <>👁 <b>قراءة فقط:</b> لا يُكتب أي شيء في السحابة.</>}</p>
       <div className="row">
         <button type="button" className={'btn ' + (on ? '' : 'pri')} onClick={toggle}>{on ? 'إيقاف الحفظ (الرجوع إلى القراءة فقط)' : 'تفعيل الحفظ في السحابة'}</button>
         {L.map(b => <button key={b.at} type="button" className="btn ghost" onClick={() => download(JSON.stringify(b.data), 'alfath-cloud-' + b.day + '.json')}>⬇ نسخة السحابة {b.day}</button>)}
@@ -74,19 +74,20 @@ function Cloud({ act }) {
   return (
     <section className="panel" aria-labelledby="cl-h">
       <h2 id="cl-h">☁ سحابة الجمعية</h2>
+      <p className="note">البرنامج القديم ما زال متاحاً للاحتياط: <a href="/old/cloud/">alfath-eau.org/old/cloud</a></p>
       {!on || c.status === 'login' ? <>
-        <p className="note">اعرض بياناتك الحقيقية من السحابة داخل نسخة React. يبدأ <b>للقراءة فقط</b>، ويمكنك بعد الاتصال تفعيل الحفظ في السحابة.</p>
+        <p className="note">اتصل ببيانات الجمعية في السحابة. يبدأ <b>للقراءة فقط</b>، ويمكنك بعد الاتصال تفعيل الحفظ في السحابة.</p>
         <form className="form two" onSubmit={go}>
           <label className="field">البريد الإلكتروني<input type="email" value={em} onChange={e => setEm(e.target.value)} autoComplete="username" /></label>
           <label className="field">كلمة سر السحابة<input type="password" value={pw} onChange={e => setPw(e.target.value)} autoComplete="current-password" /></label>
           {err && <p className="err" role="alert">{err}</p>}
           <button type="submit" className="btn pri" disabled={busy || !pw}>{busy ? 'جارٍ الاتصال...' : 'الاتصال بالسحابة (قراءة فقط)'}</button>
         </form>
-        {on && <button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى نسخة React المحلية</button>}
+        {on && <button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى البيانات المحلية لهذا الجهاز</button>}
       </> : <>
         <p className={c.status === 'error' ? 'err' : 'state'} role="status">{c.status === 'live' ? `متصل بالسحابة${c.user ? ' بحساب ' + c.user : ''}. البيانات تتحدّث مباشرة${c.cache ? ' (من النسخة المحفوظة على الجهاز)' : ''}.` : c.status === 'error' ? c.error : 'جارٍ تحميل بيانات الجمعية من السحابة...'}</p>
         {c.status === 'live' && <CloudWrite act={act} />}
-        <div className="row"><button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى نسخة React المحلية</button>
+        <div className="row"><button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى البيانات المحلية لهذا الجهاز</button>
           <button type="button" className="btn ghost" onClick={async () => { await signOut(); act.setCloudMode(false); }}>تسجيل الخروج من السحابة</button></div>
       </>}
     </section>

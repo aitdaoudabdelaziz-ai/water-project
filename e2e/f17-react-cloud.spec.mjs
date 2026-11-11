@@ -56,7 +56,7 @@ test('F17-H2 nothing is ever written to the cloud', async () => {
 });
 test('F17-H3 back to the local React copy restores it untouched', async () => {
   const { p, D } = await app(); await login(p, 'Cloud#2026'); await p.locator('.cchip.c-live').waitFor();
-  await p.locator('.nav button', { hasText: 'البيانات' }).click(); await p.getByRole('button', { name: 'الرجوع إلى نسخة React المحلية' }).click();
+  await p.locator('.nav button', { hasText: 'البيانات' }).click(); await p.getByRole('button', { name: 'الرجوع إلى البيانات المحلية لهذا الجهاز' }).click();
   await p.locator('.nav button', { hasText: 'المشتركون' }).click();
   assert.equal(+(await p.locator('.toolbar h2 .cnt').innerText()), D.subs.length); assert.equal(await p.locator('.cchip').count(), 0);
 });

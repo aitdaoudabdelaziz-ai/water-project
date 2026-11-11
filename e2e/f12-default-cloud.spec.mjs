@@ -2,7 +2,7 @@
 import test, { after } from 'node:test'; import assert from 'node:assert/strict';
 import { launch, close, URL } from './helpers.mjs';
 after(close);
-for (const u of [URL, URL.replace('water/www/index.html', 'cloud/index.html')])
+for (const u of [URL, URL.replace('water/www/index.html', 'old/cloud/index.html')])
   test('F12-H1 fresh device goes to cloud login, not setup: ' + u.split('8765/')[1], async () => {
     const b = await launch(); const ctx = await b.newContext();
     await ctx.route(/gstatic|googleapis|firebase|cdnjs/, r => r.abort());

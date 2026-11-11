@@ -75,7 +75,7 @@ test('F18-H1 a reading saved from React lands in the cloud in the same format, a
 test('F18-H2 the current app sees the React edit, and React sees the current app edits', async () => {
   const { c, p, C } = await live(); await enableWrite(p);
   const s = fresh(C), k = s.id + '|' + Y + '|' + R; await record(p, s, 300, 333); await p.getByText(/فاتورة .*غير مؤداة/).waitFor(); await p.waitForTimeout(150);
-  const L = await c.newPage(); await L.goto(BASE + 'cloud/index.html');
+  const L = await c.newPage(); await L.goto(BASE + 'old/cloud/index.html');
   await L.waitForFunction(k => { try { const D = window.__clD(); return D.reads[k] && D.reads[k].n === 333; } catch { return false; } }, k, { timeout: 8000 });
   const inv = await L.evaluate(k => window.__clD().invs.find(i => i.s + '|' + i.y + '|' + i.r === k), k); assert.equal(inv.n, 333);
   // البرنامج الحالي يعدّل اسم المشترك ← يظهر في React

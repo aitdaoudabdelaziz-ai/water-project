@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DataCtx, useDerived, useData } from './lib/useData.js';
 import { norm } from './lib/calc.js';
 import Sheet from './components/Sheet.js';
-import { loadSaved, saveCopy, demoData } from './lib/store.js';
+import { loadSaved, saveCopy, demoData, deviceData } from './lib/store.js';
 import Dashboard from './screens/Dashboard.js';
 import Readings from './screens/Readings.js';
 import Invoices from './screens/Invoices.js';
@@ -41,6 +41,19 @@ function cloudBackup(D) {
     L.unshift({ day, at: Date.now(), data: D }); localStorage.setItem(CBAK, JSON.stringify(L.slice(0, 3)));
   } catch { /* مساحة غير كافية: نكمل */ } }
 
+/** أول فتح بعد اعتماد النسخة الجديدة: نأخذ وضع البرنامج القديم على هذا الجهاز (مرة واحدة)
+ *  - كان يعمل بالسحابة ← السحابة مع الحفظ مفعّل
+ *  - كان يعمل محلياً ← ننقل بياناته المحلية إلى النسخة الجديدة (البيانات القديمة تبقى كما هي) */
+function adopt() {
+  try {
+    if (localStorage.getItem('w1react_adopted')) return; localStorage.setItem('w1react_adopted', '1');
+    const dev = deviceData(); if (!dev) return;
+    if (localStorage.getItem('wcloud_mode') !== 'local') { localStorage.setItem('w1react_cloud', '1'); localStorage.setItem('w1react_cloudwrite', '1'); return; }
+    const x = loadSaved(); if (!x || x.source === 'بيانات تجريبية') saveCopy(dev.data, 'بيانات هذا الجهاز (البرنامج القديم)');
+  } catch { /* */ }
+}
+adopt();
+
 export default function App() {
   const [{ data, source }, setDs] = useState(() => { const x = loadSaved(); if (x) return x; const d = { data: demoData(), source: 'بيانات تجريبية' }; saveCopy(d.data, d.source); return d; });
   const [tab, setTab] = useState('home');
@@ -52,7 +65,7 @@ export default function App() {
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem(THEME) || ''; } catch { return ''; } });
   const X = useDerived(data);
   const [cu, setCu] = useState(() => session.get());
-  // السحابة: قراءة فقط في هذه الخطوة. البيانات المحلية لنسخة React تبقى كما هي.
+  // السحابة: قراءة، والحفظ بعد تفعيله. البيانات المحلية تبقى كما هي.
   const [cloudOn, setCloudOn] = useState(() => { try { return localStorage.getItem('w1react_cloud') === '1'; } catch { return false; } });
   const [cloud, setCloud] = useState({ status: 'off' });
   const local = useRef(null);
@@ -119,11 +132,10 @@ export default function App() {
 
   return (
     <DataCtx.Provider value={{ D: data, X, Y, R, act, sel, setSel }}>
-      <div className="preview" role="note">{cloudOn && cloudWrite ? 'نسخة React: الحفظ في السحابة مفعّل — تعديلاتك تظهر في البرنامج الحالي.' : 'نسخة React التجريبية: لا تؤثر على برنامجك.'} <a href="../cloud/">البرنامج الحالي</a></div>
       <header className="top">
         <img src="../icon-192.png" alt="" width="44" height="44" />
         <div className="brand"><b>{assoc}</b><small>لجنة الماء الصالح للشرب</small></div>
-        {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''}>☁<span className="ct"> {cloud.status === 'live' ? (cloudWrite ? (cloud.pending ? 'جارٍ الحفظ…' : 'السحابة ✓') : 'السحابة (قراءة)') : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span></span>}
+        {cloudOn && <span className={'cchip c-' + cloud.status} role="status" title={cloud.error || ''} onClick={() => go('data')} style={{ cursor: 'pointer' }}>☁<span className="ct"> {cloud.status === 'live' ? (cloudWrite ? (cloud.pending ? 'جارٍ الحفظ…' : 'السحابة ✓') : 'السحابة (قراءة)') : cloud.status === 'login' ? 'سجّل الدخول' : cloud.status === 'error' ? 'خطأ' : '...'}</span></span>}
         <button type="button" className="icon" onClick={() => setReading({ id: null, queue: null })} aria-label="تحصيل سريع" title="تحصيل سريع">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" /></svg></button>
         <button type="button" className="icon" onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={dark ? 'الوضع الفاتح' : 'الوضع الداكن'}>{dark ? '☀' : '☾'}</button>
