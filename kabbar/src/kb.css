@@ -1,0 +1,55 @@
+/* إضافات خاصة ببرنامج التعاونية (بادئة kb- حتى لا تتعارض مع تصميم برنامج الماء) */
+.kb-acts{display:flex;gap:8px;flex-wrap:wrap}
+.panel-h .kb-acts{margin-inline-start:auto}
+.form.two .kb-w{grid-column:1/-1}
+.field select{border:1px solid var(--line);background:var(--stone);border-radius:10px;padding:9px 10px;color:var(--tx)}
+.filters label{min-width:130px}
+.kb-tot{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--soft);border-top:3px solid var(--gold);border-radius:12px;padding:10px 14px}
+.kb-tot span{font-weight:700;color:var(--ink)}.kb-tot span small{display:block;font-weight:500;color:var(--mu)}
+.kb-tot b{font-family:var(--fd);font-size:22px;color:var(--gold);font-weight:800}.kb-tot b em{font-style:normal;font-size:13px;color:var(--ink)}
+.kb-lnk{padding:2px 0;font-size:12.5px}
+.kb-nw{white-space:nowrap}
+.eye.kb-del svg{stroke:var(--pom)}
+.eye svg{width:21px;height:21px;fill:none;stroke:var(--water);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.row-b.kb-off{opacity:.55}
+.tag.kb-wait{background:#FCEFD6;color:#9A6A07}
+.tag:not(.good):not(.bad):not(.kb-wait):not(.t-c):not(.t-b){background:var(--soft);color:var(--mu)}
+.kb-p0{padding:0}
+.kb-fr{cursor:default}.kb-fr:hover{background:none!important}
+.kb-gr{display:flex;gap:8px;align-items:center}.kb-gr input:first-child{flex:1;border:1px solid var(--line);background:var(--stone);border-radius:8px;padding:6px 8px;color:var(--tx);min-width:0}
+.tbl.kb-l td:first-child{text-align:start}.tbl .kb-t td{font-weight:800;background:var(--soft)!important}
+.tbl tbody tr:first-child td{background:inherit}
+.bad{color:var(--pom)}.good{color:var(--palm)}
+.rule span{display:inline-flex;align-items:center;gap:6px}.rule .kb-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-inline-end:8px}
+.opt:disabled{opacity:.45}
+/* صفحات الطباعة: نفس ألوان فاتورة الماء */
+.pv .kpg{width:210mm;min-height:297mm;background:#fff;margin:8px auto;padding:8mm 10mm;display:flex;flex-direction:column;gap:3mm;color:#12261E;zoom:var(--z,1);
+ font-family:"Noto Kufi Arabic","Segoe UI",Tahoma,sans-serif;font-size:10pt;line-height:1.55;font-variant-numeric:tabular-nums;box-sizing:border-box}
+.pv .kpg.half{min-height:148mm}
+.pv .khd{background:#17382D;color:#fff;border-radius:6mm;min-height:22mm;padding:2mm 6mm;display:flex;align-items:center;justify-content:space-between;gap:4mm}
+.pv .khd .t1{font-size:15pt;font-weight:bold}.pv .khd .t2{font-size:10pt;opacity:.9}
+.pv .khd .md{text-align:center}.pv .khd .as{font-size:14pt;font-weight:bold}.pv .khd .ct{font-size:9.5pt}.pv .khd .lc{font-size:8pt;opacity:.9}
+.pv .khd img{height:17mm;width:17mm;border-radius:50%;background:#fff;object-fit:contain}
+.pv .kbody{flex:1;display:flex;flex-direction:column;gap:3mm}
+.pv .krow{display:flex;gap:4mm}
+.pv .kbx{flex:1;background:#D3E0C9;border:.3mm solid #0F7B5C;border-radius:3mm;padding:1.5mm 4mm;line-height:1.5}.pv .kbx h4{margin:0 0 1mm;font-size:10.5pt;color:#17382D}
+.pv .kbr{background:#17382D;color:#fff;text-align:center;font-weight:bold;font-size:10.5pt;padding:1mm;border-radius:2mm 2mm 0 0;margin-bottom:-3mm}
+.pv .ktb{width:100%;border-collapse:collapse;text-align:center}
+.pv .ktb th{background:#1e5fb8;color:#fff;font-size:9pt;padding:1.2mm 1mm;border:.2mm solid #fff}
+.pv .ktb td{background:#ececec;font-size:9.5pt;padding:1.1mm 1mm;border:.2mm solid #fff}
+.pv .ktb tr.kt td{background:#D3E0C9;font-weight:bold;color:#17382D}
+.pv .ktb td:first-child,.pv .ktb th:first-child{text-align:right;padding-right:3mm}
+.pv .ktr{display:flex;gap:4mm;align-items:center}
+.pv .ktt{background:#D3E0C9;border:.3mm solid #0F7B5C;padding:1.5mm 4mm;font-weight:bold;font-size:11pt;color:#17382D;flex:1}.pv .ktt .gr{font-size:12pt}
+.pv .kps{flex:0 0 40mm;text-align:center;border:.7mm solid #2e7d32;color:#2e7d32;border-radius:2mm;font-weight:bold;font-size:15pt;transform:rotate(-5deg);padding:1.2mm}
+.pv .ksig{display:flex;justify-content:space-around;padding:6mm 0 10mm;font-weight:bold}
+.pv .kft{background:#17382D;color:#fff;text-align:center;border-radius:4mm;padding:1.6mm;font-size:8pt;font-weight:bold}
+@media print{
+ @page{size:A4;margin:6mm}
+ .pv .kpg{zoom:1;margin:0;width:auto;min-height:0;padding:0;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .pv .kpg:last-child{page-break-after:auto}
+}
+.bal .tot b,.bal .tot b bdi{color:#fff}
+.pv-bar .btn:not(.pri){color:var(--tx)}
+.pv .kbody>.ktt{flex:none}
+.kb-mt{margin-top:12px}
