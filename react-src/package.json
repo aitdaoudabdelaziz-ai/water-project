@@ -3,7 +3,15 @@
   "version": "0.7.0",
   "private": true,
   "description": "برنامج الماء — نسخة React (المرحلة 1: لوحة القيادة، المشتركون، الفواتير — عرض فقط)",
-  "scripts": { "build": "node build.mjs" },
-  "dependencies": { "react": "19.2.8", "react-dom": "19.2.8" },
-  "devDependencies": { "esbuild": "0.28.2" }
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "jszip": "3.10.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
 }

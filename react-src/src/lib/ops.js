@@ -1,5 +1,5 @@
 // عمليات الكتابة — نفس منطق البرنامج الأصلي (regInv / sv / payGo / waText) حتى تبقى البيانات متوافقة
-import { key, tot, n2, RN, due, today } from './calc.js';
+import { key, tot, n2, RN, due, today, prevNew } from './calc.js';
 
 const trOn = D => (D.cfg.trOn && D.cfg.tr && D.cfg.tr.length ? D.cfg.tr : null);
 let CLOUD_IDS = false;
@@ -80,3 +80,49 @@ export function removeSubs(D, ids) {
   for (const k in D.reads) if (S.has(+k.split('|')[0])) delete D.reads[k];
 }
 export function toggleContract(D, id) { const s = D.subs.find(x => x.id == id); s.ct = s.ct ? 0 : 1; s.cd = s.ct ? today() : null; }
+
+// ---------- Excel: نفس قواعد imp() في البرنامج القديم ----------
+// المفتاح هو رقم العداد: مشترك موجود ← تحديث معلوماته، غير موجود ← إضافة.
+// عمودا «قديمة / جديدة» (إن وُجدا) يسجّلان قراءة الجولة المختارة.
+export const FN = { name: ['الاسم الكامل', 'الاسم'], meter: ['رقم العداد', 'العداد'], cin: ['رقم البطاقة الوطنية', 'البطاقة الوطنية', 'رقم البطاقة', 'CIN'],
+  phone: ['الهاتف'], addr: ['العنوان'], old: ['قديمة', 'القديمة', 'قديم', 'السابقة', 'القراءة السابقة'], nw: ['جديدة', 'الجديدة', 'جديد', 'الحالية', 'القراءة الحالية'] };
+/** يطبّق ملف Excel على البيانات D. يرجع تقريراً: { sheets, tot, a, up, rr, bad[], rows[] } */
+export function importBook(D, book, y, r) {
+  const rep = { sheets: 0, tot: 0, a: 0, up: 0, rr: 0, bad: [], rows: [] }, seen = {};
+  book.forEach(({ name: sn, rows }) => {
+    rows = rows.map(x => x || []);
+    const h0 = rows.findIndex(x => x.some(c => String(c).trim() !== '')); if (h0 < 0) return;
+    const H = rows[h0].map(x => String(x).trim()), ix = {};
+    for (const k in FN) ix[k] = H.findIndex(h => FN[k].includes(h));
+    if (ix.meter < 0) return; rep.sheets++;
+    const g = (row, k) => (ix[k] >= 0 && row[ix[k]] != null ? row[ix[k]] : '');
+    rows.slice(h0 + 1).forEach((row, i) => {
+      const lab = (book.length > 1 ? sn + ' - ' : '') + 'سطر ' + (h0 + i + 2);
+      if (!row.length || row.every(c => String(c).trim() === '')) return; rep.tot++;
+      const m = String(g(row, 'meter')).trim().replace(/\.0$/, ''), nm = String(g(row, 'name')).trim();
+      const note = (st, t) => { rep.rows.push({ lab, m, nm, st, t }); if (st === 'bad') rep.bad.push(lab + ': ' + t); };
+      if (!m) return note('bad', 'رقم العداد فارغ');
+      if (seen[m]) return note('bad', 'رقم العداد ' + m + ' مكرر في الملف (' + seen[m] + ')');
+      seen[m] = lab;
+      let s = D.subs.find(x => x.meter == m), st;
+      if (!s) { if (!nm) return note('bad', 'الاسم فارغ (العداد ' + m + ')'); s = { id: nid(D, 'sid'), name: nm, meter: m, cin: '', phone: '', addr: '', fl: [] }; D.subs.push(s); rep.a++; st = 'new'; }
+      else { rep.up++; st = 'upd'; }
+      if (nm) s.name = nm;
+      if (String(g(row, 'cin')).trim() !== '') s.cin = String(g(row, 'cin')).trim().toUpperCase();
+      if (String(g(row, 'phone')).trim() !== '') s.phone = String(g(row, 'phone')).trim();
+      if (String(g(row, 'addr')).trim() !== '') s.addr = String(g(row, 'addr')).trim();
+      let t = '';
+      const n = parseFloat(String(g(row, 'nw')).replace(',', '.'));
+      if (!isNaN(n)) {
+        let o = parseFloat(String(g(row, 'old')).replace(',', '.')); if (isNaN(o)) o = prevNew(D, s.id, y, r) || 0;
+        const cur = D.reads[key(s.id, y, r)], same = cur && cur.o === o && cur.n === n;
+        const e = same ? null : n < o ? 'القراءة الجديدة (' + n + ') أصغر من القديمة (' + o + ')' : roundPaid(D, s.id, y, r) ? PAID_LOCK : null;
+        if (same) t = 'القراءة بدون تغيير';
+        else if (e) { rep.bad.push(lab + ': ' + e + ' - العداد ' + m); t = '⚠ ' + e; }
+        else { D.reads[key(s.id, y, r)] = { o, n }; rep.rr++; t = 'قراءة ' + o + ' ← ' + n; }
+      }
+      note(st, t);
+    });
+  });
+  return rep;
+}

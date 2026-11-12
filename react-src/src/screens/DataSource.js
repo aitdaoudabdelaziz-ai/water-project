@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { expAll } from '../components/Excel.js';
 import { demoData, deviceData, normalize, decryptBackup, encryptBackup, download, ENC_V } from '../lib/store.js';
 import { useData } from '../lib/useData.js';
 import { signIn, signOut, AERR, DEFFB } from '../lib/cloud.js';
@@ -38,6 +39,11 @@ export default function DataSource({ current, onPick }) {
           download(txt, 'نسخة-الماء-react-' + new Date().toISOString().slice(0, 10) + (pw ? '-مشفرة' : '') + '.json');
           setXmsg(pw ? 'حُفظت النسخة مشفّرة. احتفظ بكلمة السر.' : 'حُفظت النسخة.'); }}>حفظ النسخة</button>
         {xmsg && <p className="note" role="status">{xmsg}</p>}
+      </section>
+      <section className="panel">
+        <h2>تصدير إلى Excel</h2>
+        <p className="note">ملف واحد فيه أربع أوراق: المشتركون، القراءات، الفواتير، المالية.</p>
+        <button type="button" className="btn" onClick={() => expAll(D)}>⬇ تصدير كل البيانات إلى Excel</button>
       </section>
       {enc && <PasswordDialog error={err} onCancel={() => setEnc(null)} onSubmit={async pw => {
         try { const x = await decryptBackup(enc, pw); delete x.__files; setEnc(null); onPick(normalize(x), 'نسخة مشفّرة'); }

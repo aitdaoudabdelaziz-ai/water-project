@@ -4,10 +4,11 @@ import { tot, n2, fmt, norm, roundName, key } from '../lib/calc.js';
 import { Avatar, Empty } from '../components/ui.js';
 import Sheet from '../components/Sheet.js';
 import { saveSub, removeSubs, toggleContract } from '../lib/ops.js';
+import { ImportButton, expSubs, tplSubs } from '../components/Excel.js';
 
 const PAGE = 60;
 export default function Subscribers() {
-  const { D, X, Y, R, act } = useData();
+  const { D, X, Y, R, act, sel: SEL } = useData();
   const [form, setForm] = useState(null); // { id? } إضافة أو تعديل
   const [q, setQ] = useState(''); const dq = useDeferredValue(q);
   const [f, setF] = useState(''); const [sel, setSel] = useState(null); const [lim, setLim] = useState(PAGE);
@@ -28,6 +29,11 @@ export default function Subscribers() {
         <div className="chips" role="group" aria-label="تصفية">
           {[['', 'الكل'], ['debt', 'عليهم ديون'], ['noread', 'بدون قراءة ' + roundName(R)], ['ct', 'بعقد'], ['noct', 'بدون عقد']].map(([v, l]) =>
             <button key={v} type="button" className={'chip' + (f === v ? ' on' : '')} aria-pressed={f === v} onClick={() => { setF(v); setLim(PAGE); }}>{l}</button>)}
+        </div>
+        <div className="row xl-row">
+          <ImportButton label="⬆ استيراد من Excel" y={SEL.y} r={SEL.r} />
+          <button type="button" className="btn" onClick={() => expSubs(D, X, list)}>⬇ تصدير Excel</button>
+          <button type="button" className="btn" onClick={tplSubs}>نموذج Excel</button>
         </div>
       </div>
       {!list.length ? <Empty>لا يوجد مشتركون مطابقون للبحث</Empty> : (<div>

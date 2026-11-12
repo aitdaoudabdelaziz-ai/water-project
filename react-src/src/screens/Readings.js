@@ -3,6 +3,7 @@ import { useData } from '../lib/useData.js';
 import { key, prevNew, norm, roundName, tot, n2 } from '../lib/calc.js';
 import { regRound } from '../lib/ops.js';
 import RoundPicker from '../components/RoundPicker.js';
+import { ImportButton, expReads } from '../components/Excel.js';
 import { Empty } from '../components/ui.js';
 
 const PAGE = 60;
@@ -36,6 +37,10 @@ export default function Readings() {
         <p className="legend"><span>＋ تسجيل قراءة</span><span>✎ تعديل أو مسح</span><span>🔒 مؤداة، مقفلة</span></p>
         {act.can('ed') && <button type="button" className="btn pri wide" onClick={issue}>إصدار فواتير {roundName(r)}</button>}
         {msg && <p className="note" role="status">{msg}</p>}
+        <div className="row xl-row">
+          <ImportButton label="⬆ استيراد القراءات من Excel" y={y} r={r} />
+          <button type="button" className="btn" onClick={() => expReads(D, y, r)}>⬇ تصدير / نموذج القراءات</button>
+        </div>
       </section>
       {!list.length ? <Empty>{f === 'wait' ? 'سُجّلت كل القراءات في هذه الجولة.' : 'لا توجد نتائج.'}</Empty> : (<div>
         <div className="lh lh-r" aria-hidden="true"><span>المشترك</span><span>السابقة</span><span>الجديدة</span><span>الحالة</span></div>
