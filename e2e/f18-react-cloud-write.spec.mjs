@@ -106,3 +106,27 @@ test('F18-H3 read-only cloud: subscribers page explains how to enable editing', 
   await p.getByRole('button', { name: /فعّل «الحفظ في السحابة»/ }).click(); await p.getByRole('button', { name: 'تفعيل الحفظ في السحابة' }).click();
   await p.locator('.nav button', { hasText: 'المشتركون' }).click(); await p.getByRole('button', { name: '＋ مشترك جديد' }).waitFor();
 });
+test('F18-V1 new member: sign-up sends a Google verification email; access only after confirming', async () => {
+  const { p, dialogs, errs } = await app();
+  await p.evaluate(() => localStorage.setItem('fakefb_needverify', '1'));
+  await p.getByLabel('البريد الإلكتروني').fill('new.member@example.com'); await p.getByLabel('كلمة سر السحابة').fill('Secret#123');
+  await p.getByRole('button', { name: 'عضو جديد؟ إنشاء حساب' }).click();
+  assert.match(dialogs.join(), /رسالة من Google/);
+  await p.getByText('أكّد بريدك الإلكتروني.').waitFor();
+  assert.deepEqual(await p.evaluate(() => JSON.parse(localStorage.getItem('fakefb_mails'))), ['new.member@example.com']);
+  assert.match(await p.locator('.panel', { hasText: 'سحابة الجمعية' }).innerText(), /لم تؤكّد بريدك/);
+  await p.getByRole('button', { name: 'إعادة إرسال رسالة التأكيد' }).click(); await p.getByText(/أرسلنا رسالة التأكيد/).waitFor();
+  await p.getByRole('button', { name: '✓ أكّدت بريدي' }).click(); await p.getByText(/لم يتأكد البريد بعد/).waitFor();
+  // يضغط الرابط في الرسالة
+  await p.evaluate(() => localStorage.setItem('fakefb_verified', JSON.stringify(['new.member@example.com'])));
+  await p.getByRole('button', { name: '✓ أكّدت بريدي' }).click();
+  await p.locator('.cchip.c-live').waitFor({ timeout: 8000 });
+  assert.deepEqual(errs, []);
+});
+test('F18-V2 sign-up with an email that already has an account is refused with a clear warning', async () => {
+  const { p } = await app();
+  await p.evaluate(() => localStorage.setItem('fakefb_accounts', JSON.stringify(['taken@example.com'])));
+  await p.getByLabel('البريد الإلكتروني').fill('taken@example.com'); await p.getByLabel('كلمة سر السحابة').fill('Secret#123');
+  await p.getByRole('button', { name: 'عضو جديد؟ إنشاء حساب' }).click();
+  assert.match(await p.getByRole('alert').innerText(), /لديه حساب مسبقاً.*أخبر المسؤول/);
+});

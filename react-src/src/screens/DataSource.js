@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { expAll } from '../components/Excel.js';
 import { demoData, deviceData, normalize, decryptBackup, encryptBackup, download, ENC_V } from '../lib/store.js';
 import { useData } from '../lib/useData.js';
-import { signIn, signOut, AERR, DEFFB } from '../lib/cloud.js';
+import { signIn, signUp, signOut, sendVerify, recheckVerify, AERR, DEFFB } from '../lib/cloud.js';
 import { PasswordDialog } from '../components/ui.js';
 
 export default function DataSource({ current, onPick }) {
@@ -75,8 +75,14 @@ function CloudWrite({ act }) {
 function Cloud({ act }) {
   const c = act.cloud || {}, on = act.cloudOn;
   const [em, setEm] = useState(DEFFB.admin || ''); const [pw, setPw] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState('');
   const go = async e => { e.preventDefault(); setBusy(true); setErr('');
     try { await signIn(em, pw); setPw(''); act.setCloudMode(true); } catch (x) { setErr(AERR[x && x.code] || 'تعذّر الدخول: ' + (x && x.message || x)); } finally { setBusy(false); } };
+  const up = async () => { setErr(''); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em.trim())) return setErr('اكتب بريدك الإلكتروني بشكل صحيح.'); if (pw.length < 6) return setErr(AERR['auth/weak-password']);
+    if (!confirm('إنشاء حساب جديد بالبريد ' + em.trim() + '؟\nستصلك رسالة من Google لتأكيد بريدك.')) return;
+    setBusy(true); try { await signUp(em, pw); setPw(''); act.setCloudMode(true); } catch (x) { setErr(AERR[x && x.code] || 'تعذّر إنشاء الحساب: ' + (x && x.message || x)); } finally { setBusy(false); } };
+  const resend = async () => { setInfo(''); try { await sendVerify(); setInfo('أرسلنا رسالة التأكيد إلى ' + c.user + '. افتحها (وانظر في Spam أيضاً) واضغط الرابط.'); } catch (x) { setInfo(x && x.code === 'auth/too-many-requests' ? 'أُرسلت رسائل كثيرة. انتظر قليلاً.' : 'تعذّر الإرسال: ' + (x && x.message || x)); } };
+  const recheck = async () => { setInfo(''); try { if (await recheckVerify()) location.reload(); else setInfo('لم يتأكد البريد بعد. اضغط الرابط في رسالة Google أولاً.'); } catch (x) { setInfo('تعذّر التحقق: ' + (x && x.message || x)); } };
   return (
     <section className="panel" aria-labelledby="cl-h">
       <h2 id="cl-h">☁ سحابة الجمعية</h2>
@@ -88,10 +94,15 @@ function Cloud({ act }) {
           <label className="field">كلمة سر السحابة<input type="password" value={pw} onChange={e => setPw(e.target.value)} autoComplete="current-password" /></label>
           {err && <p className="err" role="alert">{err}</p>}
           <button type="submit" className="btn pri" disabled={busy || !pw}>{busy ? 'جارٍ الاتصال...' : 'الاتصال بالسحابة (قراءة فقط)'}</button>
+          <button type="button" className="btn ghost" disabled={busy} onClick={up}>عضو جديد؟ إنشاء حساب</button>
         </form>
         {on && <button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى البيانات المحلية لهذا الجهاز</button>}
       </> : <>
         <p className={c.status === 'error' ? 'err' : 'state'} role="status">{c.status === 'live' ? `متصل بالسحابة${c.user ? ' بحساب ' + c.user : ''}. البيانات تتحدّث مباشرة${c.cache ? ' (من النسخة المحفوظة على الجهاز)' : ''}.` : c.status === 'error' ? c.error : 'جارٍ تحميل بيانات الجمعية من السحابة...'}</p>
+        {c.user && c.verified === false && <div className="vfy" role="note">
+          <p>✉️ <b>أكّد بريدك الإلكتروني.</b> أرسلت لك Google رسالة إلى <bdi dir="ltr">{c.user}</bdi>. افتحها واضغط الرابط، ثم اضغط «أكّدت بريدي». (التأكيد يحمي بيانات الجمعية من أي شخص يستعمل بريدك.)</p>
+          <div className="row"><button type="button" className="btn pri" onClick={recheck}>✓ أكّدت بريدي</button><button type="button" className="btn" onClick={resend}>إعادة إرسال رسالة التأكيد</button></div>
+          {info && <p className="note" role="status">{info}</p>}</div>}
         {c.status === 'live' && <CloudWrite act={act} />}
         <div className="row"><button type="button" className="btn" onClick={() => act.setCloudMode(false)}>الرجوع إلى البيانات المحلية لهذا الجهاز</button>
           <button type="button" className="btn ghost" onClick={async () => { await signOut(); act.setCloudMode(false); }}>تسجيل الخروج من السحابة</button></div>

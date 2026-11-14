@@ -63,5 +63,5 @@ test('F17-H3 back to the local React copy restores it untouched', async () => {
 test('F17-N1 an email not in the members list gets a clear message', async () => {
   const { p } = await app({ deny: true }); await login(p, 'Cloud#2026');
   await p.locator('.cchip.c-error').waitFor(); await p.locator('.nav button', { hasText: 'البيانات' }).click();
-  assert.match(await p.locator('#cl-h ~ .err').innerText(), /غير مفعّل في قائمة أعضاء الجمعية/);
+  assert.match(await p.locator('#cl-h ~ .err').innerText(), /قائمة أعضاء الجمعية/);
 });

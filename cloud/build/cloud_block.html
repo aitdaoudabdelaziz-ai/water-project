@@ -127,7 +127,8 @@ service cloud.firestore {
     }
     function isMember() {
       return request.auth != null && (isAdmin() ||
-        exists(/databases/$(database)/documents/members/$(request.auth.token.email)));
+        (request.auth.token.email_verified == true &&
+         exists(/databases/$(database)/documents/members/$(request.auth.token.email))));
     }
     match /members/{email} {
       allow read: if isMember();
@@ -315,7 +316,7 @@ const em=()=>g('cl_em').value.trim().toLowerCase(),pw=()=>g('cl_pw').value;
 function aerr(e){const c=e&&e.code||'';const m={'auth/invalid-credential':'البريد أو كلمة السر غير صحيحة. إذا كانت أول مرة، اضغط «إنشاء حساب جديد».','auth/invalid-login-credentials':'البريد أو كلمة السر غير صحيحة. إذا كانت أول مرة، اضغط «إنشاء حساب جديد».','auth/wrong-password':'كلمة السر غير صحيحة','auth/user-not-found':'لا يوجد حساب بهذا البريد. اضغط «إنشاء حساب جديد»','auth/email-already-in-use':'هذا البريد لديه حساب مسبقاً، استعمل زر «دخول»','auth/weak-password':'كلمة السر قصيرة: 6 أحرف على الأقل','auth/invalid-email':'البريد الإلكتروني غير صحيح','auth/missing-password':'اكتب كلمة السر','auth/network-request-failed':'لا يوجد اتصال بالإنترنت','auth/too-many-requests':'محاولات كثيرة، انتظر قليلاً','auth/operation-not-allowed':'فعّل الدخول بالبريد وكلمة السر في Firebase ← Authentication','auth/unauthorized-domain':'أضف رابط البرنامج في Firebase ← Authentication ← Paramètres ← Domaines autorisés'};g('cl_lerr').textContent=m[c]||('خطأ: '+(e&&e.message||e))}
 function busy(b){['cl_in','cl_up','cl_rst'].forEach(x=>g(x).disabled=b)}
 g('cl_in').onclick=()=>{if(!okMail(em()))return aerr({code:'auth/invalid-email'});busy(true);auth.signInWithEmailAndPassword(em(),pw()).catch(aerr).finally(()=>busy(false))};
-g('cl_up').onclick=()=>{if(!okMail(em()))return aerr({code:'auth/invalid-email'});if(pw().length<6)return aerr({code:'auth/weak-password'});busy(true);auth.createUserWithEmailAndPassword(em(),pw()).catch(aerr).finally(()=>busy(false))};
+g('cl_up').onclick=()=>{if(!okMail(em()))return aerr({code:'auth/invalid-email'});if(pw().length<6)return aerr({code:'auth/weak-password'});busy(true);auth.createUserWithEmailAndPassword(em(),pw()).then(r=>r.user.sendEmailVerification().then(()=>toast('أرسلنا رسالة تأكيد البريد من Google. افتحها واضغط الرابط.')).catch(()=>{})).catch(aerr).finally(()=>busy(false))};
 g('cl_rst').onclick=()=>{if(!okMail(em()))return g('cl_lerr').textContent='اكتب بريدك أولاً';auth.sendPasswordResetEmail(em()).then(()=>g('cl_lerr').textContent='أرسلنا رابط تغيير كلمة السر إلى بريدك').catch(aerr)};
 g('cl_pw').onkeydown=e=>{if(e.key==='Enter')g('cl_in').click()};
 
@@ -326,6 +327,7 @@ function lerr(e){
   if(denied)return;denied=true;stop();
   const retry=['إعادة المحاولة',()=>{denied=false;listen()}],out=['تسجيل الخروج',()=>auth.signOut(),'cl_l'];
   if(isFbAdmin())msg('أنت المسؤول، لكن قواعد الحماية في Firebase لا تسمح بعد بهذا البرنامج. اضغط «عرض القواعد»، انسخها والصقها في Firestore ← Règles ثم اضغط Publier، ثم ارجع واضغط «إعادة المحاولة».',[['عرض القواعد',()=>txt('قواعد الحماية','انسخ هذا النص والصقه في Firebase ← Firestore ← Règles، ثم اضغط Publier.',rulesText(FB.admin)),'cl_g'],retry,out]);
+  else if(USER&&!USER.emailVerified)msg(`لم تؤكّد بريدك ${USER.email} بعد. افتح رسالة التأكيد التي وصلتك من Google واضغط الرابط، ثم اضغط «أكّدت بريدي».`,[['✓ أكّدت بريدي',()=>USER.reload().then(()=>USER.getIdToken(true)).then(()=>location.reload()),'cl_g'],['إعادة إرسال رسالة التأكيد',()=>USER.sendEmailVerification().then(()=>toast('أُرسلت الرسالة. انظر في Spam أيضاً.')).catch(()=>toast('انتظر قليلاً ثم أعد المحاولة'))],out])
   else msg(`بريدك ${USER?USER.email:''} غير مفعّل بعد. اطلب من مسؤول الجمعية إضافته في قائمة الأعضاء، ثم اضغط «إعادة المحاولة».`,[retry,out]);
  }else toast('خطأ في الاتصال بالسحابة: '+(e&&e.message||e));
 }

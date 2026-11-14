@@ -55,7 +55,8 @@ async function sdk() {
   fb = { F, db, auth: F.auth() }; return fb;
 }
 export const AERR = { 'auth/invalid-credential': 'البريد أو كلمة السر غير صحيحة.', 'auth/invalid-login-credentials': 'البريد أو كلمة السر غير صحيحة.', 'auth/wrong-password': 'كلمة السر غير صحيحة.',
-  'auth/user-not-found': 'لا يوجد حساب بهذا البريد.', 'auth/invalid-email': 'البريد غير صحيح.', 'auth/too-many-requests': 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', 'auth/network-request-failed': 'لا يوجد اتصال بالإنترنت.' };
+  'auth/user-not-found': 'لا يوجد حساب بهذا البريد.', 'auth/invalid-email': 'البريد غير صحيح.', 'auth/too-many-requests': 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', 'auth/network-request-failed': 'لا يوجد اتصال بالإنترنت.',
+  'auth/email-already-in-use': 'هذا البريد لديه حساب مسبقاً. استعمل «الاتصال بالسحابة». إن لم تُنشئه أنت، أخبر المسؤول فوراً.', 'auth/weak-password': 'كلمة السر قصيرة: 6 أحرف على الأقل.', 'auth/operation-not-allowed': 'إنشاء الحسابات غير مفعّل. اطلب من المسؤول إنشاء حسابك.' };
 
 /** يتصل ويتابع البيانات مباشرة. on({status, user, data, error}) */
 export async function connect(on) {
@@ -64,16 +65,22 @@ export async function connect(on) {
   const stopAuth = fb.auth.onAuthStateChanged(u => {
     if (unsub) { unsub(); unsub = null; }
     if (!u) { on({ status: 'login', user: null }); return; }
-    on({ status: 'loading', user: u.email });
+    const verified = !!u.emailVerified;
+    on({ status: 'loading', user: u.email, verified });
     unsub = fb.db.collection(COL).onSnapshot({ includeMetadataChanges: true }, s => {
       if (!s.docs.length && s.metadata.fromCache) return;
       const D = fromDocs(s.docs); setRemote(D);
-      on({ status: 'live', user: u.email, data: D, cache: s.metadata.fromCache, pending: s.metadata.hasPendingWrites, at: Date.now() });
-    }, e => on({ status: 'error', user: u.email, error: e && e.code === 'permission-denied' ? 'بريدك ' + u.email + ' غير مفعّل في قائمة أعضاء الجمعية. اطلب من المسؤول إضافته.' : 'خطأ في الاتصال بالسحابة: ' + (e && e.message || e) }));
+      on({ status: 'live', user: u.email, verified, data: D, cache: s.metadata.fromCache, pending: s.metadata.hasPendingWrites, at: Date.now() });
+    }, e => on({ status: 'error', user: u.email, verified, error: e && e.code === 'permission-denied' ? (verified ? 'بريدك ' + u.email + ' غير موجود في قائمة أعضاء الجمعية. اطلب من المسؤول إضافته.' : 'لم تؤكّد بريدك ' + u.email + ' بعد: افتح رسالة التأكيد من Google، اضغط الرابط، ثم اضغط «أكّدت بريدي». إن كنت أكّدته، فاطلب من المسؤول إضافة بريدك إلى قائمة أعضاء الجمعية.') : 'خطأ في الاتصال بالسحابة: ' + (e && e.message || e) }));
   });
   return () => { if (unsub) unsub(); stopAuth && stopAuth(); };
 }
 export async function signIn(email, pw) { await sdk(); return fb.auth.signInWithEmailAndPassword(email.trim().toLowerCase(), pw); }
+/** حساب جديد + رسالة تأكيد البريد من Google */
+export async function signUp(email, pw) { await sdk(); const r = await fb.auth.createUserWithEmailAndPassword(email.trim().toLowerCase(), pw); try { await r.user.sendEmailVerification(); } catch { /* يمكن إعادة الإرسال */ } return r; }
+export async function sendVerify() { if (!fb || !fb.auth.currentUser) throw new Error('لست متصلاً'); return fb.auth.currentUser.sendEmailVerification(); }
+/** بعد الضغط على رابط التأكيد: نحدّث الحساب ونجدّد التصريح ثم نعيد الاتصال */
+export async function recheckVerify() { const u = fb && fb.auth.currentUser; if (!u) return false; await u.reload(); await u.getIdToken(true); return !!fb.auth.currentUser.emailVerified; }
 export async function signOut() { if (fb) await fb.auth.signOut(); }
 
 // ---------- الكتابة (المرحلة 4، الخطوة 2): نفس طريقة push في البرنامج الحالي ----------
