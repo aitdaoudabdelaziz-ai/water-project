@@ -205,6 +205,7 @@ td.nw{white-space:nowrap;font-variant-numeric:tabular-nums}
   <button class="btn wide">دخول</button>
   <div class="err" id="lerr"></div>
   <p class="muted" id="lfirst" style="margin-top:10px"></p>
+  <button type="button" class="btn sec wide" style="margin-top:6px" onclick="forgotPass()">نسيت كلمة المرور؟</button>
  </form>
 </div>
 
@@ -406,6 +407,61 @@ function go(v,arg){
  window.scrollTo(0,0);
 }
 const menuBtn=`<button class="btn sec menu-btn" aria-label="القائمة" onclick="$('side').classList.toggle('open')">${I('menu')}</button>`;
+
+/* ========== نسيت كلمة المرور (رمز موقّع من مستودع الجمعية على GitHub) ========== */
+/* التطبيق يعرض رمزا عشوائيا؛ مسؤول المستودع يشغّل archive-reset-code في Actions فيحصل على رمز استرجاع
+   موقّع بمفتاح سري لا يوجد إلا مشفّرا في المستودع. التطبيق لا يحمل إلا المفتاح العمومي، وكل رمز يُستعمل مرة واحدة. */
+const RESET_PUB='MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEh7YRMgn+9igd2PCQg4W50EMJkvnWl3BvpQmbbtJzgoMdfye1f/WHezp86F8M22d2Tg0FoU6obDCkpaxX7g6SMA==';
+const RESET_ABC='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+async function resetNonce(){
+ let n=SET.resetNonce;
+ if(typeof n!=='string'||!/^[A-Z0-9]{10}$/.test(n)){
+  const b=crypto.getRandomValues(new Uint8Array(10));n=[...b].map(x=>RESET_ABC[x%32]).join('');
+  SET.resetNonce=n;await DB.put('settings',{key:'resetNonce',value:n});
+ }
+ return n;
+}
+async function forgotPass(){
+ if(!(window.crypto&&crypto.subtle&&crypto.getRandomValues)){$('lerr').textContent='هذا الجهاز لا يدعم الاسترجاع. استعمل Chrome أو آخر نسخة من التطبيق.';return}
+ const n=await resetNonce();
+ const us=(await DB.all('users')).sort((a,b)=>(a.role==='admin'?0:1)-(b.role==='admin'?0:1));
+ modal(`<h2>نسيت كلمة المرور</h2>
+ <p class="muted">البيانات ديالك ما غاديش تتمسح. غير كلمة المرور اللي غادي تتبدّل.</p>
+ <p><b>1.</b> صيفط هاد الرمز لمسؤول مستودع الجمعية على GitHub (ولا لـClaude):</p>
+ <div id="rs_code" style="font:700 26px/1.4 monospace;letter-spacing:3px;direction:ltr;text-align:center;padding:12px;margin:8px 0 14px;background:#eef4f7;border-radius:10px;user-select:all">${esc(n.slice(0,5)+'-'+n.slice(5))}</div>
+ <form onsubmit="doReset(event)">
+  <div class="f"><label><b>2.</b> رمز الاسترجاع اللي توصلتي بيه (انسخو كامل)</label><textarea id="rs_sig" rows="3" dir="ltr" autocomplete="off" spellcheck="false" required></textarea></div>
+  <div class="f"><label><b>3.</b> الحساب</label><select id="rs_u">${us.map(u=>`<option value="${esc(u.username)}">${esc(u.name||u.username)} (${esc(u.username)}) · ${esc(ROLES[u.role]||'')}</option>`).join('')}</select></div>
+  <div class="f"><label>كلمة المرور الجديدة</label><input id="rs_p1" type="password" autocomplete="new-password" required></div>
+  <div class="f"><label>عاود كتبها</label><input id="rs_p2" type="password" autocomplete="new-password" required></div>
+  <div class="err" id="rs_err"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn">تعيين كلمة المرور</button><button type="button" class="btn sec" onclick="closeModal()">إلغاء</button></div>
+ </form>`,520);
+}
+function b64u(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
+async function doReset(e){
+ e.preventDefault();const er=$('rs_err');er.textContent='';
+ const n=SET.resetNonce,p1=$('rs_p1').value,p2=$('rs_p2').value;
+ const sig=$('rs_sig').value.replace(/[^A-Za-z0-9_\-+\/]/g,'');
+ if(p1.length<4)return er.textContent='كلمة المرور خاصها تكون 4 حروف على الأقل';
+ if(p1!==p2)return er.textContent='جوج كلمات المرور ماشي بحال بحال';
+ let ok=false;
+ try{
+  const raw=b64u(sig);
+  if(typeof n==='string'&&raw.length===64){
+   const key=await crypto.subtle.importKey('spki',b64u(RESET_PUB),{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+   ok=await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},key,raw,new TextEncoder().encode('alfath-archive-reset:'+n));
+  }
+ }catch(x){ok=false}
+ if(!ok)return er.textContent='رمز الاسترجاع غير صحيح، ولا ماشي ديال هاد الرمز اللي فوق';
+ const u=await DB.get('users',$('rs_u').value);
+ if(!u)return er.textContent='الحساب غير موجود';
+ u.pass=await hash(p1);u.mustChange=false;u.disabled=false;await DB.put('users',u);
+ SET.resetNonce=null;await DB.put('settings',{key:'resetNonce',value:null});
+ await log('إعادة تعيين كلمة المرور برمز الاسترجاع: '+u.username);
+ closeModal();$('lu').value=u.username;$('lp').value='';$('lerr').textContent='';$('lp').focus();
+ toast('تبدّلات كلمة المرور. دخل دابا بالكلمة الجديدة');
+}
 
 /* ========== لوحة القيادة ========== */
 async function vDash(){
