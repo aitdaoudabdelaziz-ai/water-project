@@ -43,10 +43,15 @@ function createWindow() {
 }
 
 // فتح وثيقة مؤرشفة بالبرنامج الافتراضي في الحاسوب (PDF، Word، صور...)
+// أنواع الوثائق العادية فقط تُفتح مباشرة؛ أي نوع آخر (exe, bat, js...) يُرفض
+const OPEN_EXT = new Set(['.pdf','.png','.jpg','.jpeg','.gif','.webp','.bmp','.txt','.csv','.doc','.docx','.xls','.xlsx','.ppt','.pptx','.odt','.ods','.odp','.rtf','.mp3','.m4a','.wav','.mp4']);
+const cleanName = n => path.basename(String(n || 'file')).replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/[\\/:*?"<>|]+/g, '_').slice(0, 120) || 'file';
 ipcMain.handle('open-file', async (_e, name, buf) => {
+  const safe = cleanName(name);
+  if (!OPEN_EXT.has(path.extname(safe).toLowerCase())) return false;
   const dir = path.join(app.getPath('temp'), 'alfath-archive');
   fs.mkdirSync(dir, { recursive: true });
-  const p = path.join(dir, Date.now() + '-' + path.basename(String(name || 'file')));
+  const p = path.join(dir, Date.now() + '-' + safe);
   fs.writeFileSync(p, Buffer.from(buf));
   const err = await shell.openPath(p);
   return err === '';
@@ -56,7 +61,7 @@ ipcMain.handle('open-file', async (_e, name, buf) => {
 ipcMain.handle('save-file', async (_e, name, buf) => {
   const r = await dialog.showSaveDialog(win, {
     title: 'حفظ الملف',
-    defaultPath: path.join(app.getPath('documents'), path.basename(String(name || 'file')))
+    defaultPath: path.join(app.getPath('documents'), cleanName(name))
   });
   if (r.canceled || !r.filePath) return false;
   fs.writeFileSync(r.filePath, Buffer.from(buf));

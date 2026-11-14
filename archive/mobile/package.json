@@ -1,6 +1,6 @@
 {
   "name": "alfath-archive-mobile",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "نظام الإدارة والأرشفة — جمعية الفتح للتنمية و التعاون (نسخة الهاتف)",
   "private": true,
   "dependencies": {
