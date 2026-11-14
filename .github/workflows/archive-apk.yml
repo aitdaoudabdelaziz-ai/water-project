@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      KEYPASS: ${{ secrets.APK_KEY_PASS }}
     defaults:
       run:
         working-directory: archive/mobile
@@ -26,20 +29,43 @@ jobs:
         run: npm install
       - name: Add Android platform
         run: npx cap add android
-      - name: App icon and splash from the association logo
-        continue-on-error: true
-        run: npx @capacitor/assets generate --android --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#ffffff' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#ffffff'
-      - name: Sync web app and plugins
-        run: npx cap sync android
+      - name: App icon (full logo on navy) and splash
+        run: npx @capacitor/assets generate --android --iconBackgroundColor '#032269' --iconBackgroundColorDark '#032269' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#ffffff'
+      - name: Sync web app and plugins, set version
+        run: |
+          npx cap sync android
+          V=$(node -p "require('./package.json').version")
+          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"$V\"/" android/app/build.gradle
+          grep -E "versionCode|versionName" android/app/build.gradle
+          echo "APKV=$V" >> $GITHUB_ENV
+      # Same fixed key as the water app (kept encrypted in the repo, unlocked by the APK_KEY_PASS secret),
+      # so every new version installs over the previous one.
+      - name: Signing key
+        if: env.KEYPASS != ''
+        working-directory: .
+        run: |
+          K=$RUNNER_TEMP/release.jks
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in water/android-app/signing/release.jks.enc -out "$K" -pass env:KEYPASS
+          keytool -list -keystore "$K" -storepass:env KEYPASS | grep -i fingerprint
+          echo "KS=$K" >> $GITHUB_ENV
       - name: Build APK
         working-directory: archive/mobile/android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-      - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk AlFath-Archive-1.1.0.apk
+          OUT=../AlFath-Archive-$APKV.apk
+          if [ -n "$KS" ]; then
+            ./gradlew assembleRelease --no-daemon
+            BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+            $BT/zipalign -f -p 4 app/build/outputs/apk/release/app-release-unsigned.apk $RUNNER_TEMP/aligned.apk
+            $BT/apksigner sign --ks "$KS" --ks-key-alias alfath --ks-pass env:KEYPASS --key-pass env:KEYPASS --out $OUT $RUNNER_TEMP/aligned.apk
+            $BT/apksigner verify --print-certs $OUT | head -3
+          else
+            echo "::warning::APK_KEY_PASS secret not set - debug signature (changes every build)"
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk $OUT
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: AlFath-Archive-Android
-          path: archive/mobile/AlFath-Archive-1.1.0.apk
+          path: archive/mobile/AlFath-Archive-*.apk
           if-no-files-found: error
