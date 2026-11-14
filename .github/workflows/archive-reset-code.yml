@@ -1,0 +1,59 @@
+name: archive-reset-code (password reset code)
+
+# Run this from the Actions tab: "Run workflow", paste the code the app shows
+# under "نسيت كلمة المرور؟". The reset code appears in the run summary.
+# Only people with write access to this repository can run it.
+on:
+  workflow_dispatch:
+    inputs:
+      code:
+        description: 'الرمز اللي ظاهر فالتطبيق (Code shown in the app)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency: archive-reset-key
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    env:
+      KEYPASS: ${{ secrets.APK_KEY_PASS }}
+      CODE: ${{ inputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Key (created once, kept encrypted)
+        run: |
+          test -n "$KEYPASS" || { echo "::error::APK_KEY_PASS secret missing"; exit 1; }
+          E=archive/reset/reset-key.pem.enc
+          K=$RUNNER_TEMP/reset-key.pem
+          if [ -f "$E" ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$E" -out "$K" -pass env:KEYPASS
+          else
+            openssl ecparam -name prime256v1 -genkey -noout -out "$K"
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in "$K" -out "$E" -pass env:KEYPASS
+            openssl ec -in "$K" -pubout -outform DER 2>/dev/null | base64 -w0 > archive/reset/reset-public.b64
+            git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$E" archive/reset/reset-public.b64; git commit -m "Add encrypted archive reset key"; git pull --rebase; git push
+          fi
+          echo "K=$K" >> $GITHUB_ENV
+      - name: Reset code
+        if: env.CODE != ''
+        run: |
+          C=$(printf '%s' "$CODE" | tr -cd 'A-Za-z0-9' | tr 'a-z' 'A-Z')
+          [ ${#C} -eq 10 ] || { echo "::error::The code must have 10 letters/digits"; exit 1; }
+          printf 'alfath-archive-reset:%s' "$C" | openssl dgst -sha256 -sign "$K" -out $RUNNER_TEMP/sig.der
+          R=$(python3 - "$RUNNER_TEMP/sig.der" <<'PY'
+          import sys,base64
+          d=open(sys.argv[1],'rb').read()
+          def rd(i):
+              assert d[i]==2; n=d[i+1]; v=d[i+2:i+2+n]; return int.from_bytes(v,'big'), i+2+n
+          i=2 if d[1]<0x80 else 3
+          r,i=rd(i); s,i=rd(i)
+          print(base64.urlsafe_b64encode(r.to_bytes(32,'big')+s.to_bytes(32,'big')).decode().rstrip('='))
+          PY
+          )
+          { echo "## رمز إعادة تعيين كلمة المرور"; echo; echo "الرمز ديال التطبيق: \`$C\`"; echo; echo "انسخ هاد السطر كامل وحطّو فالتطبيق:"; echo; echo '```'; echo "$R"; echo '```'; } >> $GITHUB_STEP_SUMMARY
+          echo "RESET-CODE: $R"
