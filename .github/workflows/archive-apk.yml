@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'archive/mobile/**'
+      - 'archive/index.html'
       - '.github/workflows/archive-apk.yml'
 
 jobs:
@@ -25,6 +26,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - name: Copy the program file
+        run: mkdir -p www && cp ../index.html www/index.html
       - name: Install
         run: npm install
       - name: Add Android platform

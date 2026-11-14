@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'archive/desktop/**'
+      - 'archive/index.html'
       - '.github/workflows/archive-exe.yml'
 
 jobs:
@@ -18,6 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Copy the program file
+        run: mkdir -p app && cp ../index.html app/index.html
       - name: Install
         run: npm install
       - name: Build EXE (installer + portable)
