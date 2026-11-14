@@ -1926,8 +1926,10 @@ g('cl_tcopy').onclick=()=>{const t=g('cl_tb');const d=()=>toast('تم النسخ
 function b64e(s){return btoa(unescape(encodeURIComponent(s)))}
 function b64d(s){return decodeURIComponent(escape(atob(s)))}
 function parseCfg(t){t=String(t||'').trim();try{const j=JSON.parse(t);if(j&&j.apiKey&&j.projectId)return j}catch(e){}const o={};t.replace(/["']?(\w+)["']?\s*:\s*["']([^"']*)["']/g,(m,k,v)=>{o[k]=v});return o.apiKey&&o.projectId?o:null}
-function readHash(){const h=location.hash;if(!h.startsWith('#c='))return;try{const x=JSON.parse(b64d(h.slice(3)));if(x&&x.cfg&&x.cfg.apiKey){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY)}}catch(e){}history.replaceState(null,'',location.href.split('#')[0])}
-function getFb(){try{const x=JSON.parse(localStorage.getItem(FBKEY));if(x&&x.cfg&&x.cfg.apiKey)return x}catch(e){}return DEFFB}
+// أمان: البرنامج المدمج بسحابة الجمعية لا يقبل إلا سحابتها (رابط مزيّف لا يستطيع تحويله إلى سحابة أخرى)
+const okCfg=x=>!!(x&&x.cfg&&x.cfg.apiKey)&&(!DEFFB||x.cfg.projectId===DEFFB.cfg.projectId);
+function readHash(){const h=location.hash;if(!h.startsWith('#c='))return;try{const x=JSON.parse(b64d(h.slice(3)));if(okCfg(x)){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY)}}catch(e){}history.replaceState(null,'',location.href.split('#')[0])}
+function getFb(){try{const x=JSON.parse(localStorage.getItem(FBKEY));if(okCfg(x))return x;if(x)localStorage.removeItem(FBKEY)}catch(e){}return DEFFB}
 const isFbAdmin=()=>!!(USER&&FB&&String(USER.email).toLowerCase()===FB.admin);
 const WEBURL='https://alfath-eau.org/cloud/';
 const invite=()=>(/^https?:/.test(location.protocol)&&!/appassets\.androidplatform\.net/.test(location.host)?location.href.split('#')[0]:WEBURL)+'#c='+b64e(JSON.stringify(FB));
@@ -2114,9 +2116,10 @@ g('cl_conn').onclick=()=>{g('cl_panel').hidden=true;if(!confirm('ربط هذا �
 
 // ---------- شاشة الإعداد ----------
 g('cl_ssave').onclick=()=>{const raw=g('cl_cfg').value.trim();
- const hi=raw.indexOf('#c=');if(hi>=0){try{const x=JSON.parse(b64d(raw.slice(hi+3).trim()));if(x&&x.cfg&&x.cfg.apiKey){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY);location.reload();return}}catch(e){}return g('cl_serr').textContent='رابط الدعوة غير صحيح. انسخه كاملاً من رسالة واتساب.'}
+ const hi=raw.indexOf('#c=');if(hi>=0){try{const x=JSON.parse(b64d(raw.slice(hi+3).trim()));if(okCfg(x)){localStorage.setItem(FBKEY,JSON.stringify(x));localStorage.removeItem(MODEKEY);location.reload();return}}catch(e){}return g('cl_serr').textContent='رابط الدعوة غير صحيح أو لسحابة أخرى غير سحابة الجمعية.'}
  const c=parseCfg(raw),a=g('cl_adm').value.trim().toLowerCase();
  if(!c)return g('cl_serr').textContent='لم أتعرف على الإعدادات. انسخ كامل الجزء firebaseConfig.';
+ if(!okCfg({cfg:c}))return g('cl_serr').textContent='هذه الإعدادات لسحابة أخرى غير سحابة الجمعية.';
  if(!okMail(a))return g('cl_serr').textContent='اكتب بريد المسؤول بشكل صحيح.';
  localStorage.setItem(FBKEY,JSON.stringify({cfg:c,admin:a}));localStorage.removeItem(MODEKEY);location.reload()};
 g('cl_slocal').onclick=()=>{localStorage.setItem(MODEKEY,'local');if(window.__cl)location.reload();else{showApp();chip()}};

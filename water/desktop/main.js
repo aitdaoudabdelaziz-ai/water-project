@@ -43,8 +43,10 @@ function createWindow() {
   win.once("ready-to-show", () => { win.maximize(); win.show(); });
   win.webContents.on("did-finish-load", () => setTimeout(dailyCheck, 4000));
   // الروابط الخارجية تفتح في المتصفح
-  win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: "deny" }; });
-  win.webContents.on("will-navigate", (e, url) => { if (!url.startsWith("file:")) { e.preventDefault(); shell.openExternal(url); } });
+  // أمان: لا يُفتح خارج البرنامج إلا https وواتساب والبريد والهاتف
+  const SAFE = /^(https:|mailto:|tel:|whatsapp:)/i;
+  win.webContents.setWindowOpenHandler(({ url }) => { if (SAFE.test(url)) shell.openExternal(url); return { action: "deny" }; });
+  win.webContents.on("will-navigate", (e, url) => { if (!url.startsWith("file:")) { e.preventDefault(); if (SAFE.test(url)) shell.openExternal(url); } });
   // F5 / Ctrl+R تحديث، Ctrl+Shift+I أدوات المطوّر، Ctrl +/- تكبير
   win.webContents.on("before-input-event", (e, i) => {
     if (i.type !== "keyDown") return;

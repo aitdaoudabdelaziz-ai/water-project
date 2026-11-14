@@ -5,12 +5,12 @@ after(close);
 const BASE = URL.replace(/water\/www\/index\.html/, '');
 async function ctx() { const b = await launch(), c = await b.newContext({ viewport: { width: 390, height: 844 } }); await c.route(/gstatic|googleapis|cdnjs/, r => r.abort()); return c; }
 const D3 = { subs: [1, 2, 3].map(i => ({ id: i, name: 'قديم ' + i, meter: 'O-' + i, cin: '', phone: '', addr: '' })), reads: {}, invs: [], sid: 3, seq: 0, fin: [], fid: 0, users: [], uid: 0, cfg: { price: 5, fee: 10 } };
-test('F20-H1 main address and /cloud/ open the new app; old invite links keep working', async () => {
+test('F20-H1 main address and /cloud/ open the new app; invite-style links are no longer forwarded', async () => {
   const c = await ctx(), p = await c.newPage();
   await p.goto(BASE); await p.waitForURL(/\/react\/$/); await p.locator('.kpi').first().waitFor();
   assert.equal(await p.title(), 'جمعية الفتح - تدبير الماء'); assert.equal(await p.locator('.preview').count(), 0);
   await p.goto(BASE + 'cloud/'); await p.waitForURL(/\/react\/$/);
-  await p.goto(BASE + 'cloud/#inv=abc'); await p.waitForURL(/\/old\/cloud\/#inv=abc$/);
+  await p.goto(BASE + 'cloud/#c=abc'); await p.waitForURL(/\/react\/$/); // روابط # لا تُمرَّر بعد الآن
 });
 test('F20-H2 a device that used the old app with the cloud switches to the cloud with saving on (once)', async () => {
   const c = await ctx(), p = await c.newPage(); await p.goto(BASE + 'icon-192.png');
