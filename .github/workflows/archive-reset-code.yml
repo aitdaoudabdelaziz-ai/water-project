@@ -27,6 +27,7 @@ jobs:
       - name: Key (created once, kept encrypted)
         run: |
           test -n "$KEYPASS" || { echo "::error::APK_KEY_PASS secret missing"; exit 1; }
+          mkdir -p archive/reset
           E=archive/reset/reset-key.pem.enc
           K=$RUNNER_TEMP/reset-key.pem
           if [ -f "$E" ]; then
