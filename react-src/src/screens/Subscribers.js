@@ -35,6 +35,10 @@ export default function Subscribers() {
           <button type="button" className="btn" onClick={() => expSubs(D, X, list)}>⬇ تصدير Excel</button>
           <button type="button" className="btn" onClick={tplSubs}>نموذج Excel</button>
         </div>
+        <div className="row xl-row">
+          <button type="button" className="btn" onClick={() => act.printContracts('blank')}>📄 عقد فارغ للطباعة</button>
+          <button type="button" className="btn" disabled={!list.length} onClick={() => act.printContracts(list.map(s => s.id))}>📄 طباعة عقود القائمة ({list.length})</button>
+        </div>
       </div>
       {!list.length ? <Empty>لا يوجد مشتركون مطابقون للبحث</Empty> : (<div>
         <div className="lh lh-s" aria-hidden="true"><span>المشترك</span><span>الديون</span></div>
@@ -42,7 +46,7 @@ export default function Subscribers() {
           {list.slice(0, lim).map(s => { const d = X.debtBySub.get(s.id); return (
             <li key={s.id}><button type="button" className="row-b" onClick={() => setSel(s.id)}>
               <Avatar sub={s} />
-              <span className="row-i"><b>{s.name}</b><small>العداد {s.meter}{s.phone ? <>، <bdi dir="ltr">{s.phone}</bdi></> : null}</small></span>
+              <span className="row-i"><b>{s.name}</b><small>العداد {s.meter}{s.phone ? <>، <bdi dir="ltr">{s.phone}</bdi></> : null}</small><em className={'ctb ' + (s.ct ? 'y' : 'n')}>{s.ct ? '✔ عقد موقّع' : '✘ عقد غير موقّع'}</em></span>
               {d ? <span className="tag bad"><bdi dir="ltr">{n2(d)}</bdi> د.م</span> : <span className="tag good">لا ديون</span>}
             </button></li>); })}
         </ul></div>)}
@@ -66,13 +70,14 @@ function Detail({ s, onClose, onEdit }) {
           <div><dt>الهاتف</dt><dd><bdi dir="ltr">{s.phone || '—'}</bdi></dd></div>
           <div><dt>البطاقة</dt><dd>{s.cin || '—'}</dd></div>
           <div><dt>العنوان</dt><dd>{s.addr || '—'}</dd></div>
-          <div><dt>العقد</dt><dd>{s.ct ? '✔ موقّع' : '—'}</dd></div>
+          <div><dt>العقد</dt><dd><span className={'ctb ' + (s.ct ? 'y' : 'n')}>{s.ct ? '✔ موقّع' + (s.cd ? ' بتاريخ ' + s.cd.split('-').reverse().join('/') : '') : '✘ غير موقّع'}</span></dd></div>
           <div><dt>الديون</dt><dd className={debt ? 'bad' : 'good'}><bdi dir="ltr">{n2(debt)}</bdi> د.م</dd></div>
           <div><dt>الفواتير</dt><dd>{inv.length}</dd></div>
         </dl>
         <div className="row">
           {act.can('ed') && <button type="button" className="btn pri" onClick={() => { setSel({ y: Y, r: R }); onClose(); act.openReading(s.id); }}>تسجيل قراءة {roundName(R)}</button>}
           {act.can('ed') && <button type="button" className="btn" onClick={onEdit}>✎ تعديل المعلومات</button>}
+          <button type="button" className="btn" onClick={() => { onClose(); act.printContracts([s.id]); }}>📄 العقد (طباعة)</button>
           {act.can('ed') && <button type="button" className="btn" onClick={() => act.update(D2 => toggleContract(D2, s.id))}>{s.ct ? 'إلغاء توقيع العقد' : '✔ العقد موقّع'}</button>}
           {act.can('del') && <button type="button" className="btn ghost danger" onClick={() => {
             if (!confirm('حذف المشترك «' + s.name + '» وقراءاته وفواتيره؟' + (inv.some(i => i.paid) ? '\nالمبالغ المؤداة تبقى في المالية كمدخول.' : ''))) return;

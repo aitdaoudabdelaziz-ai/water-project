@@ -7,6 +7,7 @@ import Sheet from '../components/Sheet.js';
 import { AS0, CT0, LC0, PRO, logoOf } from '../lib/brand.js';
 import { LicenseCard } from '../components/License.js';
 import { readLogo } from '../lib/logo.js';
+import { stampSrc, CL } from '../lib/stamp.js';
 
 /** حقل يحفظ عند الخروج منه (لا يعيد الحفظ مع كل حرف) */
 function Field({ label, value, onSave, type = 'text', inputMode, hint }) {
@@ -34,6 +35,7 @@ export default function Settings() {
         </div>
         <Logo />
       </section>
+      <ContractSettings />
       <section className="panel"><h2>الثمن والأداء</h2>
         <p className="note">التغيير يطبَّق على الفواتير الجديدة فقط. الفواتير السابقة تحتفظ بثمنها.</p>
         <div className="form two">
@@ -144,4 +146,36 @@ function Logo() {
   return <div className="logo-row"><img src={logoOf(D.cfg)} alt="شعار الجمعية" width="64" height="64" />
     <label className="btn">اختيار الشعار<input type="file" accept="image/*" hidden onChange={pick} /></label>
     {D.cfg.logo && <button type="button" className="btn ghost" onClick={() => act.update(D2 => { delete D2.cfg.logo; })}>إزالة</button>}</div>;
+}
+
+/** العقد والخاتم (نفس إعدادات البرنامج الأصلي) */
+function ContractSettings() {
+  const { D, act } = useData(), assoc = act.assoc;
+  const C = D.cfg, set = (k, v) => act.update(D2 => { if (v === '' || v == null) delete D2.cfg[k]; else D2.cfg[k] = v; });
+  const [cl, setCl] = useState(C.clauses || CL);
+  const sel = (k, label, opts) => <label className="field">{label}<select value={k === 'stampOn' ? (C.stampOn === false ? '0' : '1') : (C[k] || '')}
+    onChange={e => k === 'stampOn' ? act.update(D2 => { D2.cfg.stampOn = e.target.value === '1'; }) : set(k, e.target.value)}>{opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>;
+  const up = e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const m = 600, k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); set('stamp', c.toDataURL('image/png')); };
+      im.onerror = () => alert('تعذّر فتح الصورة. اختر صورة PNG أو JPG.'); im.src = r.result; }; r.readAsDataURL(f); };
+  return (
+    <section className="panel" aria-labelledby="cts-h"><h2 id="cts-h">العقد والخاتم</h2>
+      <label className="field">بنود الالتزام (كل سطر بند)<textarea rows="7" value={cl} onChange={e => setCl(e.target.value)}
+        onBlur={() => { if (cl.trim() !== (C.clauses || CL).trim()) set('clauses', cl.trim() === CL.trim() ? '' : cl); }} /></label>
+      <div className="row"><button type="button" className="btn ghost" onClick={() => { setCl(CL); set('clauses', ''); }}>إرجاع البنود الأصلية</button>
+        <button type="button" className="btn" onClick={() => act.printContracts('blank')}>📄 معاينة عقد فارغ</button></div>
+      <div className="form two">
+        {sel('stampOn', 'الخاتم على الوثيقة المطبوعة', [['1', 'طباعة الخاتم'], ['0', 'بدون خاتم (للختم اليدوي)']])}
+        <Field label="النص أعلى الخاتم (اسم الجمعية)" value={C.stT} onSave={v => set('stT', v.trim())} />
+        <Field label="النص أسفل الخاتم" value={C.stB} onSave={v => set('stB', v.trim())} />
+        <Field label="النص في وسط الخاتم" value={C.stC} onSave={v => set('stC', v.trim())} hint="مثلاً: خاتم الرئيس" />
+        {sel('stK', 'لون الحبر', [['', 'أزرق'], ['#5b2a86', 'بنفسجي'], ['#222222', 'أسود'], ['#b3261e', 'أحمر']])}
+        {sel('stF', 'تأثير الحبر', [['', 'واضح وحاد (مناسب للطباعة)'], ['1', 'حبر طبيعي (بنسيج)']])}
+      </div>
+      <img className="stp-pv" src={stampSrc(C, assoc)} alt="معاينة الخاتم" />
+      <div className="row"><label className="btn">أو ارفع صورة خاتم جاهزة<input type="file" accept="image/*" hidden onChange={up} /></label>
+        {C.stamp && <button type="button" className="btn ghost" onClick={() => set('stamp', '')}>حذف الصورة والرجوع للخاتم المرسوم</button>}</div>
+    </section>
+  );
 }

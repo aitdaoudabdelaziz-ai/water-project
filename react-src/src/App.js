@@ -17,6 +17,7 @@ import Finance from './screens/Finance.js';
 import Settings from './screens/Settings.js';
 import Login from './screens/Login.js';
 import PrintArea from './components/Print.js';
+import ContractArea from './components/Contract.js';
 import Thermal from './components/Thermal.js';
 import { perms, session } from './lib/auth.js';
 import { connect, push, setRemote, WERR } from './lib/cloud.js';
@@ -100,6 +101,7 @@ export default function App() {
   const P = perms(data, cu);
   const [more, setMore] = useState(false);
   const [printIds, setPrintIds] = useState(null);
+  const [ctIds, setCtIds] = useState(null); // عقود للطباعة: لائحة أو 'blank'
   const [thermIds, setThermIds] = useState(null);
 
   useEffect(() => { if (theme) document.documentElement.dataset.th = theme; else delete document.documentElement.dataset.th;
@@ -135,7 +137,7 @@ export default function App() {
   const tabs = TABS.filter(allowed);
   useEffect(() => { if (!tabs.some(t => t[0] === tab) && tabs.length) setTab(tabs[0][0]); }, [tab, tabs.length, cu]);
   const can = k => (readOnly && (k === 'ed' || k === 'del')) ? false : P.can(k);
-  const act = { update, assoc, lic: PRO ? lic : null, can, readOnly, goData: () => go('data'), cloudOn, cloud, setCloudMode, cloudWrite: cloudOn && cloudWrite, setCloudWrite, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
+  const act = { printContracts: setCtIds, update, assoc, lic: PRO ? lic : null, can, readOnly, goData: () => go('data'), cloudOn, cloud, setCloudMode, cloudWrite: cloudOn && cloudWrite, setCloudWrite, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
     openReading: (id, queue) => setReading({ id, queue: queue || null }),
     openInvoice: id => setInvoice(id) };
   const next = () => { const q = reading.queue || [], k = q.indexOf(reading.id);
@@ -181,6 +183,7 @@ export default function App() {
           {P.user && <button type="button" className="opt" onClick={() => { setMore(false); login(null); }}><b>خروج</b><small>{P.user.u}</small></button>}</div>
       </Sheet>}
       </>}
+      {ctIds && <ContractArea D={data} ids={ctIds} onDone={() => setCtIds(null)} />}
       {printIds && <PrintArea D={data} ids={printIds} onDone={() => setPrintIds(null)} onThermal={() => { setThermIds(printIds); setPrintIds(null); }} />}
       {thermIds && <Thermal ids={thermIds} onDone={() => setThermIds(null)} />}
       {reading && (reading.id == null

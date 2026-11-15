@@ -393,3 +393,18 @@ h2{position:relative}
 .xl-row{margin-top:0}.xl-row .btn{flex:1;min-width:150px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .xl-p{padding:10px 0}.xl-s{white-space:normal!important;text-align:start!important}.xl-s small{font-size:12px;color:var(--mu)}.xl-s small.bad{color:var(--pom)}
 .vfy{border:2px solid var(--gold);background:color-mix(in srgb,var(--gold) 12%,var(--card));border-radius:14px;padding:12px 14px;margin:8px 0}.vfy p{margin:0 0 8px;line-height:1.8}
+/* العقد (التزام الاشتراك): نفس نموذج البرنامج الأصلي، صفحة A4 */
+@page ct{size:A4;margin:12mm}
+.pv .ctp{font-family:"Segoe UI","Noto Sans Arabic","Noto Naskh Arabic",Tahoma,system-ui,sans-serif;page:ct;width:210mm;min-height:297mm;padding:10mm 12mm;background:#fff;margin:8px auto;font-size:12pt;line-height:1.75;color:#12261E;zoom:var(--z,1);display:flex;flex-direction:column;gap:3mm;box-sizing:border-box}
+.pv .cth{text-align:center;font-size:15pt;color:#17382D;margin:2mm 0 0}.pv .ctp p{margin:0}.pv .ctp ol{margin:0;padding:0 7mm 0 0}
+.pv .cst{text-align:center;font-weight:bold;border-radius:4mm;padding:1mm}.pv .cst.y{background:#C8E6C9;color:#1B5E20}.pv .cst.n{background:#FFE0B2;color:#BF360C}
+.pv .ctt{width:100%;border-collapse:collapse}.pv .ctt td{border:.3mm solid #90a4ae;padding:1.5mm 3mm;font-size:11.5pt}.pv .ctt td:first-child{background:#D3E0C9;width:34%;font-weight:bold}
+.pv .ctp .row{display:flex;gap:6mm}.pv .sgb{position:relative;flex:1;height:47mm;border:.3mm solid #0F7B5C;border-radius:3mm;padding:2mm 4mm;text-align:center;display:flex;flex-direction:column;background:#F4F8EE}
+.pv .sgb h5{margin:0;color:#17382D;font-size:12pt}.pv .sgb small{font-size:9pt}
+.pv .sgb .stp{position:absolute;left:50%;top:8mm;height:37mm;transform:translateX(-50%);max-width:100%;object-fit:contain;mix-blend-mode:multiply}
+.pv .ps{flex:1;text-align:center;border:.7mm solid #2e7d32;color:#2e7d32;border-radius:2mm;font-weight:bold;font-size:15pt;transform:rotate(-5deg);padding:1.2mm;margin:0 8mm}
+.pv .ctp .hd{flex:none}
+@media print{.pv .ctp{zoom:1;width:auto;margin:0;padding:0;min-height:0;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}.pv .ctp:last-child{page-break-after:auto}}
+.stp-pv{height:120px;display:block;margin:8px auto;background:#fff;border:1px solid var(--line);border-radius:8px}
+.ctb{display:inline-block;font-style:normal;font-weight:700;font-size:11.5px;padding:0 7px;border-radius:7px;margin-inline-start:4px;line-height:1.7}.ctb.y{background:#DDF1E3;color:#1E7A45}.ctb.n{background:#FCEFD6;color:#9A6A07}
+.row-i .ctb{align-self:flex-start;margin:3px 0 0;width:max-content}
