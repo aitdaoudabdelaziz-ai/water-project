@@ -130,3 +130,11 @@ test('F18-V2 sign-up with an email that already has an account is refused with a
   await p.getByRole('button', { name: 'عضو جديد؟ إنشاء حساب' }).click();
   assert.match(await p.getByRole('alert').innerText(), /لديه حساب مسبقاً.*أخبر المسؤول/);
 });
+test('F18-H4 editing an invoice with cloud saving on is written to the cloud', async () => {
+  const { p, C } = await live(); await enableWrite(p);
+  const inv = C.invs.find(i => !i.paid), k = inv.s + '|' + inv.y + '|' + inv.r;
+  await p.locator('.nav button', { hasText: 'الفواتير' }).click(); await p.getByLabel(/بحث/).first().fill(inv.num); await p.locator('.list.inv li button').first().click();
+  await p.getByRole('button', { name: '✎ تعديل الفاتورة' }).click();
+  await p.getByLabel('ملاحظة إضافية تظهر في الفاتورة').fill('تعديل من السحابة'); await p.getByRole('button', { name: 'حفظ', exact: true }).click();
+  await p.waitForFunction(([d, k]) => { const x = JSON.parse(localStorage.getItem('fakefb_docs')).find(z => z.id === d); return x && x.data.m[k] && JSON.parse(x.data.m[k]).note === 'تعديل من السحابة'; }, ['i_' + inv.y + '_' + inv.r, k], { timeout: 5000 });
+});

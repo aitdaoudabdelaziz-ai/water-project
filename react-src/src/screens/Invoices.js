@@ -21,6 +21,7 @@ export default function Invoices({ init }) {
     <div className="stack">
       <div className="panel toolbar">
         <h2>الفواتير <span className="cnt">{list.length}</span></h2>
+        {act.readOnly && <button type="button" className="btn ro-hint" onClick={act.goData}>🔒 السحابة للقراءة فقط — لتأكيد الدفع وتعديل الفواتير فعّل «الحفظ في السحابة»</button>}
         <div className="filters">
           <label>السنة<select value={y} onChange={e => { setY(e.target.value); setLim(PAGE); }}><option value="">الكل</option>{years.map(v => <option key={v} value={v}>{v}</option>)}</select></label>
           <label>الجولة<select value={r} onChange={e => { setR(e.target.value); setLim(PAGE); }}><option value="">الكل</option>{RN.map((n, i) => <option key={i} value={i}>{n}</option>)}</select></label>

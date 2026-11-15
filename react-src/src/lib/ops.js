@@ -126,3 +126,32 @@ export function importBook(D, book, y, r) {
   });
   return rep;
 }
+
+// ---------- تعديل الفاتورة (نفس editInv / saveInv / resetInv / delInv في البرنامج الأصلي) ----------
+const trCp = T => T.map(t => ({ to: t.to, price: t.price }));
+/** v: {num,date,name,meter,phone,addr,o,n,price,fee,note,tr(bool)}. يرجع رسالة خطأ أو null */
+export function saveInvoice(D, id, v) {
+  const i = D.invs.find(x => x.id === id); if (!i) return 'الفاتورة غير موجودة';
+  const f = x => parseFloat(String(x).replace(',', '.'));
+  const o = f(v.o), n = f(v.n), p = f(v.price); let fee = f(v.fee); const num = String(v.num || '').trim(), dt = v.date;
+  if (isNaN(o) || isNaN(n)) return 'أدخل القراءتين'; if (n < o) return 'القراءة الحالية أصغر من السابقة';
+  if (isNaN(p) || p < 0) return 'الثمن غير صالح'; if (isNaN(fee) || fee < 0) fee = 0;
+  if (!num) return 'رقم الفاتورة فارغ'; if (!dt) return 'تاريخ الإصدار فارغ';
+  if (D.invs.some(x => x.id !== i.id && x.num == num)) return 'رقم الفاتورة مستعمل في فاتورة أخرى';
+  const s0 = D.subs.find(x => x.id === i.s) || {}, ov = {};
+  ['name', 'meter', 'phone', 'addr'].forEach(k => { const x = String(v[k] || '').trim(); if (x !== (s0[k] || '')) ov[k] = x; });
+  if (o !== i.o || n !== i.n) i.lk = 1;
+  i.o = o; i.n = n; i.price = p; i.fee = fee;
+  const T = i.tr || trOn(D); if (T && v.tr) i.tr = i.tr || trCp(T); else delete i.tr;
+  i.num = num; i.date = dt; i.note = String(v.note || '').trim(); if (!i.note) delete i.note;
+  if (Object.keys(ov).length) i.ov = ov; else delete i.ov;
+  return null;
+}
+export function resetInvoice(D, id) {
+  const i = D.invs.find(x => x.id === id); if (!i) return;
+  const v = D.reads[key(i.s, i.y, i.r)]; if (v) { i.o = v.o; i.n = v.n; }
+  i.price = D.cfg.price; i.fee = D.cfg.fee; const T = trOn(D); if (T) i.tr = trCp(T); else delete i.tr;
+  delete i.lk; delete i.ov; delete i.note;
+}
+export function deleteInvoice(D, id) { D.invs = D.invs.filter(x => x.id !== id); }
+export const invTiers = D => trOn(D);
