@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useData } from '../lib/useData.js';
-import { tot, n2, roundName, due, today, daysBetween, tierLines } from '../lib/calc.js';
+import { tot, n2, roundName, due, today, daysBetween, tierLines, arrears } from '../lib/calc.js';
 import { pay, unpay, openWhatsApp, saveInvoice, resetInvoice, deleteInvoice, invTiers } from '../lib/ops.js';
 import Sheet from '../components/Sheet.js';
 
@@ -23,6 +23,9 @@ export default function InvoiceSheet({ id, onClose }) {
           : <tr><th>الثمن</th><td><bdi dir="ltr">{c} × {n2(i.price)} = {n2(c * i.price)}</bdi></td></tr>}
         {+i.fee ? <tr><th>واجب ثابت</th><td><bdi dir="ltr">{n2(i.fee)}</bdi></td></tr> : null}
         <tr><th>تاريخ الإصدار</th><td>{i.date}</td></tr>
+        {!i.paid && (() => { const ar = arrears(D, i), t = ar.reduce((x, y) => x + tot(y), 0); return ar.length ? <>
+          <tr className="ar-r"><th>متأخرات سابقة</th><td>{ar.length} {ar.length > 2 ? 'فواتير' : ar.length == 2 ? 'فاتورتان' : 'فاتورة'}: <bdi dir="ltr">{n2(t)}</bdi> درهم</td></tr>
+          <tr className="ar-r"><th>المجموع الكلي</th><td><b><bdi dir="ltr">{n2(tot(i) + t)}</bdi> درهم</b></td></tr></> : null; })()}
       </tbody></table>
       {i.note && <p className="note" style={{ whiteSpace: 'pre-line' }}>📝 {i.note}</p>}
       {err && <p className="err" role="alert">{err}</p>}
@@ -32,7 +35,7 @@ export default function InvoiceSheet({ id, onClose }) {
         <button type="button" className="btn wa" onClick={() => { const e = openWhatsApp(D, i, act.assoc); setErr(e || ''); }}>واتساب</button>
         {act.can('pr') && <button type="button" className="btn" onClick={() => act.print([i.id])}>🖨 {i.paid ? 'طباعة الوصل' : 'طباعة الفاتورة'}</button>}
         {act.can('pr') && <button type="button" className="btn" onClick={() => act.thermal([i.id])}>🧾 {i.paid ? 'وصل حراري للأداء' : 'وصل حراري'}</button>}
-        {i.paid && act.can('ed') && <button type="button" className="btn ghost" onClick={() => { if (confirm('إلغاء دفع الفاتورة ' + i.num + '؟ سيُنقص المبلغ من ' + (i.pw == 'b' ? 'البنك' : 'الصندوق') + '.')) act.update(D2 => unpay(D2, i.id)); }}>إلغاء الدفع</button>}
+        {!!i.paid && act.can('ed') && <button type="button" className="btn ghost" onClick={() => { if (confirm('إلغاء دفع الفاتورة ' + i.num + '؟ سيُنقص المبلغ من ' + (i.pw == 'b' ? 'البنك' : 'الصندوق') + '.')) act.update(D2 => unpay(D2, i.id)); }}>إلغاء الدفع</button>}
       </div>
       {(act.can('ed') || act.can('del')) && <div className="row">
         {act.can('ed') && <button type="button" className="btn" onClick={() => setEd(true)}>✎ تعديل الفاتورة</button>}

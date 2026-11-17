@@ -50,3 +50,15 @@ test('F25-N1 duplicate number and impossible readings are refused; reset and del
   await p.getByRole('button', { name: '🗑 حذف الفاتورة' }).click(); await p.waitForTimeout(200);
   assert.equal((await data(p)).invs.some(i => i.id === a.id), false);
 });
+test('F25-H2 an unpaid invoice shows the previous unpaid invoices and the full amount to pay', async () => {
+  const { p } = await app(); const D = await data(p);
+  const pr = i => D.invs.filter(x => x.s == i.s && !x.paid && x.id != i.id && (x.y < i.y || (x.y == i.y && x.r < i.r)));
+  const i = D.invs.filter(x => !x.paid).find(x => pr(x).length > 0); const ar = pr(i);
+  const t = x => (x.n - x.o) * x.price + x.fee, sum = ar.reduce((a, x) => a + t(x), 0);
+  await p.locator('.nav button', { hasText: 'الفواتير' }).click(); await p.getByLabel(/بحث/).first().fill(i.num); await p.locator('.list.inv li button').first().click();
+  assert.match(await p.locator('.ar-r').last().innerText(), new RegExp((t(i) + sum).toFixed(2).replace('.', '\\.')));
+  assert.equal(await p.locator('.sheet .row').first().evaluate(e => /(^|\s)0(\s|$)/.test(e.innerText)), false);
+  await p.getByRole('button', { name: /طباعة الفاتورة/ }).click();
+  const pg = await p.locator('.pv .pg').innerText();
+  assert.match(pg, new RegExp('المجموع الكلي للأداء: ' + (t(i) + sum).toFixed(2))); for (const x of ar) assert.match(pg, new RegExp(x.num));
+});

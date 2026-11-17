@@ -1,6 +1,6 @@
 // الطباعة بنفس نموذج فاتورة البرنامج الأصلي حرفياً (صفحة 210×148 مم، نفس الأقسام والألوان والنصوص)
 import { useEffect, useState } from 'react';
-import { tot, n2, RN, due, tierLines, tierAmt } from '../lib/calc.js';
+import { tot, n2, RN, due, tierLines, tierAmt , arrears } from '../lib/calc.js';
 
 export { AS0, CT0, LC0 } from '../lib/brand.js';
 import { AS0, CT0, LC0, logoOf } from '../lib/brand.js';
@@ -29,6 +29,7 @@ export default function PrintArea({ D, ids, onDone, onThermal }) {
       <div className="pp">
         {ids.map(id => { const i = D.invs.find(x => x.id === id); if (!i) return null;
           const s = Object.assign({}, D.subs.find(x => x.id === i.s), i.ov || {}), c = cs(i.o, i.n), a = i.tr ? tierAmt(c, i.tr) : c * i.price;
+          const ar = i.paid ? [] : arrears(D, i), art = ar.reduce((t, x) => t + tot(x), 0);
           return (
             <div className="pg" key={id}>
               <div className="hd"><div><div className="t1">فاتورة الماء الصالح للشرب</div><div className="t2">فاتورة رسمية</div></div>
@@ -41,10 +42,10 @@ export default function PrintArea({ D, ids, onDone, onThermal }) {
               <div><div className="br">جدول تفاصيل الاستهلاك</div>
                 <table><tbody><tr><th>اسم المشترك</th><th>القراءة السابقة (م³)</th><th>القراءة الحالية (م³)</th><th>الاستهلاك (م³)</th><th>الثمن (درهم/م³)</th><th>المبلغ (درهم)</th></tr>
                   <tr><td>{s.name}</td><td>{i.o}</td><td>{i.n}</td><td>{c}</td><td>{i.tr ? 'بالأشطر' : n2(i.price)}</td><td>{n2(a)}</td></tr></tbody></table></div>
-              <div className="tr"><div className="tt"><div>مبلغ الاستهلاك: {n2(a)} درهم</div>{i.fee > 0 && <div>رسوم الاشتراك: {n2(i.fee)} درهم</div>}<div className="gr">المجموع المستحق: {n2(tot(i))} درهم</div></div>
+              <div className="tr"><div className="tt"><div>مبلغ الاستهلاك: {n2(a)} درهم</div>{i.fee > 0 && <div>رسوم الاشتراك: {n2(i.fee)} درهم</div>}<div className="gr">المجموع المستحق: {n2(tot(i))} درهم</div>{ar.length > 0 && <><div className="ar">متأخرات سابقة ({ar.length} {ar.length > 2 ? 'فواتير' : ar.length == 2 ? 'فاتورتان' : 'فاتورة'}): {n2(art)} درهم</div><div className="gr ga">المجموع الكلي للأداء: {n2(tot(i) + art)} درهم</div></>}</div>
                 {i.paid ? <div className="ps">✔ مدفوعة</div> : null}</div>
               <div className="nt"><h5>ملاحظات:</h5><ul><li>يُرجى تسديد المبلغ قبل {fd(due(i, C.due))} لتفادي توقيف التزويد بالماء.</li><li>الاستهلاك تم احتسابه بناءً على الفرق بين القراءة الحالية والسابقة.</li>
-                {i.tr && <li>تفصيل الأشطر: {trTxt(c, i.tr)}</li>}{i.note && <li style={{ whiteSpace: 'pre-line' }}>{i.note}</li>}</ul></div>
+                {i.tr && <li>تفصيل الأشطر: {trTxt(c, i.tr)}</li>}{ar.length > 0 && <li>فواتير سابقة غير مؤداة: {ar.map(x => x.num + ' (' + RN[x.r].split(' (')[0] + ' ' + x.y + ': ' + n2(tot(x)) + ')').join('، ')}.</li>}{i.note && <li style={{ whiteSpace: 'pre-line' }}>{i.note}</li>}</ul></div>
               <div className="ft">{AS} - {CT} | الهاتف: {C.phone} | البريد الإلكتروني: {C.email}</div>
               <div className="ty">هذه فاتورة رسمية مُحرَّرة من {AS} - شكراً لكم على ترشيد استهلاك الماء</div>
             </div>); })}

@@ -17,6 +17,8 @@ export function tierLines(c, T) {
   return o;
 }
 export const tierAmt = (c, T) => +tierLines(c, T).reduce((a, l) => a + l.amt, 0).toFixed(2);
+/** الفواتير السابقة غير المؤداة لنفس المشترك (نفس قاعدة الوصل الحراري) */
+export const arrears = (D, i) => D.invs.filter(x => x.s == i.s && !x.paid && x.id != i.id && (x.y < i.y || (x.y == i.y && x.r < i.r))).sort((a, b) => a.y - b.y || a.r - b.r);
 export const tot = i => (i.tr ? tierAmt(i.n - i.o, i.tr) : (i.n - i.o) * i.price) + i.fee;
 export function due(i, days) { const d = new Date(i.date); d.setDate(d.getDate() + (+days)); return d.toISOString().slice(0, 10); }
 export const prevNew = (D, i, y, r) => { const v = D.reads[r ? key(i, y, r - 1) : key(i, y - 1, 3)]; return v ? v.n : null; };

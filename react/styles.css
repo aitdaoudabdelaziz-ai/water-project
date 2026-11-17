@@ -408,3 +408,4 @@ h2{position:relative}
 .stp-pv{height:120px;display:block;margin:8px auto;background:#fff;border:1px solid var(--line);border-radius:8px}
 .ctb{display:inline-block;font-style:normal;font-weight:700;font-size:11.5px;padding:0 7px;border-radius:7px;margin-inline-start:4px;line-height:1.7}.ctb.y{background:#DDF1E3;color:#1E7A45}.ctb.n{background:#FCEFD6;color:#9A6A07}
 .row-i .ctb{align-self:flex-start;margin:3px 0 0;width:max-content}
+.pv .ar{color:#B3261E;font-weight:bold}.pv .gr.ga{color:#B3261E;font-size:11.5pt;border-top:.3mm solid #B3261E}.ar-r td{color:#B3261E}
