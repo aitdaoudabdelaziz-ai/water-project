@@ -110,3 +110,26 @@ jobs:
           name: AlFath-Water-React-Android
           path: out/*.apk
           if-no-files-found: error
+
+  # رابط تحميل ثابت بدون حساب GitHub (الإصدار «app-latest» يُستبدل في كل بناء)
+  release:
+    needs: [exe, apk]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: dl }
+      - name: Publish fixed download links
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R: ${{ github.repository }}
+        run: |
+          mkdir up
+          cp dl/AlFath-Water-React-Android/*.apk up/AlFath-Water.apk
+          cp dl/AlFath-Water-React-Windows/*Setup*.exe up/AlFath-Water-Setup.exe
+          cp dl/AlFath-Water-React-Windows/*Portable*.exe up/AlFath-Water-Portable.exe
+          ls -la up
+          gh release view app-latest -R "$R" >/dev/null 2>&1 || gh release create app-latest -R "$R" --target "$GITHUB_SHA" --title "برنامج الماء - آخر نسخة" --notes "تُحدَّث تلقائياً مع كل تعديل. الهاتف: AlFath-Water.apk — الحاسوب: AlFath-Water-Setup.exe"
+          gh release upload app-latest up/* -R "$R" --clobber
+          gh release edit app-latest -R "$R" --notes "آخر تحديث: $(date -u +%Y-%m-%d\ %H:%M) UTC — الهاتف: AlFath-Water.apk — الحاسوب: AlFath-Water-Setup.exe (أو Portable بدون تثبيت)"
