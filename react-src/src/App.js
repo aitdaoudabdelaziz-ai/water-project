@@ -23,6 +23,7 @@ import { perms, session } from './lib/auth.js';
 import { connect, push, setRemote, WERR } from './lib/cloud.js';
 import { PRO, AS0, iconOf } from './lib/brand.js';
 import { readLogo } from './lib/logo.js';
+import { usePageEnter } from './lib/motion.js';
 import { useLicense, LicenseBar, LicenseDialog } from './components/License.js';
 import { cloudIds } from './lib/ops.js';
 
@@ -137,6 +138,7 @@ export default function App() {
   const tabs = TABS.filter(allowed);
   useEffect(() => { if (!tabs.some(t => t[0] === tab) && tabs.length) setTab(tabs[0][0]); }, [tab, tabs.length, cu]);
   const can = k => (readOnly && (k === 'ed' || k === 'del')) ? false : P.can(k);
+  const mainRef = usePageEnter(tab);
   const act = { printContracts: setCtIds, update, assoc, lic: PRO ? lic : null, can, readOnly, goData: () => go('data'), cloudOn, cloud, setCloudMode, cloudWrite: cloudOn && cloudWrite, setCloudWrite, admin: P.admin, user: P.user, login, print: ids => setPrintIds(ids), thermal: ids => setThermIds(ids),
     openReading: (id, queue) => setReading({ id, queue: queue || null }),
     openInvoice: id => setInvoice(id) };
@@ -159,7 +161,7 @@ export default function App() {
       </header>
       {P.needLogin && <Login D={data} assoc={assoc} onLogin={login} />}
       {!P.needLogin && <>
-      <main className="main">
+      <main className="main" ref={mainRef} key={tab}>
         {tab === 'home' && <Dashboard go={go} />}
         {tab === 'reads' && <Readings />}
         {tab === 'invoices' && <Invoices key={JSON.stringify(init)} init={init} />}

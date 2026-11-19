@@ -17,7 +17,7 @@ if (PRO) {
 mkdirSync(OUT, { recursive: true });
 await build({
   entryPoints: ['src/main.js'], bundle: true, outfile: OUT + '/app.js', format: 'iife', target: 'es2019',
-  loader: { '.js': 'jsx' }, jsx: 'automatic', minify: true, sourcemap: false, legalComments: 'none',
+  loader: { '.js': 'jsx' }, jsx: 'automatic', minify: true, sourcemap: false, legalComments: 'eof',
   define: { 'process.env.NODE_ENV': '"production"', __PRO__: String(PRO), __SK__: JSON.stringify(SK), __SELLER__: JSON.stringify(SELLER) }, nodePaths,
 });
 copyFileSync('src/styles.css', OUT + '/styles.css');

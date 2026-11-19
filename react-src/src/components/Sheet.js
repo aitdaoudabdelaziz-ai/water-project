@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import { sheetEnter } from '../lib/motion.js';
 /** نافذة سفلية على الهاتف، ووسطية على الحاسوب. Esc أو النقر خارجها يغلقها */
 export default function Sheet({ title, sub, onClose, children, labelId = 'sh-t' }) {
   const ref = useRef(null);
+  useLayoutEffect(() => { sheetEnter(ref.current, ref.current && ref.current.parentNode); }, []);
   useEffect(() => { const prev = document.activeElement; const el = ref.current && ref.current.querySelector('[data-autofocus]') || ref.current;
     el && el.focus(); return () => prev && prev.focus && prev.focus(); }, []);
   // Esc يغلق النافذة حتى لو ضاع التركيز (مثلاً بعد اختفاء الزر الذي ضُغط)
